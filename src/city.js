@@ -221,7 +221,6 @@ function collectOfflineTerritoryIncome(){
  return collected;
 }
 for(const key of Object.keys(army))army[key]=Math.max(0,Math.floor(Number(army[key])||0));
-Object.assign(levels,savedCity.levels||{});
 refreshDefenseTowerModels();
 refreshWallModels();
 const troopCosts={infantry:{wood:10,gold:5},spearman:{wood:15,stone:5},archer:{wood:10,stone:10},cavalry:{wood:20,gold:10},knight:{stone:20,gold:20}};
