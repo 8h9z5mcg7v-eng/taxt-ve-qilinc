@@ -202,6 +202,22 @@ function renderRaidAlert(){
   });
  }
  controls.querySelector('#defenseTactic').value=plan.tactic||'balanced';
+ const scout=document.createElement('div');scout.style.cssText='margin-top:12px;padding-top:10px;border-top:1px solid #80633f';
+ const report=fortressState.scoutReport;
+ const reportFresh=report&&Date.now()-Number(report.at)<30*60*1000;
+ scout.innerHTML='<b>🔭 Kəşfiyyat</b><p>'+(reportFresh?'Son hesabat · '+Math.ceil((30*60*1000-(Date.now()-report.at))/60000)+' dəqiqə qüvvədədir.':'Düşmən qarnizonunun tərkibini öyrənmək üçün kəşfiyyatçı göndər.')+'</p><button id="sendScout" type="button">Kəşfiyyat göndər · 10 qızıl</button>'+(reportFresh?'<div style="margin-top:8px">Düşmən qüvvələri: piyada 35 · nizəçi 20 · oxçu 25 · süvari 15 · cəngavər 5<br>Ümumi: 100 əsgər<br>Qala divarları: möhkəmləndirilmiş</div>':'');
+ scout.querySelector('#sendScout').addEventListener('click',()=>{
+  let city={};try{city=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}')}catch{}
+  city.resources=city.resources||{wood:1200,stone:1000,gold:500};
+  const gold=Math.max(0,Number(city.resources.gold)||0);
+  if(gold<10){scout.querySelector('p').textContent='Kəşfiyyat üçün 10 qızıl lazımdır. Mövcud qızıl: '+gold+'.';return;}
+  city.resources.gold=gold-10;
+  try{localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(city))}catch{}
+  fortressState.scoutReport={at:Date.now(),enemy:{infantry:35,spearman:20,archer:25,cavalry:15,knight:5},fortified:true};
+  worldState.redFortress=fortressState;saveWorld();
+  renderRaidAlert();
+ });
+ alert.append(scout);
 }
 renderRaidAlert();
 setInterval(renderRaidAlert,60000);
