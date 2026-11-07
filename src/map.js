@@ -643,5 +643,34 @@ function mountDiplomacyContracts(){
 }
 mountDiplomacyContracts();
 
+function renderCapturedFrontiers(){
+ const map=document.querySelector('#map');if(!map)return;
+ map.querySelectorAll('.frontier-marker,.frontier-info').forEach(node=>node.remove());
+ let diplomacy={};try{diplomacy=JSON.parse(localStorage.getItem('tvq_diplomacy_v1')||'{}')}catch{}
+ const campaigns=diplomacy.borderCampaigns||{};
+ const sites=[
+  {id:'north',name:'Şimal sərhəd qalası',icon:'❄️',left:'84%',top:'18%',rate:'12 odun · 5 daş · 3 qızıl/saat'},
+  {id:'iron',name:'Dəmir Tac qalası',icon:'⚒️',left:'84%',top:'43%',rate:'5 odun · 12 daş · 4 qızıl/saat'},
+  {id:'sun',name:'Günəş sərhəd qalası',icon:'☀️',left:'17%',top:'39%',rate:'10 odun · 7 daş · 6 qızıl/saat'}
+ ];
+ const owned=sites.filter(site=>campaigns[site.id]?.captured);
+ if(!owned.length)return;
+ const info=document.createElement('section');info.className='frontier-info';info.id='frontierInfo';
+ info.innerHTML='<b>🏴 Fəth edilmiş sərhəd qalaları</b><p>Xəritədə nişana toxunaraq qarnizon və istehsal məlumatlarına bax.</p>';
+ map.after(info);
+ for(const site of owned){
+  const campaign=campaigns[site.id];
+  const guard=campaign.garrison||{};
+  const count=Object.values(guard).reduce((n,v)=>n+(Number(v)||0),0);
+  const marker=document.createElement('button');
+  marker.type='button';marker.className='frontier-marker';marker.style.left=site.left;marker.style.top=site.top;
+  marker.textContent=site.icon;marker.dataset.label='Sənin qalən';marker.setAttribute('aria-label',site.name);
+  marker.addEventListener('click',()=>{
+   info.innerHTML='<b>'+site.icon+' '+site.name+'</b><p>Bu qala sənin krallığının nəzarətindədir. Qarnizon: <b>'+count+'</b> əsgər.</p><p>İstehsal: '+site.rate+'.</p><p>'+(count?'Qarnizon düşmən basqınlarına qarşı müdafiə yaradır.':'Qala müdafiəsizdir — qarnizon yerləşdirmək lazımdır.')+'</p><small>Son basqın: '+(campaign.lastRaidAt?new Date(campaign.lastRaidAt).toLocaleString('az-AZ'):'Hələ basqın olmayıb')+'</small>';
+  });
+  map.append(marker);
+ }
+}
+renderCapturedFrontiers();
 
 if(!total)document.querySelector('#description').textContent='Şəhərdə əvvəlcə qoşun hazırla. Sonra xəritəyə qayıdıb yürüşə başla.';
