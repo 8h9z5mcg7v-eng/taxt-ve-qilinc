@@ -73,8 +73,8 @@ function renderTerrain(terrain, wallDamage = 0, siege = {}) {
   field.insertBefore(scene, field.firstChild);
 }
 
-function renderBattlefield(attacker, defender, direction, terrain = 'plains') {
-  renderTerrain(terrain);
+function renderBattlefield(attacker, defender, direction, terrain = 'plains', wallDamage = 0, siege = {}) {
+  renderTerrain(terrain, wallDamage, siege);
   const attackLayer = document.getElementById('attackerUnits');
   const defendLayer = document.getElementById('defenderUnits');
   const arrowLayer = document.getElementById('attackArrow');
