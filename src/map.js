@@ -367,12 +367,35 @@ try{journey=JSON.parse(localStorage.getItem(journeyKey)||'null')}catch{journey=n
 const dot=document.createElement('div');dot.className='march-dot';dot.textContent='⚔';document.querySelector('#map').append(dot);
 function renderJourney(){if(!journey)return;const left=journey.arrivesAt-Date.now();document.querySelector('#path').style.display='block';dot.style.display='block';marchButton.disabled=left>0;if(left>0){marchButton.textContent='Yürüş davam edir';document.querySelector('#description').textContent='Ordu Qırmızı Qalaya doğru irəliləyir. Qalan vaxt: '+Math.ceil(left/1000)+' saniyə.';}else{marchButton.textContent='⚔ Döyüşə keç';document.querySelector('#description').textContent='Ordu düşmən qalasına çatdı. Döyüşə başlaya bilərsən.';}}
 if(journey&&journey.target==='red-fortress')renderJourney();else dot.style.display='none';
+let returnJourney=null;
+try{returnJourney=JSON.parse(localStorage.getItem('tvq_return_journey_v1')||'null')}catch{returnJourney=null}
+const returnPanel=document.createElement('section');
+returnPanel.id='returnJourneyPanel';returnPanel.className='panel';returnPanel.style.display='none';
+returnPanel.innerHTML='<h2>↩️ Geri qayıdan ordu</h2><p id="returnJourneyText"></p><div class="stats" id="returnArmyStats"></div><div class="actions"><a href="./city.html">🏰 Şəhərə keç</a></div>';
+document.querySelector('.wrap').append(returnPanel);
+function renderReturnJourney(){
+ if(!returnJourney)return;
+ const now=Date.now(),start=Number(returnJourney.startedAt)||now,end=Number(returnJourney.arrivesAt)||now;
+ const duration=Math.max(1,end-start),progress=Math.max(0,Math.min(1,(now-start)/duration));
+ const left=Math.max(0,end-now),army=returnJourney.army||{};
+ const count=Object.values(army).reduce((sum,n)=>sum+Math.max(0,Number(n)||0),0);
+ dot.style.animation='none';dot.style.left=(76-(54*progress))+'%';dot.style.top=(70-(6*progress))+'%';dot.style.display='block';
+ document.querySelector('#path').style.display='block';
+ returnPanel.style.display='block';
+ document.querySelector('#returnJourneyText').textContent=left>0?'Sağ qalan əsgərlər düşmən qalasından paytaxta qayıdır. Çatmağa: '+Math.ceil(left/1000)+' saniyə.':'Ordu paytaxta çatıb. Əsgərləri şəhər qarnizonuna qəbul etmək üçün şəhərə keç.';
+ document.querySelector('#returnArmyStats').innerHTML='<span>⚔ Sağ qalan: '+count+'</span><span>🏁 '+(left>0?'Yolda':'Çatıb')+'</span>';
+ if(left>0){marchButton.disabled=true;marchButton.textContent='↩️ Ordu geri qayıdır';}
+ else{marchButton.disabled=true;marchButton.textContent='Ordu çatıb';}
+}
+renderReturnJourney();
+if(returnJourney)setInterval(renderReturnJourney,500);
+
 document.querySelectorAll('.place').forEach(el=>el.addEventListener('click',()=>{
  document.querySelectorAll('.place').forEach(x=>x.classList.remove('selected'));
  el.classList.add('selected');selected=targets[el.dataset.id];
  document.querySelector('#targetTitle').textContent=selected.title;
  document.querySelector('#description').textContent=selected.description;
- marchButton.disabled=!selected.enemy||total===0;
+ marchButton.disabled=!!returnJourney||!selected.enemy||total===0;
  document.querySelector('#path').style.display='block';
  if(el.dataset.id==='enemy'&&fortressState.captured){showGarrisonControls();showTerritoryEconomy();}
  else document.querySelector('#garrisonControls')?.remove();
@@ -388,6 +411,7 @@ document.querySelectorAll('.place').forEach(el=>el.addEventListener('click',()=>
  if(el.dataset.id==='village'||el.dataset.id==='mine')showOutpostControls(el.dataset.id);else document.querySelector('#outpostControls')?.remove();
 }));
 marchButton.addEventListener('click',()=>{
+ if(returnJourney)return;
  if(journey&&journey.target==='red-fortress'&&Date.now()>=journey.arrivesAt){const next=new URLSearchParams(params);let plan={};try{plan=JSON.parse(localStorage.getItem('tvq_attack_plan_v1')||'{}')}catch{};next.set('target','red-fortress');next.set('garrison','300');next.set('direction',plan.direction||'south');next.set('tactic',plan.tactic||'balanced');next.set('ram',String(plan.ram??1));next.set('catapult',String(plan.catapult??1));location.href='./battle.html?'+next.toString();return;}
  if(!selected?.enemy||!total||journey)return;
  const marchArmy=Object.fromEntries(['infantry','spearman','archer','cavalry','knight'].map(type=>[type,Math.max(0,Math.floor(Number(army[type])||0))]));
