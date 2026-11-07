@@ -184,9 +184,20 @@ function showOutpostControls(id){
   const keys=['infantry','spearman','archer','cavalry','knight'],ids=['ogInf','ogSp','ogAr','ogCa','ogKn'];
   const chosen=Object.fromEntries(keys.map((k,i)=>[k,Math.max(0,Math.min(army[k],Math.floor(Number(panel.querySelector('#'+ids[i]).value)||0)))]));
   if(Object.values(chosen).every(n=>n===0)){panel.querySelector('p').textContent='Qarnizona yerləşdirmək üçün əsgər seç.';return}
+  const previousArmy={...army},previousGuard={...guard},previousTerritory=JSON.stringify(territory[id]);
   for(const k of keys){army[k]-=chosen[k];guard[k]=(Number(guard[k])||0)+chosen[k]}
   territory[id].garrison=guard;
-  try{localStorage.setItem(territoryKey,JSON.stringify(territory));const city=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}');city.army={...army};localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(city))}catch{}
+  try{
+   const city=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}');
+   city.army={...army};
+   localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(city));
+   localStorage.setItem(territoryKey,JSON.stringify(territory));
+  }catch{
+   for(const k of keys){army[k]=previousArmy[k];guard[k]=previousGuard[k]}
+   territory[id]=JSON.parse(previousTerritory);
+   panel.querySelector('p').textContent='Qarnizon yerləşdirilmədi: yaddaş yazısı uğursuz oldu. Qoşun sayı əvvəlki vəziyyətə qaytarıldı.';
+   return;
+  }
   stats.innerHTML=keys.filter(k=>army[k]>0).map(k=>'<span>'+names[k]+': '+army[k]+'</span>').join('')||'<span>Səyyar ordu qalmayıb</span>';
   showOutpostControls(id);
  });
@@ -195,17 +206,23 @@ function showOutpostControls(id){
   const returning={...guard};
   if(!Object.values(returning).some(n=>Number(n)>0)){panel.querySelector('p').textContent='Qaytarılacaq qarnizon yoxdur.';return;}
   let city={};try{city=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}')}catch{}
+  const previousTerritory=JSON.stringify(territory[id]),previousArmy={...army};
   city.army=city.army||{};
   for(const k of troopIds){
    const count=Math.max(0,Math.floor(Number(returning[k])||0));
    city.army[k]=(Number(city.army[k])||0)+count;
-   army[k]=(Number(army[k])||0)+count;
+   army[k]=city.army[k];
   }
   territory[id].garrison={infantry:0,spearman:0,archer:0,cavalry:0,knight:0};
   try{
-   localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(city));
    localStorage.setItem(territoryKey,JSON.stringify(territory));
-  }catch{panel.querySelector('p').textContent='Qarnizon geri çağırıla bilmədi. Yaddaşda yer olub-olmadığını yoxla.';return;}
+   localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(city));
+  }catch{
+   territory[id]=JSON.parse(previousTerritory);
+   for(const k of troopIds)army[k]=previousArmy[k];
+   panel.querySelector('p').textContent='Qarnizon geri çağırıla bilmədi: yaddaş yazısı uğursuz oldu. Əvvəlki qarnizon saxlanıldı.';
+   return;
+  }
   stats.innerHTML=troopIds.filter(k=>army[k]>0).map(k=>'<span>'+names[k]+': '+army[k]+'</span>').join('')||'<span>Səyyar ordu qalmayıb</span>';
   showOutpostControls(id);
  });
