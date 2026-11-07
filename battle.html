@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="az">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#111a20">
+<title>Taxt və Qılınc — Döyüş sınağı</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,-apple-system,sans-serif;background:#111a20;color:#f2eadb}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 50% -10%,#4a4030 0,#202b30 42%,#111a20 85%)}
+header{padding:20px 17px 12px;border-bottom:1px solid #65563d}h1{font-size:19px;letter-spacing:.06em;margin:0}header p{font-size:12px;color:#c3b9a5;margin:5px 0 0}
+main{max-width:720px;margin:auto;padding:14px;display:grid;gap:12px}
+.card{background:#202b30;border:1px solid #5c5547;border-radius:14px;padding:14px;box-shadow:0 8px 24px #0003}
+h2{font-size:15px;margin:0 0 12px;color:#e6c78e}.sub{font-size:12px;color:#b8c0bd;margin:-6px 0 12px}
+.armies{display:grid;grid-template-columns:1fr 1fr;gap:10px}.army{background:#172127;border-radius:10px;padding:11px;border:1px solid #39464a}
+.army h3{margin:0 0 9px;font-size:13px}.enemy h3{color:#e3a18d}.own h3{color:#a9c99e}
+.unit{display:grid;grid-template-columns:1fr 58px;align-items:center;gap:8px;margin:8px 0;font-size:12px;color:#e0ddd4}
+input[type=number]{width:58px;background:#10191e;border:1px solid #64716e;border-radius:7px;padding:7px;color:#fff;text-align:center;font:inherit}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:10px}.field label{display:block;font-size:12px;color:#c5c0b5;margin-bottom:6px}
+select{width:100%;padding:11px;background:#121c21;border:1px solid #76664a;color:#f5ead5;border-radius:9px;font:inherit}
+button{width:100%;padding:14px;border:1px solid #c5a46a;border-radius:10px;background:linear-gradient(#a17a3e,#76542c);color:white;font-weight:750;font-size:14px}
+#result{display:none}.winner{font-size:18px;font-weight:800;margin-bottom:8px;color:#edcf94}.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}.stat{background:#121c21;border-radius:9px;padding:10px}.stat small{display:block;color:#aeb8b4;font-size:11px}.stat strong{font-size:18px}
+#log{font-size:12px;line-height:1.6;color:#d0d0c8;margin:10px 0 0;padding-left:18px}
+footer{text-align:center;color:#85918e;font-size:11px;padding:0 10px 22px}
+@media(max-width:420px){.armies{grid-template-columns:1fr}.controls{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<header><h1>TAXT VƏ QILINC</h1><p>Taktiki döyüş laboratoriyası · mobil prototip</p></header>
+<main>
+<section class="card"><h2>Qoşunların tərkibi</h2><p class="sub">Öz ordunu və müdafiəçinin qoşunlarını seç.</p>
+<div class="armies">
+<div class="army own"><h3>⚔ Hücum ordusu</h3>
+<div class="unit"><label for="a-infantry">Piyada</label><input id="a-infantry" type="number" min="0" max="9999" value="20"></div><div class="unit"><label for="a-spearman">Nizəçi</label><input id="a-spearman" type="number" min="0" max="9999" value="10"></div><div class="unit"><label for="a-archer">Oxçu</label><input id="a-archer" type="number" min="0" max="9999" value="12"></div><div class="unit"><label for="a-cavalry">Süvari</label><input id="a-cavalry" type="number" min="0" max="9999" value="6"></div><div class="unit"><label for="a-knight">Cəngavər</label><input id="a-knight" type="number" min="0" max="9999" value="2"></div>
+</div>
+<div class="army enemy"><h3>🛡 Müdafiə ordusu</h3>
+<div class="unit"><label for="d-infantry">Piyada</label><input id="d-infantry" type="number" min="0" max="9999" value="16"></div><div class="unit"><label for="d-spearman">Nizəçi</label><input id="d-spearman" type="number" min="0" max="9999" value="12"></div><div class="unit"><label for="d-archer">Oxçu</label><input id="d-archer" type="number" min="0" max="9999" value="14"></div><div class="unit"><label for="d-cavalry">Süvari</label><input id="d-cavalry" type="number" min="0" max="9999" value="4"></div><div class="unit"><label for="d-knight">Cəngavər</label><input id="d-knight" type="number" min="0" max="9999" value="3"></div>
+</div></div></section>
+<section class="card"><h2>Komandir əmrləri</h2><div class="controls">
+<div class="field"><label for="direction">Hücum istiqaməti</label><select id="direction"><option value="south">Cənub</option><option value="north">Şimal</option><option value="east">Şərq — cinah</option><option value="west">Qərb — cinah</option></select></div>
+<div class="field"><label for="tactic">Döyüş taktikası</label><select id="tactic"><option value="balanced">Balanslı</option><option value="wedge">Paz — süvari</option><option value="line">Xətt — piyada</option><option value="volley">Yaylım — oxçu</option></select></div>
+</div><div style="margin-top:12px"><button id="fight">DÖYÜŞÜ HESABLA</button></div></section>
+<section class="card" id="result" aria-live="polite"><div class="winner" id="winner"></div><div class="stats"><div class="stat"><small>Hücum gücü</small><strong id="ap">—</strong></div><div class="stat"><small>Müdafiə gücü</small><strong id="dp">—</strong></div><div class="stat"><small>Hücumda qalan</small><strong id="ar">—</strong></div><div class="stat"><small>Müdafiədə qalan</small><strong id="dr">—</strong></div></div><ul id="log"></ul></section>
+</main><footer>İlkin balans sınağıdır. Animasiya, real vaxt hərəkəti və multiplayer hələ əlavə edilməyib.</footer>
+<script type="module" src="./src/battle-ui.js"></script>
+</body></html>
