@@ -214,6 +214,15 @@ const dispatched=new URLSearchParams(location.search);
 const isWorldMapAttack=dispatched.get('target')==='red-fortress';
 const isBorderBattle=dispatched.get('target')==='border';
 if(isWorldMapAttack||isBorderBattle){const garrison=Math.max(1,Math.min(9999,Number(dispatched.get('garrison'))||(isBorderBattle?75:300)));const defense=isBorderBattle?{infantry:Number(dispatched.get('def_infantry'))||45,spearman:Number(dispatched.get('def_spearman'))||10,archer:Number(dispatched.get('def_archer'))||15,cavalry:Number(dispatched.get('def_cavalry'))||5,knight:Number(dispatched.get('def_knight'))||0}:{infantry:Math.round(garrison*.3),spearman:Math.round(garrison*.2),archer:Math.round(garrison*.3),cavalry:Math.round(garrison*.1),knight:0};defense.knight=Math.max(0,defense.knight||garrison-Object.values(defense).reduce((a,n)=>a+n,0));for(const [type,count] of Object.entries(defense)){document.getElementById('d-'+type).value=String(count);}if(isBorderBattle){const terrainField=document.getElementById('terrain');const requestedTerrain=dispatched.get('terrain')||'fortress';if([...terrainField.options].some(option=>option.value===requestedTerrain))terrainField.value=requestedTerrain;}}
+// In the local battle simulator, defensive catapults come from the city's upgraded towers.
+if(!dispatched.has('target')){
+ try{
+  const citySave=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}');
+  const towerLevel=Math.max(1,Math.min(10,Math.floor(Number(citySave.levels?.['Müdafiə qülləsi'])||1)));
+  const defenseField=document.getElementById('defenseCatapult');
+  if(defenseField&&!dispatched.has('defenseCatapult'))defenseField.value=String(Math.min(20,towerLevel-1));
+ }catch{}
+}
 for(const type of troopIds){
  if(dispatched.has(type)){
   const field=document.getElementById('a-'+type);
