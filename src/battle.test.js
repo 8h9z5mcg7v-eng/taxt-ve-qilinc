@@ -31,3 +31,24 @@ test('empty armies return a readable result without invalid losses', () => {
   assert.equal(result.winner, 'defender');
   assert.ok(result.log[0].includes('qoşun'));
 });
+
+test('fortress terrain strengthens defender power over open plains', () => {
+  const input = { attacker: { infantry: 20 }, defender: { infantry: 20 }, seed: 8 };
+  const plains = resolveBattle({ ...input, terrain: 'plains' });
+  const fortress = resolveBattle({ ...input, terrain: 'fortress' });
+  assert.ok(fortress.power.defender > plains.power.defender);
+});
+
+test('forest terrain reduces cavalry attack effectiveness', () => {
+  const input = { attacker: { cavalry: 20 }, defender: { infantry: 10 }, seed: 8 };
+  const plains = resolveBattle({ ...input, terrain: 'plains' });
+  const forest = resolveBattle({ ...input, terrain: 'forest' });
+  assert.ok(forest.power.attacker < plains.power.attacker);
+});
+
+test('hill terrain gives the attacker a modest height advantage', () => {
+  const input = { attacker: { infantry: 20 }, defender: { infantry: 20 }, seed: 8 };
+  const plains = resolveBattle({ ...input, terrain: 'plains' });
+  const hill = resolveBattle({ ...input, terrain: 'hill' });
+  assert.ok(hill.power.attacker > plains.power.attacker);
+});
