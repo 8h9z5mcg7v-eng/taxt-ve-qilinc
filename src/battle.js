@@ -29,7 +29,7 @@ function calculatePower(army, defending, formation, opponents) {
  * direction: north | east | south | west
  * tactic: balanced | wedge | line | volley
  */
-export function resolveBattle({ attacker, defender, direction = 'south', tactic = 'balanced', defenderTactic = 'balanced', terrain = 'plains', siege = {}, defenseCatapult = 0, priorWallDamage = 0, seed = 1 }) {
+export function resolveBattle({ attacker, defender, direction = 'south', tactic = 'balanced', defenderTactic = 'balanced', terrain = 'plains', siege = {}, defenseCatapult = 0, wallLevel = 1, priorWallDamage = 0, seed = 1 }) {
   const attackArmy = createArmy(attacker);
   const defendArmy = createArmy(defender);
   const attackCount = armySize(attackArmy);
@@ -54,10 +54,14 @@ export function resolveBattle({ attacker, defender, direction = 'south', tactic 
   const cavalryShare = attackArmy.cavalry / totalAttackers;
   const cavalryTerrainFactor = 1 - (1 - cavalryPenalty) * cavalryShare;
   const wallMax = safeTerrain === 'fortress' ? 100 : 0;
-  const wallDamage = Math.min(wallMax, clamp(Number(priorWallDamage) || 0, 0, wallMax) + siegeEngines.ram * 18 + siegeEngines.catapult * 30);
+  const safeWallLevel = clamp(Math.floor(Number(wallLevel) || 1), 1, 10);
+  const wallDamageReduction = 1 - (safeWallLevel - 1) * 0.035;
+  const incomingWallDamage = (siegeEngines.ram * 18 + siegeEngines.catapult * 30) * wallDamageReduction;
+  const wallDamage = Math.min(wallMax, clamp(Number(priorWallDamage) || 0, 0, wallMax) + incomingWallDamage);
   const wallRemaining = Math.max(0, wallMax - wallDamage);
   const wallBreached = wallMax > 0 && wallRemaining === 0;
-  const wallProtection = wallMax > 0 ? ((1 + (wallRemaining / wallMax) * 0.32) / 1.32) / (1 + siegeEngines.tower * 0.16) : 1;
+  const wallLevelBonus = 1 + (safeWallLevel - 1) * 0.045;
+  const wallProtection = wallMax > 0 ? (((1 + (wallRemaining / wallMax) * 0.32) / 1.32) * wallLevelBonus) / (1 + siegeEngines.tower * 0.16) : 1;
   const siegeAttackBonus = wallMax > 0 ? siegeEngines.catapult * 14 + siegeEngines.tower * 10 + (wallBreached ? siegeEngines.ram * 6 : 0) : 0;
   const defensiveStoneDamage = defensiveCatapults * 12;
   const attackPower = Math.max(1, rawAttackPower * directionBonus * terrainAttackBonus * cavalryTerrainFactor + siegeAttackBonus - defensiveStoneDamage);
@@ -78,7 +82,7 @@ export function resolveBattle({ attacker, defender, direction = 'south', tactic 
 
   return {
     winner, direction: safeDirection, tactic: safeTactic, defenderTactic: safeDefenderTactic, terrain: safeTerrain,
-    siege: { ...siegeEngines, defensiveCatapults, defensiveStoneDamage, wallMax, wallDamage, wallRemaining, wallBreached, attackBonus: siegeAttackBonus },
+    siege: { ...siegeEngines, defensiveCatapults, defensiveStoneDamage, wallMax, wallLevel: safeWallLevel, wallLevelBonus, wallDamageReduction, wallDamage, wallRemaining, wallBreached, attackBonus: siegeAttackBonus },
     modifiers: { direction: directionBonus, attackerTerrain: terrainAttackBonus * cavalryTerrainFactor, defenderTerrain: wallBreached ? 1 : terrainDefenseBonus * wallProtection },
     power: { attacker: Math.round(attackPower), defender: Math.round(defendPower) },
     remaining: {
@@ -92,7 +96,7 @@ export function resolveBattle({ attacker, defender, direction = 'south', tactic 
       `Müdafiə taktikası: ${safeDefenderTactic}`,
       `Ərazi: ${safeTerrain}`,
       `Mühasirə: qoçbaşı ${siegeEngines.ram}, katapult ${siegeEngines.catapult}, mühasirə qülləsi ${siegeEngines.tower}`,\n      ...(defensiveCatapults ? [`Qala müdafiə katapultları: ${defensiveCatapults} · hücum gücünə zərər: ${defensiveStoneDamage}`] : []),
-      ...(wallMax ? [`Divar zədəsi: ${wallDamage}/100 · ${wallBreached ? 'divar yarıldı' : 'divar hələ dayanır'}`] : []),
+      ...(wallMax ? [`Divar səviyyəsi: ${safeWallLevel}/10 · zədə: ${Math.round(wallDamage)}/100 · ${wallBreached ? 'divar yarıldı' : 'divar hələ dayanır'}`] : []),
       `Hücum gücü: ${Math.round(attackPower)} · Müdafiə gücü: ${Math.round(defendPower)}`,
       winner === 'attacker' ? 'Hücum edən tərəf üstün gəldi.' : 'Müdafiə tərəfi qalib gəldi.'
     ]
