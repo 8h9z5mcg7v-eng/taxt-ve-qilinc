@@ -310,6 +310,8 @@ updateArmyStatus();
 renderArmyInCity();
 processHospital();
 setInterval(processHospital,1000);
+processReturningArmy();
+setInterval(processReturningArmy,1000);
 collectOfflineTerritoryIncome();
 saveCity();
 try{const world=JSON.parse(localStorage.getItem('tvq_world_state_v1')||'{}');if(world.redFortress){info.innerHTML=world.redFortress.captured?'<b>🏆 Qırmızı Qala fəth edildi!</b>Qələbə tarixi: '+new Date(world.redFortress.updatedAt).toLocaleString('az-AZ')+'.':'<b>⚔ Hücum başa çatdı</b>Düşmən qalası müdafiə olunur. Sağ qalan düşmən: '+world.redFortress.remainingDefenders+'. Ordunu yenidən hazırlaya bilərsən.';}}catch{}
