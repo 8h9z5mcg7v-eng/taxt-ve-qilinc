@@ -76,20 +76,32 @@ function playCombatAnimation() {
   field.classList.remove('combat-active');
   void field.getBoundingClientRect();
   field.classList.add('combat-active');
-  for (const [layer, direction] of [[attackLayer, -1], [defendLayer, 1]]) {
-    [...layer.querySelectorAll('circle')].forEach((circle, index) => {
-      circle.animate(
-        [
-          { transform: 'scale(1)', filter: 'brightness(1)' },
-          { transform: 'scale(1.22)', filter: 'brightness(1.8)' },
-          { transform: 'scale(1)', filter: 'brightness(1)' }
-        ],
-        { duration: 620, delay: index * 110, easing: 'ease-out' }
-      );
-    });
-  }
+
+  // Animate complete troop groups so the movement remains visible after
+  // the post-battle formation has been rendered.
+  [...attackLayer.querySelectorAll('g')].forEach((group, index) => {
+    group.animate(
+      [{ transform: group.getAttribute('transform') },
+       { transform: group.getAttribute('transform') + ' translate(0,-18)' },
+       { transform: group.getAttribute('transform') }],
+      { duration: 760, delay: index * 130, easing: 'ease-in-out' }
+    );
+  });
+  [...defendLayer.querySelectorAll('g')].forEach((group, index) => {
+    group.animate(
+      [{ transform: group.getAttribute('transform') },
+       { transform: group.getAttribute('transform') + ' translate(0,5)' },
+       { transform: group.getAttribute('transform') }],
+      { duration: 680, delay: index * 100, easing: 'ease-out' }
+    );
+  });
   const arrow = document.querySelector('#attackArrow line');
-  if (arrow) arrow.animate([{ opacity: 0.25 }, { opacity: 1 }, { opacity: 0.25 }], { duration: 900, iterations: 2 });
+  if (arrow) {
+    arrow.animate(
+      [{ opacity: 0.2, strokeWidth: 4 }, { opacity: 1, strokeWidth: 9 }, { opacity: 0.35, strokeWidth: 4 }],
+      { duration: 1000, iterations: 2 }
+    );
+  }
 }
 
 function refreshPreview() {
@@ -121,7 +133,6 @@ document.getElementById('fight').addEventListener('click', () => {
   fightButton.disabled = true;
   fightButton.textContent = 'DÖYÜŞ HESABLANIR...';
   const result = resolveBattle({ attacker, defender, direction, tactic, terrain, siege, seed: Date.now() % 100000 });
-  playCombatAnimation();
   fightButton.textContent = isWorldMapAttack ? 'DÖYÜŞ TAMAMLANDI' : 'YENİ DÖYÜŞÜ HESABLA';
   if (!isWorldMapAttack) fightButton.disabled = false;
   const survivingAttacker = result.remaining?.attacker ?? attacker;
@@ -138,6 +149,7 @@ document.getElementById('fight').addEventListener('click', () => {
   }
   const survivingDefender = result.remaining?.defender ?? defender;
   renderBattlefield(survivingAttacker, survivingDefender, direction);
+  playCombatAnimation();
   const panel = document.getElementById('result');
   panel.style.display = 'block';
   if(isWorldMapAttack){try{const worldKey='tvq_world_state_v1';const world=JSON.parse(localStorage.getItem(worldKey)||'{}');const previous=world.redFortress||{};const captured=result.winner==='attacker';const now=Date.now();world.redFortress={...previous,captured,updatedAt:now,capturedAt:captured?now:(previous.capturedAt||null),garrison:captured?{infantry:0,spearman:0,archer:0,cavalry:0,knight:0}:survivingDefender,remainingDefenders:total(survivingDefender),lastBattle:{winner:result.winner,at:now,attackerLosses:result.losses?.attacker||{},defenderLosses:result.losses?.defender||{},survivingAttackers:total(survivingAttacker)}};localStorage.setItem(worldKey,JSON.stringify(world));localStorage.removeItem('tvq_active_journey_v1');const outcome=document.createElement('p');outcome.style.cssText='margin-top:12px;color:#f0d69d;font-weight:700';outcome.textContent=captured?'Qırmızı Qala fəth edildi! Şəhərə qayıdaraq nəticəni gör.':'Hücum uğursuz oldu. Sağ qalan ordu şəhərə qaytarıldı.';panel.appendChild(outcome);const back=document.createElement('a');back.href='./city.html';back.textContent='Şəhərə qayıt';back.style.cssText='display:block;text-align:center;margin-top:10px;padding:12px;background:#76542c;border-radius:9px;color:white;text-decoration:none';panel.appendChild(back);}catch(error){console.warn('Döyüş nəticəsi saxlanmadı',error)}}
