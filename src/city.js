@@ -157,7 +157,7 @@ const resourceNodes={wood:document.querySelector('#wood'),stone:document.querySe
 function refreshResources(){for(const key of Object.keys(resources))resourceNodes[key].textContent=resources[key].toLocaleString('en-US')}
 function showBuilding(label){selectedBuilding=label;const level=levels[label]||1;const defenseNote=label==='Müdafiə qülləsi'?'<br>Hər səviyyə yüksəlişi qala müdafiəsinə 1 katapult əlavə edir. Hazırda: '+Math.max(0,level-1)+' katapult.':label.includes('qala divarı')?'<br>Divar səviyyəsi: '+level+'/10 · daha hündür daş divar və sıx mazğallar.':' ';info.innerHTML='<b>'+label+' · Səviyyə '+level+'</b>İnkişaf üçün düyməyə toxun. Növbəti səviyyə resurs tələb edir.'+defenseNote;}
 renderer.domElement.addEventListener('pointerup',e=>{const rect=renderer.domElement.getBoundingClientRect();pointer.x=((e.clientX-rect.left)/rect.width)*2-1;pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;raycaster.setFromCamera(pointer,camera);const hits=raycaster.intersectObjects(pickables,false);if(hits.length){const label=hits[0].object.userData.label||'Şəhər obyekti';showBuilding(label)}});
-document.querySelector('#upgrade').addEventListener('click',()=>{if(!selectedBuilding){info.innerHTML='<b>Tikili seçilməyib</b>İnkişaf etdirmək üçün əvvəlcə şəhərdə binaya toxun.';return}const current=levels[selectedBuilding]||1;if(current>=10){info.innerHTML='<b>Maksimum səviyyə</b>'+selectedBuilding+' artıq 10-cu səviyyədədir.';return}const cost={wood:current*150,stone:current*100,gold:current*50};if(resources.wood<cost.wood||resources.stone<cost.stone||resources.gold<cost.gold){info.innerHTML='<b>Resurs çatışmır</b>Bu inkişaf üçün daha çox odun, daş və qızıl lazımdır.';return}resources.wood-=cost.wood;resources.stone-=cost.stone;resources.gold-=cost.gold;levels[selectedBuilding]=current+1;if(selectedBuilding==='Müdafiə qülləsi')refreshDefenseTowerModels();if(selectedBuilding.includes('qala divarı'))refreshWallModels();refreshResources();saveCity();info.innerHTML='<b>'+selectedBuilding+' · Səviyyə '+(current+1)+'</b>İnkişaf tamamlandı və yadda saxlanıldı. Xərc: '+cost.wood+' odun, '+cost.stone+' daş, '+cost.gold+' qızıl.'+(selectedBuilding==='Müdafiə qülləsi'?'<br>Qala müdafiəsi: '+current+' katapult hazırdır. Döyüş meydanında avtomatik tətbiq olunacaq.':'')});
+document.querySelector('#upgrade').addEventListener('click',()=>withCityEconomyLock(()=>{if(!selectedBuilding){info.innerHTML='<b>Tikili seçilməyib</b>İnkişaf etdirmək üçün əvvəlcə şəhərdə binaya toxun.';return}const current=levels[selectedBuilding]||1;if(current>=10){info.innerHTML='<b>Maksimum səviyyə</b>'+selectedBuilding+' artıq 10-cu səviyyədədir.';return}const cost={wood:current*150,stone:current*100,gold:current*50};if(resources.wood<cost.wood||resources.stone<cost.stone||resources.gold<cost.gold){info.innerHTML='<b>Resurs çatışmır</b>Bu inkişaf üçün daha çox odun, daş və qızıl lazımdır.';return}resources.wood-=cost.wood;resources.stone-=cost.stone;resources.gold-=cost.gold;levels[selectedBuilding]=current+1;if(selectedBuilding==='Müdafiə qülləsi')refreshDefenseTowerModels();if(selectedBuilding.includes('qala divarı'))refreshWallModels();refreshResources();saveCity();info.innerHTML='<b>'+selectedBuilding+' · Səviyyə '+(current+1)+'</b>İnkişaf tamamlandı və yadda saxlanıldı. Xərc: '+cost.wood+' odun, '+cost.stone+' daş, '+cost.gold+' qızıl.'+(selectedBuilding==='Müdafiə qülləsi'?'<br>Qala müdafiəsi: '+current+' katapult hazırdır. Döyüş meydanında avtomatik tətbiq olunacaq.':'')}));
 refreshResources();
 const territoryKey='tvq_territory_v1';
 const worldKey='tvq_world_state_v1';
@@ -225,6 +225,24 @@ function saveCity(){
   savedCity=next;
   return true;
  }catch{return false}
+}
+async function withCityEconomyLock(action){
+ const run=async()=>{
+  try{
+   const latest=JSON.parse(localStorage.getItem(SAVE_KEY)||'{}');
+   savedCity=latest;
+   for(const key of Object.keys(resources))resources[key]=Math.max(0,Math.floor(Number(latest.resources?.[key]??resources[key])||0));
+   for(const key of Object.keys(army))army[key]=Math.max(0,Math.floor(Number(latest.army?.[key]??army[key])||0));
+   for(const key of Object.keys(wounded))wounded[key]=Math.max(0,Math.floor(Number(latest.wounded?.[key]??wounded[key])||0));
+   for(const key of Object.keys(levels))delete levels[key];
+   Object.assign(levels,latest.levels||{});
+   treatmentEndsAt=Math.max(0,Number(latest.treatmentEndsAt)||0);
+   refreshResources();updateArmyStatus();renderArmyInCity();refreshDefenseTowerModels();refreshWallModels();
+  }catch{return}
+  action();
+ };
+ if(navigator.locks?.request)await navigator.locks.request('tvq-city-economy',run);
+ else run();
 }
 function collectOfflineTerritoryIncome(){
  let outposts={},world={};
@@ -313,15 +331,16 @@ function renderArmyInCity(){
  });
 }
 
-document.querySelector('#train').addEventListener('click',()=>{
+document.querySelector('#train').addEventListener('click',()=>withCityEconomyLock(()=>{
  const type=document.querySelector('#troopType').value;
  const count=Math.max(1,Math.min(500,Math.floor(Number(document.querySelector('#troopCount').value)||1)));
  const cost=troopCosts[type];
+ if(!cost){document.querySelector('#armyStatus').textContent='Naməlum qoşun növü.';return}
  const totalCost={wood:(cost.wood||0)*count,stone:(cost.stone||0)*count,gold:(cost.gold||0)*count};
  if(Object.keys(totalCost).some(k=>resources[k]<totalCost[k])){document.querySelector('#armyStatus').textContent='Resurs çatışmır — '+count+' '+troopTitles[type]+' hazırlamaq mümkün deyil.';return}
  for(const key of Object.keys(resources))resources[key]-=totalCost[key];
  army[type]+=count;refreshResources();saveCity();updateArmyStatus();renderArmyInCity();
-});
+}));
 document.querySelector('#sendArmy').addEventListener('click',()=>{
  if(Object.values(army).every(v=>v===0)){document.querySelector('#armyStatus').textContent='Əvvəlcə kazarmada qoşun hazırla.';return}
  const params=new URLSearchParams();for(const [type,count] of Object.entries(army))params.set(type,String(count));
