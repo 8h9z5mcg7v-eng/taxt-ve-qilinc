@@ -268,6 +268,9 @@ if(isWorldMapAttack||isBorderBattle){
    const activeJourney=JSON.parse(localStorage.getItem('tvq_active_journey_v1')||'null');
    available=activeJourney?.target==='red-fortress'?(activeJourney.army||{}):{};
   }catch{available={}}
+ } else if(isBorderBattle){
+  // Border troops were deducted from the city at dispatch; validate against the recorded dispatch payload.
+  available=Object.fromEntries(troopIds.map(type=>[type,Math.max(0,Math.floor(Number(dispatched.get(type))||0))]));
  }
  for(const type of troopIds){
   const field=document.getElementById('a-'+type);
