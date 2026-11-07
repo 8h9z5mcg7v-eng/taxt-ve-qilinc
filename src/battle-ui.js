@@ -59,6 +59,14 @@ function renderBattlefield(attacker, defender, direction) {
   svgNode('text', { x: 300, y: 155, 'text-anchor': 'middle', fill: '#fff0c5', 'font-size': 11, 'font-weight': 700, stroke: '#263b2d', 'stroke-width': 3, 'paint-order': 'stroke' }, arrowLayer, 'HÜCUM İSTİQAMƏTİ');
 }
 
+// Accept the army dispatched from the city training panel.
+const dispatched=new URLSearchParams(location.search);
+for(const type of troopIds){
+ if(dispatched.has(type)){
+  const field=document.getElementById('a-'+type);
+  field.value=String(Math.max(0,Math.min(9999,Math.floor(Number(dispatched.get(type))||0))));
+ }
+}
 function refreshPreview() {
   renderBattlefield(readArmy('a'), readArmy('d'), document.getElementById('direction').value);
 }
