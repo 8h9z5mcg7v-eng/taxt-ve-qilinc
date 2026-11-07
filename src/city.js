@@ -65,10 +65,36 @@ box('Baş qala',0,30,0,23,12,22,stoneDark);
 for(let i=-1;i<=1;i+=2){box('Qala mazğalı',i*9,40,0,2,8,2,stone);box('Qala mazğalı',0,40,i*9,2,8,2,stone)}
 const keepRoof=new THREE.Mesh(new THREE.ConeGeometry(18,13,4),roof);keepRoof.position.set(0,51,0);keepRoof.rotation.y=Math.PI/4;keepRoof.castShadow=true;keepRoof.userData.label='Baş qala';pickables.push(keepRoof);scene.add(keepRoof);
 const wallZ=49,wallX=49;
-box('Şimal qala divarı',0,0,-wallZ,112,13,7,stone);
-box('Cənub qala divarı',0,0,wallZ,112,13,7,stone);
-box('Qərb qala divarı',-wallX,0,0,7,13,105,stone);
-box('Şərq qala divarı',wallX,0,0,7,13,105,stone);
+const wallSegments=[
+ {label:'Şimal qala divarı',x:0,z:-wallZ,w:112,h:13,d:7,axis:'x'},
+ {label:'Cənub qala divarı',x:0,z:wallZ,w:112,h:13,d:7,axis:'x'},
+ {label:'Qərb qala divarı',x:-wallX,z:0,w:7,h:13,d:105,axis:'z'},
+ {label:'Şərq qala divarı',x:wallX,z:0,w:7,h:13,d:105,axis:'z'}
+];
+const wallBattlements=[];
+for(const wall of wallSegments){
+ const base=box(wall.label,wall.x,0,wall.z,wall.w,wall.h,wall.d,stone);
+ base.userData.wallSegment=wall.label;
+ const crenels=[];
+ const count=wall.axis==='x'?15:14;
+ for(let i=0;i<count;i++){
+  const offset=(i-(count-1)/2)*6.8;
+  const block=box(wall.label,wall.axis==='x'?offset:wall.x,13,wall.axis==='x'?wall.z:offset,wall.axis==='x'?2.8:7,3.2,wall.axis==='x'?7:2.8,stoneDark,false);
+  block.userData.wallSegment=wall.label;crenels.push(block);
+ }
+ wallBattlements.push({label:wall.label,base,crenels});
+}
+function refreshWallModels(){
+ for(const wall of wallBattlements){
+  const level=Math.max(1,Math.min(10,Math.floor(Number(levels[wall.label])||1)));
+  const scale=1+(level-1)*.055;
+  wall.base.scale.y=scale;wall.base.position.y=13*(scale-1)/2;
+  wall.crenels.forEach((block,i)=>{
+   block.visible=i<Math.min(wall.crenels.length,8+level*2);
+   block.position.y=13*scale+1.5;
+  });
+ }
+}
 for(const [x,z] of [[-wallX,-wallZ],[wallX,-wallZ],[-wallX,wallZ],[wallX,wallZ]])tower(x,z);
 box('Darvaza',0,0,wallZ,19,12,9,stoneDark);
 box('Darvaza keçidi',0,0,wallZ+5,8,9,2,dark);
@@ -127,9 +153,9 @@ let resources={wood:Math.max(0,Number(savedCity.resources?.wood??1200)),stone:Ma
 const levels={};
 const resourceNodes={wood:document.querySelector('#wood'),stone:document.querySelector('#stone'),gold:document.querySelector('#gold')};
 function refreshResources(){for(const key of Object.keys(resources))resourceNodes[key].textContent=resources[key].toLocaleString('en-US')}
-function showBuilding(label){selectedBuilding=label;const level=levels[label]||1;const defenseNote=label==='Müdafiə qülləsi'?'<br>Hər səviyyə yüksəlişi qala müdafiəsinə 1 katapult əlavə edir. Hazırda: '+Math.max(0,level-1)+' katapult.':' ';info.innerHTML='<b>'+label+' · Səviyyə '+level+'</b>İnkişaf üçün düyməyə toxun. Növbəti səviyyə resurs tələb edir.'+defenseNote;}
+function showBuilding(label){selectedBuilding=label;const level=levels[label]||1;const defenseNote=label==='Müdafiə qülləsi'?'<br>Hər səviyyə yüksəlişi qala müdafiəsinə 1 katapult əlavə edir. Hazırda: '+Math.max(0,level-1)+' katapult.':label.includes('qala divarı')?'<br>Divar səviyyəsi: '+level+'/10 · daha hündür daş divar və sıx mazğallar.':' ';info.innerHTML='<b>'+label+' · Səviyyə '+level+'</b>İnkişaf üçün düyməyə toxun. Növbəti səviyyə resurs tələb edir.'+defenseNote;}
 renderer.domElement.addEventListener('pointerup',e=>{const rect=renderer.domElement.getBoundingClientRect();pointer.x=((e.clientX-rect.left)/rect.width)*2-1;pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;raycaster.setFromCamera(pointer,camera);const hits=raycaster.intersectObjects(pickables,false);if(hits.length){const label=hits[0].object.userData.label||'Şəhər obyekti';showBuilding(label)}});
-document.querySelector('#upgrade').addEventListener('click',()=>{if(!selectedBuilding){info.innerHTML='<b>Tikili seçilməyib</b>İnkişaf etdirmək üçün əvvəlcə şəhərdə binaya toxun.';return}const current=levels[selectedBuilding]||1;if(current>=10){info.innerHTML='<b>Maksimum səviyyə</b>'+selectedBuilding+' artıq 10-cu səviyyədədir.';return}const cost={wood:current*150,stone:current*100,gold:current*50};if(resources.wood<cost.wood||resources.stone<cost.stone||resources.gold<cost.gold){info.innerHTML='<b>Resurs çatışmır</b>Bu inkişaf üçün daha çox odun, daş və qızıl lazımdır.';return}resources.wood-=cost.wood;resources.stone-=cost.stone;resources.gold-=cost.gold;levels[selectedBuilding]=current+1;if(selectedBuilding==='Müdafiə qülləsi')refreshDefenseTowerModels();refreshResources();saveCity();info.innerHTML='<b>'+selectedBuilding+' · Səviyyə '+(current+1)+'</b>İnkişaf tamamlandı və yadda saxlanıldı. Xərc: '+cost.wood+' odun, '+cost.stone+' daş, '+cost.gold+' qızıl.'+(selectedBuilding==='Müdafiə qülləsi'?'<br>Qala müdafiəsi: '+current+' katapult hazırdır. Döyüş meydanında avtomatik tətbiq olunacaq.':'')});
+document.querySelector('#upgrade').addEventListener('click',()=>{if(!selectedBuilding){info.innerHTML='<b>Tikili seçilməyib</b>İnkişaf etdirmək üçün əvvəlcə şəhərdə binaya toxun.';return}const current=levels[selectedBuilding]||1;if(current>=10){info.innerHTML='<b>Maksimum səviyyə</b>'+selectedBuilding+' artıq 10-cu səviyyədədir.';return}const cost={wood:current*150,stone:current*100,gold:current*50};if(resources.wood<cost.wood||resources.stone<cost.stone||resources.gold<cost.gold){info.innerHTML='<b>Resurs çatışmır</b>Bu inkişaf üçün daha çox odun, daş və qızıl lazımdır.';return}resources.wood-=cost.wood;resources.stone-=cost.stone;resources.gold-=cost.gold;levels[selectedBuilding]=current+1;if(selectedBuilding==='Müdafiə qülləsi')refreshDefenseTowerModels();if(selectedBuilding.includes('qala divarı'))refreshWallModels();refreshResources();saveCity();info.innerHTML='<b>'+selectedBuilding+' · Səviyyə '+(current+1)+'</b>İnkişaf tamamlandı və yadda saxlanıldı. Xərc: '+cost.wood+' odun, '+cost.stone+' daş, '+cost.gold+' qızıl.'+(selectedBuilding==='Müdafiə qülləsi'?'<br>Qala müdafiəsi: '+current+' katapult hazırdır. Döyüş meydanında avtomatik tətbiq olunacaq.':'')});
 refreshResources();
 const territoryKey='tvq_territory_v1';
 const worldKey='tvq_world_state_v1';
@@ -195,6 +221,7 @@ function collectOfflineTerritoryIncome(){
 for(const key of Object.keys(army))army[key]=Math.max(0,Math.floor(Number(army[key])||0));
 Object.assign(levels,savedCity.levels||{});
 refreshDefenseTowerModels();
+refreshWallModels();
 const troopCosts={infantry:{wood:10,gold:5},spearman:{wood:15,stone:5},archer:{wood:10,stone:10},cavalry:{wood:20,gold:10},knight:{stone:20,gold:20}};
 const troopTitles={infantry:'Piyada',spearman:'Nizəçi',archer:'Oxçu',cavalry:'Süvari',knight:'Cəngavər'};
 const recruit=document.querySelector('#recruit');
