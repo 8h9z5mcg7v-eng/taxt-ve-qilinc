@@ -159,7 +159,7 @@ function collectOfflineTerritoryIncome(){
  }
  if(changed){
   for(const key of Object.keys(resources))resources[key]+=collected[key];
-  try{localStorage.setItem(territoryKey,JSON.stringify(outposts));localStorage.setItem(worldKey,JSON.stringify(world))}catch{}
+  try{localStorage.setItem(territoryKey,JSON.stringify(outposts));localStorage.setItem(worldKey,JSON.stringify(world));localStorage.setItem('tvq_diplomacy_v1',JSON.stringify(diplomacy))}catch{}
   refreshResources();saveCity();
   const panel=document.querySelector('#territorySummary');
   if(panel&&Object.values(collected).some(v=>v>0)){
