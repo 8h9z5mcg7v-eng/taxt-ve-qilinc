@@ -389,41 +389,51 @@ mountGeneralPanel();
  });
 }
 function processReturningArmy(){
- let trip=null;
- try{trip=JSON.parse(localStorage.getItem('tvq_return_journey_v1')||'null')}catch{}
+ const queueKey='tvq_return_journeys_v1';
+ let trips=[];
+ try{trips=JSON.parse(localStorage.getItem(queueKey)||'[]');if(!Array.isArray(trips))trips=[]}catch{trips=[]}
+ let legacy=null;
+ try{legacy=JSON.parse(localStorage.getItem('tvq_return_journey_v1')||'null')}catch{}
+ if(legacy&&legacy.id&&!trips.some(t=>t.id===legacy.id))trips.push(legacy);
  const panelId='returnJourneyPanel';
  let panel=document.getElementById(panelId);
- if(!trip){panel?.remove();return}
- const left=Math.max(0,Number(trip.arrivesAt)-Date.now());
- if(left<=0){
-  const journeyId=String(trip.id||((Number(trip.startedAt)||0)+':'+Number(trip.arrivesAt)+':'+Object.values(trip.army||{}).join(',')));
+ if(!trips.length){panel?.remove();return}
+ const now=Date.now();
+ const due=trips.filter(t=>Number(t.arrivesAt)<=now);
+ if(due.length){
   try{
    let latest=JSON.parse(localStorage.getItem(SAVE_KEY)||'{}');
    latest.processedReturnJourneys=latest.processedReturnJourneys||{};
-   if(!latest.processedReturnJourneys[journeyId]){
-    latest.army=latest.army||{};
+   latest.army=latest.army||{};
+   for(const trip of due){
+    const journeyId=String(trip.id||((Number(trip.startedAt)||0)+':'+Number(trip.arrivesAt)+':'+Object.values(trip.army||{}).join(',')));
+    if(latest.processedReturnJourneys[journeyId])continue;
     for(const type of Object.keys(army)){
      const count=Math.max(0,Math.floor(Number(trip.army?.[type])||0));
      latest.army[type]=Math.max(0,Math.floor(Number(latest.army[type])||0))+count;
     }
-    latest.processedReturnJourneys[journeyId]={processedAt:Date.now()};
-    const ids=Object.keys(latest.processedReturnJourneys);
-    if(ids.length>30)for(const oldId of ids.slice(0,ids.length-30))delete latest.processedReturnJourneys[oldId];
-    localStorage.setItem(SAVE_KEY,JSON.stringify(latest));
+    latest.processedReturnJourneys[journeyId]={processedAt:now};
    }
+   const ids=Object.keys(latest.processedReturnJourneys);
+   if(ids.length>100)for(const oldId of ids.slice(0,ids.length-100))delete latest.processedReturnJourneys[oldId];
+   localStorage.setItem(SAVE_KEY,JSON.stringify(latest));
+   trips=trips.filter(t=>Number(t.arrivesAt)>now);
+   localStorage.setItem(queueKey,JSON.stringify(trips));
+   if(legacy&&Number(legacy.arrivesAt)<=now)localStorage.removeItem('tvq_return_journey_v1');
    for(const type of Object.keys(army))army[type]=Math.max(0,Math.floor(Number(latest.army?.[type])||0));
    savedCity={...savedCity,...latest};
-   localStorage.removeItem('tvq_return_journey_v1');
   }catch{
    if(panel)panel.textContent='⚠️ Qayıdan qoşunların nəticəsi yadda saxlanmadı. Şəhər yaddaşı yoxlanıldıqdan sonra yenidən cəhd ediləcək.';
    return;
   }
-  updateArmyStatus();renderArmyInCity();panel?.remove();
-  const note=document.createElement('div');note.id=panelId;note.textContent='🏰 Sağ qalan qoşunlar şəhərə qayıtdı və orduya qoşuldu.';note.style.cssText='position:absolute;left:12px;bottom:90px;z-index:8;padding:10px 13px;border:1px solid #b58a55;border-radius:9px;background:#1d2b25ed;color:#f4e6c8';document.body.append(note);
-  return;
+  updateArmyStatus();renderArmyInCity();
+  if(!trips.length){panel?.remove();const note=document.createElement('div');note.id=panelId;note.textContent='🏰 Sağ qalan qoşunlar şəhərə qayıtdı və orduya qoşuldu.';note.style.cssText='position:absolute;left:12px;bottom:90px;z-index:8;padding:10px 13px;border:1px solid #b58a55;border-radius:9px;background:#1d2b25ed;color:#f4e6c8';document.body.append(note);return}
  }
+ const next=trips.reduce((a,b)=>Number(a.arrivesAt)<Number(b.arrivesAt)?a:b);
+ const left=Math.max(0,Number(next.arrivesAt)-Date.now());
  if(!panel){panel=document.createElement('section');panel.id=panelId;panel.style.cssText='position:absolute;left:12px;bottom:90px;z-index:8;padding:10px 13px;border:1px solid #b58a55;border-radius:9px;background:#1d2b25ed;color:#f4e6c8;font:12px/1.5 system-ui;pointer-events:none';document.body.append(panel)}
- panel.textContent='⚔ Ordu şəhərə qayıdır · '+Math.ceil(left/1000)+' saniyə qalıb · sağ qalan: '+Object.values(trip.army||{}).reduce((a,n)=>a+(Number(n)||0),0);
+ const total=trips.reduce((sum,t)=>sum+Object.values(t.army||{}).reduce((n,v)=>n+Math.max(0,Number(v)||0),0),0);
+ panel.textContent='⚔ Qayıdan yürüşlər: '+trips.length+' · '+Math.ceil(left/1000)+' saniyə · sağ qalan qoşun: '+total;
 }
 updateArmyStatus();
 renderArmyInCity();
