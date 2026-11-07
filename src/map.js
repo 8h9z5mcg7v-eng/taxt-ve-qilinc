@@ -461,6 +461,7 @@ function mountDiplomacyContracts(){
  try{state={...state,...JSON.parse(localStorage.getItem(key)||'{}')}}catch{}
  state.standings=state.standings||{};
  state.completed=state.completed||{};
+ state.relations=state.relations||{};
  if(state.day!==day){state.day=day;state.completed={};}
  const kingdoms=[
   {id:'north',name:'Şimal İttifaqı',resource:'wood',base:180,bonus:260,rep:3,icon:'❄️'},
@@ -469,6 +470,22 @@ function mountDiplomacyContracts(){
  ];
  const seed=Number(day.replaceAll('-',''));
  const list=panel.querySelector('#diplomacyList');
+ const relationNames={neutral:'Neytral',allied:'Müttəfiq',war:'Müharibə'};
+ const relationActions={neutral:'🤝 İttifaq təklif et · 100 qızıl',allied:'⚔ Müharibə elan et · 100 qızıl',war:'🕊 Sülh təklif et · 50 qızıl'};
+ function changeRelation(kingdom,card){
+  const current=state.relations[kingdom.id]||'neutral';
+  const next=current==='neutral'?'allied':current==='allied'?'war':'allied';
+  const cost=next==='allied'&&current==='neutral'?100:next==='war'?100:50;
+  let city={};try{city=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}')}catch{}
+  city.resources=city.resources||{wood:1200,stone:1000,gold:500};
+  const gold=Math.max(0,Number(city.resources.gold)||0);
+  if(gold<cost){card.querySelector('.relationStatus').textContent='Qızıl çatmır. Lazımdır: '+cost+' · Mövcud: '+gold+'.';return}
+  city.resources.gold=gold-cost;
+  state.relations[kingdom.id]=next;
+  try{localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(city));localStorage.setItem(key,JSON.stringify(state))}
+  catch{card.querySelector('.relationStatus').textContent='Dəyişiklik yadda saxlanmadı.';return}
+  render();
+ }
  function render(){
   list.innerHTML='';
   for(const kingdom of kingdoms){
@@ -479,7 +496,9 @@ function mountDiplomacyContracts(){
    const card=document.createElement('article');
    card.style.cssText='margin-top:10px;padding:12px;border:1px solid #80633f;border-radius:10px;background:#202d29';
    const resourceName=kingdom.resource==='wood'?'odun':'daş';
-   card.innerHTML='<b>'+kingdom.icon+' '+kingdom.name+'</b><div style="font-size:12px;margin:5px 0 9px">Nüfuz: '+standing+' · Gündəlik müqavilə</div><p style="margin:0 0 8px">'+amount+' '+resourceName+' təhvil ver · '+reward+' qızıl və '+kingdom.rep+' nüfuz qazan</p><button type="button" '+(completed?'disabled':'')+'>'+ (completed?'✓ Müqavilə tamamlandı':'Müqaviləni yerinə yetir')+'</button><small class="contractStatus" style="display:block;margin-top:7px">'+(completed?'Bu günün mükafatı artıq alınıb.':'Resurslar şəhər anbarından çıxılacaq.')+'</small>';
+   const relation=state.relations[kingdom.id]||'neutral';
+   card.innerHTML='<b>'+kingdom.icon+' '+kingdom.name+'</b><div style="font-size:12px;margin:5px 0 9px">Nüfuz: '+standing+' · Münasibət: '+relationNames[relation]+'</div><p style="margin:0 0 8px">'+amount+' '+resourceName+' təhvil ver · '+reward+' qızıl və '+kingdom.rep+' nüfuz qazan</p><button type="button" '+(completed?'disabled':'')+'>'+ (completed?'✓ Müqavilə tamamlandı':'Müqaviləni yerinə yetir')+'</button><small class="contractStatus" style="display:block;margin-top:7px">'+(completed?'Bu günün mükafatı artıq alınıb.':'Resurslar şəhər anbarından çıxılacaq.')+'</small><div style="margin-top:10px;padding-top:9px;border-top:1px solid #80633f"><button type="button" class="relationAction">'+relationActions[relation]+'</button><small class="relationStatus" style="display:block;margin-top:6px">'+(relation==='neutral'?'İttifaq ticarət güzəştlərini gücləndirəcək.':relation==='allied'?'İttifaq qüvvədədir. Müharibə elan etsən, münasibətlər pozulacaq.':'Müharibə vəziyyətindəsən. Sülh üçün ödəniş et.')+'</small></div>';
+   card.querySelector('.relationAction').addEventListener('click',()=>changeRelation(kingdom,card));
    const button=card.querySelector('button');
    button.addEventListener('click',()=>{
     let city={};try{city=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}')}catch{}
