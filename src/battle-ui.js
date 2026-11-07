@@ -63,6 +63,22 @@ function renderTerrain(terrain, wallDamage = 0, siege = {}) {
     if (damage >= 50) {
       svgNode('path', { d: 'M214 109 L247 109 L259 130 L235 130Z M340 109 L371 109 L386 130 L354 130Z', fill: '#4c4b43', stroke: '#282b27', 'stroke-width': 2 }, scene);
     }
+    if (damage >= 15 && damage < 100) {
+      const crackCount = Math.min(8, Math.floor(damage / 12));
+      for (let i = 0; i < crackCount; i++) {
+        const x = 224 + ((i * 31) % 150);
+        const y = 79 + ((i * 17) % 42);
+        svgNode('path', { d: `M${x} ${y} l-5 9 l7 5 l-4 10`, fill: 'none', stroke: '#292722', 'stroke-width': 2.2, 'stroke-linecap': 'round' }, scene);
+      }
+    }
+    if (damage >= 35) {
+      const fallenCount = Math.min(18, Math.floor((damage - 25) / 4));
+      for (let i = 0; i < fallenCount; i++) {
+        const x = 218 + ((i * 19) % 166);
+        const y = 130 + ((i * 11) % 13);
+        svgNode('path', { d: `M${x} ${y} l7 -4 l8 5 l-4 6 l-9 0Z`, fill: ['#77786d', '#969184', '#5e625d'][i % 3], stroke: '#393b35', 'stroke-width': 1 }, scene);
+      }
+    }
     if (damage >= 100) {
       // Open breach with broken masonry piled on both sides of the passage.
       svgNode('rect', { x: 264, y: 76, width: 68, height: 54, fill: '#a18a58' }, scene);
@@ -365,6 +381,28 @@ function playCombatAnimation(attacker = {}, defender = {}, siege = {}, result = 
   });
   // A breached gate triggers a visible melee only after the attackers reach
   // the courtyard; if defenders win, the defending line surges forward.
+  if (result.siege?.wallMax && result.siege.wallDamage > 0) {
+    const damage = Math.min(100, Number(result.siege.wallDamage) || 0);
+    const field = document.getElementById('battlefield');
+    const impact = document.createElementNS(svgNS, 'g');
+    impact.setAttribute('id', 'wallImpactAnimation');
+    const burst = svgNode('g', { transform: 'translate(300 112)' }, impact);
+    for (let i = 0; i < Math.min(12, Math.max(4, Math.ceil(damage / 9))); i++) {
+      const angle = (Math.PI * 2 * i) / 12;
+      const dx = Math.cos(angle) * (18 + damage * .24);
+      const dy = Math.sin(angle) * (12 + damage * .12);
+      svgNode('path', { d: `M0 0 L${dx.toFixed(1)} ${dy.toFixed(1)}`, stroke: '#e1b36b', 'stroke-width': 2.4, 'stroke-linecap': 'round', opacity: .9 }, burst);
+    }
+    for (let i = 0; i < Math.min(10, Math.ceil(damage / 10)); i++) {
+      const x = 270 + ((i * 17) % 60);
+      const y = 116 + ((i * 13) % 18);
+      const stone = svgNode('path', { d: `M${x} ${y} l5 -4 l7 3 l-2 6 l-8 0Z`, fill: '#b0a99a', stroke: '#393b35', 'stroke-width': 1 }, impact);
+      stone.style.transformBox = 'fill-box';
+      stone.style.transformOrigin = 'center';
+      stone.animate([{ transform: 'translate(0,0) rotate(0deg)', opacity: 1 }, { transform: `translate(${(i%2?1:-1)*(8+damage*.08)}px,${8+damage*.12}px) rotate(${i%2?45:-45}deg)`, opacity: 0 }], { duration: 760 + i*35, easing: 'ease-out' });
+    }
+    field.appendChild(impact);
+  }
   if (result.siege?.wallBreached) {
     const meleeLayer = document.createElementNS(svgNS, 'g');
     meleeLayer.setAttribute('id', 'courtyardMelee');
