@@ -20,8 +20,11 @@ function calculatePower(army, defending, formation, opponents, commander = null)
       .reduce((sum, [enemyType, enemyUnits]) => sum + (unit.counters === enemyType ? enemyUnits : 0), 0);
     const counterBonus = 1 + 0.25 * (counteredCount / enemyCount);
     const commanderType = commander?.bonus || ({alp:'cavalry',tomris:'archer',babek:'infantry'}[commander?.id]);
+    const commanderLevel = Math.max(1, Math.min(10, 1 + Math.floor(Math.max(0, Number(commander?.xp) || 0) / 100)));
     const generalBonus = !defending && commanderType
-      ? (commanderType === type || (commanderType === 'infantry' && type === 'spearman') ? 1.18 : 1.03)
+      ? (commanderType === type || (commanderType === 'infantry' && type === 'spearman')
+          ? 1.18 + (commanderLevel - 1) * 0.01
+          : 1.03 + (commanderLevel - 1) * 0.005)
       : 1;
     total += count * base * formationBonus * counterBonus * generalBonus;
   }
@@ -33,7 +36,7 @@ function calculatePower(army, defending, formation, opponents, commander = null)
  * direction: north | east | south | west
  * tactic: balanced | wedge | line | volley
  */
-export function resolveBattle({ attacker, defender, direction = 'south', tactic = 'balanced', defenderTactic = 'balanced', terrain = 'plains', siege = {}, defenseCatapult = 0, wallLevel = 1, priorWallDamage = 0, seed = 1 }) {
+export function resolveBattle({ attacker, defender, direction = 'south', tactic = 'balanced', defenderTactic = 'balanced', terrain = 'plains', siege = {}, defenseCatapult = 0, wallLevel = 1, priorWallDamage = 0, commander = null, seed = 1 }) {
   const attackArmy = createArmy(attacker);
   const defendArmy = createArmy(defender);
   const attackCount = armySize(attackArmy);
