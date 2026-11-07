@@ -208,8 +208,6 @@ function showOutpostControls(id){
    collection={collectedAt,gain:{...gain}};
    for(const key of ['wood','stone','gold'])city.resources[key]=Math.max(0,Number(city.resources[key])||0)+gain[key];
    city.outpostCollections[collectionId]=collection;
-   const ids=Object.keys(city.outpostCollections);
-   if(ids.length>60)for(const oldId of ids.slice(0,ids.length-60))delete city.outpostCollections[oldId];
    try{localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(city))}catch{
     panel.querySelector('p').textContent='Gəlir toplanmadı: resurslar yadda saxlanmadı.';return;
    }
@@ -238,7 +236,6 @@ function showOutpostControls(id){
    if(keys.some(k=>chosen[k]>(Number(city.army[k])||0))){panel.querySelector('p').textContent='Seçilən qoşun şəhərdəki mövcud saydan çoxdur.';return}
    next={...before};for(const k of keys){city.army[k]=(Number(city.army[k])||0)-chosen[k];next[k]=(Number(next[k])||0)+chosen[k]}
    city.outpostGarrisonTransfers[transferId]={outpost:id,counts:chosen,before,after:next,at:Date.now()};
-   const transferIds=Object.keys(city.outpostGarrisonTransfers);if(transferIds.length>100)for(const oldId of transferIds.slice(0,transferIds.length-100))delete city.outpostGarrisonTransfers[oldId];
    try{localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(city))}
    catch{panel.querySelector('p').textContent='Qoşun göndərilməsi yadda saxlanmadı.';return}
   }
@@ -658,7 +655,6 @@ function mountDiplomacyContracts(){
        if(invalid){guardStatus.textContent='Seçilən qoşun şəhərdəki mövcud saydan çoxdur.';return}
        next={...before};for(const k of guardKeys){city.army[k]=(Number(city.army[k])||0)-additions[k];next[k]=(Number(next[k])||0)+additions[k]}
        city.borderGarrisonTransfers[transferId]={type:'assign',kingdom:kingdom.id,counts:additions,before,after:next,at:Date.now()};
-       const ids=Object.keys(city.borderGarrisonTransfers);if(ids.length>100)for(const oldId of ids.slice(0,ids.length-100))delete city.borderGarrisonTransfers[oldId];
        try{localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(city))}catch{guardStatus.textContent='Qoşun göndərilməsi yadda saxlanmadı.';return}
       }
       campaign.garrison=next;state.borderCampaigns=state.borderCampaigns||{};state.borderCampaigns[kingdom.id]=campaign;
@@ -673,7 +669,6 @@ function mountDiplomacyContracts(){
       if(!city.borderGarrisonReturns[transferId]){
        for(const k of guardKeys)city.army[k]=(Number(city.army[k])||0)+(Number(returning[k])||0);
        city.borderGarrisonReturns[transferId]={kingdom:kingdom.id,counts:returning,at:Date.now()};
-       const ids=Object.keys(city.borderGarrisonReturns);if(ids.length>100)for(const oldId of ids.slice(0,ids.length-100))delete city.borderGarrisonReturns[oldId];
        try{localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(city))}catch{guardStatus.textContent='Qarnizon geri çağırıla bilmədi: şəhər yaddaşı yazılmadı.';return}
       }
       campaign.garrison={infantry:0,spearman:0,archer:0,cavalry:0,knight:0};state.borderCampaigns[kingdom.id]=campaign;
@@ -754,8 +749,6 @@ function renderCapturedFrontiers(){
    for(const key of Object.keys(earned))earned[key]+=Number(collection.gain?.[key])||0;
    campaign.lastCollectedAt=Number(collection.collectedAt)||now;
   }
-  const ids=Object.keys(city.frontierCollections);
-  if(ids.length>100)for(const oldId of ids.slice(0,ids.length-100))delete city.frontierCollections[oldId];
   try{localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(city))}
   catch{info.querySelector('#frontierIncomeStatus').textContent='Gəlir yadda saxlanmadı; təkrar toplama qeydi yaradılmadı.';return}
   try{localStorage.setItem('tvq_diplomacy_v1',JSON.stringify(current))}
