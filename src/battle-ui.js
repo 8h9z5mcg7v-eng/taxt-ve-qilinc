@@ -327,6 +327,31 @@ function playCombatAnimation(attacker = {}, defender = {}, siege = {}, result = 
           [{ transform: 'translate(0px,0px)' }, { transform: 'translate(0px,-16px)' }, { transform: 'translate(0px,0px)' }],
           { duration: 360, delay: 250 + index * 220, iterations: 3, easing: 'ease-in-out' }
         );
+        if (result.terrain === 'fortress') {
+          const gateImpact = document.createElementNS(svgNS, 'g');
+          gateImpact.setAttribute('class', 'ram-gate-impact');
+          const impactX = 286 + index * 24;
+          svgNode('path', { d: `M${impactX} 111 l-13 -8 m13 8 l-15 5 m15 -5 l12 -11 m-12 11 l12 10`, stroke: '#f2c36d', 'stroke-width': 3, 'stroke-linecap': 'round', fill: 'none' }, gateImpact);
+          svgNode('circle', { cx: impactX, cy: 111, r: 8, fill: 'none', stroke: '#f2c36d', 'stroke-width': 2 }, gateImpact);
+          field.appendChild(gateImpact);
+          gateImpact.animate(
+            [{ opacity: 0, transform: 'scale(.45)', transformOrigin: `${impactX}px 111px` },
+             { opacity: 1, transform: 'scale(1.2)', transformOrigin: `${impactX}px 111px` },
+             { opacity: 0, transform: 'scale(1.8)', transformOrigin: `${impactX}px 111px` }],
+            { duration: 560, delay: 250 + index * 220, iterations: 3, easing: 'ease-out' }
+          ).onfinish = () => gateImpact.remove();
+          for (let hit = 0; hit < 3; hit++) {
+            const splinter = document.createElementNS(svgNS, 'path');
+            splinter.setAttribute('d', `M${impactX} 111 l0 -5 l5 -3 l-1 8Z`);
+            splinter.setAttribute('fill', '#c18a4b');
+            field.appendChild(splinter);
+            splinter.animate(
+              [{ transform: 'translate(0px,0px)', opacity: 1 },
+               { transform: `translate(${(hit-1)*13}px,${-10-hit*5}px) rotate(${(hit-1)*35}deg)`, opacity: 0 }],
+              { duration: 520, delay: 250 + index * 220 + hit * 35, iterations: 3, easing: 'ease-out' }
+            ).onfinish = () => splinter.remove();
+          }
+        }
       } else if (index >= catapultShots && index < catapultShots + Math.min(2, siege.tower || 0)) {
         machine.animate(
           [{ transform: 'translate(0px,0px)' }, { transform: 'translate(-46px,-8px)' }],
