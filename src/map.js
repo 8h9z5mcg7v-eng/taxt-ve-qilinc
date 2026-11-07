@@ -17,10 +17,21 @@ function showOutpostControls(id){
  let panel=document.querySelector('#outpostControls');
  if(!panel){panel=document.createElement('div');panel.id='outpostControls';panel.style.cssText='margin-top:12px;padding:12px;border:1px solid #756448;border-radius:9px;background:#1d2b25';document.querySelector('.panel').append(panel)}
  const owned=!!territory[id]?.captured;
- panel.innerHTML='<b>'+target.name+'</b><p>'+(owned?'Bu məntəqə sənin nəzarətindədir. Hər saat resurs istehsal edir.':'Məntəqəni ələ keçirmək üçün kəşfiyyat və qoşun göndərmək lazımdır. Bu prototipdə sınaq fəthi açıqdır.')+'</p><div class="stats"><span>🪵 '+target.wood+'/saat</span><span>🪨 '+target.stone+'/saat</span><span>🪙 '+target.gold+'/saat</span></div><button id="captureOutpost" style="margin-top:10px" '+(owned?'disabled':'')+'>'+(owned?'Ərazi sənin nəzarətindədir':'Məntəqəni ələ keçir')+'</button>';
+ const now=Date.now(),last=Number(territory[id]?.lastCollectedAt||now);
+ const hours=Math.min(24,Math.max(0,(now-last)/3600000));
+ const gain={wood:Math.floor(hours*target.wood),stone:Math.floor(hours*target.stone),gold:Math.floor(hours*target.gold)};
+ panel.innerHTML='<b>'+target.name+'</b><p>'+(owned?'Ərazi sənin nəzarətindədir. Toplanmamış gəlir: '+gain.wood+' odun, '+gain.stone+' daş, '+gain.gold+' qızıl.':'Məntəqə hələ sənin nəzarətində deyil. Bu prototipdə sınaq fəthi açıqdır.')+'</p><div class="stats"><span>🪵 '+target.wood+'/saat</span><span>🪨 '+target.stone+'/saat</span><span>🪙 '+target.gold+'/saat</span></div><button id="captureOutpost" style="margin-top:10px">'+(owned?'Gəliri topla':'Məntəqəni ələ keçir')+'</button>';
  panel.querySelector('#captureOutpost').addEventListener('click',()=>{
-  territory[id]={captured:true,lastCollectedAt:Date.now()};try{localStorage.setItem(territoryKey,JSON.stringify(territory))}catch{}
-  const el=document.querySelector('[data-id="'+id+'"]');el.querySelector('span').textContent='🏳 '+target.name;el.querySelector('small').textContent='Sənin nəzarətində';
+  if(owned){
+   let city={};try{city=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}')}catch{}
+   city.resources=city.resources||{wood:1200,stone:1000,gold:500};
+   for(const key of ['wood','stone','gold'])city.resources[key]=Math.max(0,Number(city.resources[key])||0)+gain[key];
+   try{localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(city))}catch{}
+   territory[id].lastCollectedAt=Date.now();try{localStorage.setItem(territoryKey,JSON.stringify(territory))}catch{}
+  }else{
+   territory[id]={captured:true,lastCollectedAt:Date.now()};try{localStorage.setItem(territoryKey,JSON.stringify(territory))}catch{}
+   const el=document.querySelector('[data-id="'+id+'"]');el.querySelector('span').textContent='🏳 '+target.name;el.querySelector('small').textContent='Sənin nəzarətində';
+  }
   showOutpostControls(id);
  });
 }
@@ -82,6 +93,7 @@ if(fortressState.captured){
  targets.enemy.enemy=false;
 }
 
+for(const id of ['village','mine']){if(territory[id]?.captured){const el=document.querySelector('[data-id="'+id+'"];if(el){el.querySelector('span').textContent='🏳 '+territories.find(t=>t.id===id).name;el.querySelector('small').textContent='Sənin nəzarətində';}}}
 const journeyKey='tvq_active_journey_v1';
 const marchButton=document.querySelector('#march');
 let journey=null;
