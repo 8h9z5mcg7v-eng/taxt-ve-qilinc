@@ -6,7 +6,7 @@ const DIRECTIONS = new Set(['north', 'east', 'south', 'west']);
 const TACTICS = new Set(['balanced', 'wedge', 'line', 'volley']);
 const TERRAIN = new Set(['plains', 'forest', 'hill', 'fortress']);
 
-function calculatePower(army, defending, formation, opponents) {
+function calculatePower(army, defending, formation, opponents, commander = null) {
   const enemyCount = Math.max(1, armySize(opponents));
   let total = 0;
   for (const [type, count] of Object.entries(createArmy(army))) {
