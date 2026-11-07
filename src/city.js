@@ -152,6 +152,7 @@ try{savedCity=JSON.parse(localStorage.getItem(SAVE_KEY)||'{}')}catch{}
 let resources={wood:Math.max(0,Number(savedCity.resources?.wood??1200)),stone:Math.max(0,Number(savedCity.resources?.stone??1000)),gold:Math.max(0,Number(savedCity.resources?.gold??500))};
 const levels={};
 const wounded={infantry:0,spearman:0,archer:0,cavalry:0,knight:0,...(savedCity.wounded||{})};
+let treatmentEndsAt=Math.max(0,Number(savedCity.treatmentEndsAt)||0);
 const resourceNodes={wood:document.querySelector('#wood'),stone:document.querySelector('#stone'),gold:document.querySelector('#gold')};
 function refreshResources(){for(const key of Object.keys(resources))resourceNodes[key].textContent=resources[key].toLocaleString('en-US')}
 function showBuilding(label){selectedBuilding=label;const level=levels[label]||1;const defenseNote=label==='Müdafiə qülləsi'?'<br>Hər səviyyə yüksəlişi qala müdafiəsinə 1 katapult əlavə edir. Hazırda: '+Math.max(0,level-1)+' katapult.':label.includes('qala divarı')?'<br>Divar səviyyəsi: '+level+'/10 · daha hündür daş divar və sıx mazğallar.':' ';info.innerHTML='<b>'+label+' · Səviyyə '+level+'</b>İnkişaf üçün düyməyə toxun. Növbəti səviyyə resurs tələb edir.'+defenseNote;}
@@ -232,11 +233,29 @@ function renderHospital(){
  let panel=document.querySelector('#hospitalPanel');
  if(!panel){panel=document.createElement('section');panel.id='hospitalPanel';panel.style.cssText='position:absolute;right:12px;top:112px;z-index:5;width:min(290px,calc(100vw - 24px));padding:11px 13px;border:1px solid #b58a55;border-radius:10px;background:#1d2b25ed;color:#f4e6c8;font:12px/1.5 system-ui;pointer-events:auto';document.body.append(panel)}
  const totalWounded=Object.values(wounded).reduce((sum,n)=>sum+Math.max(0,Number(n)||0),0);
- panel.innerHTML='<b>✚ Şəfa evi · Yaralılar: '+totalWounded+'</b><div>'+Object.entries(wounded).filter(([,n])=>n>0).map(([type,n])=>troopTitles[type]+': '+n).join(' · ')+'</div><small>Müalicə hər əsgər üçün 8 odun, 5 daş və 3 qızıl tələb edir.</small>';
- const button=document.createElement('button');button.textContent='Yaralıları müalicə et';button.disabled=totalWounded===0||resources.wood<totalWounded*8||resources.stone<totalWounded*5||resources.gold<totalWounded*3;button.style.cssText='display:block;width:100%;margin-top:8px;padding:9px;border:0;border-radius:7px;background:#9b7540;color:#fff;font-weight:700';
- button.addEventListener('click',()=>{const count=Object.values(wounded).reduce((sum,n)=>sum+Math.max(0,Number(n)||0),0);if(!count)return;const cost={wood:count*8,stone:count*5,gold:count*3};if(resources.wood<cost.wood||resources.stone<cost.stone||resources.gold<cost.gold)return;for(const key of Object.keys(cost))resources[key]-=cost[key];for(const type of Object.keys(wounded)){army[type]=(army[type]||0)+wounded[type];wounded[type]=0}refreshResources();updateArmyStatus();renderArmyInCity();saveCity();renderHospital()});
+ const active=treatmentEndsAt>0;
+ panel.innerHTML='<b>✚ Şəfa evi · Yaralılar: '+totalWounded+'</b><div>'+Object.entries(wounded).filter(([,n])=>n>0).map(([type,n])=>troopTitles[type]+': '+n).join(' · ')+'</div><small>'+(active?'Müalicə davam edir · hər 30 saniyədə 1 əsgər bərpa olunur.':'Müalicə hər əsgər üçün 8 odun, 5 daş və 3 qızıl tələb edir. Hər 30 saniyədə 1 yaralı sağalır.')+'</small>';
+ const button=document.createElement('button');button.textContent=active?'Müalicə gedir…':'Müalicəyə başla';button.disabled=active||totalWounded===0||resources.wood<totalWounded*8||resources.stone<totalWounded*5||resources.gold<totalWounded*3;button.style.cssText='display:block;width:100%;margin-top:8px;padding:9px;border:0;border-radius:7px;background:#9b7540;color:#fff;font-weight:700';
+ button.addEventListener('click',()=>{const count=Object.values(wounded).reduce((sum,n)=>sum+Math.max(0,Number(n)||0),0);if(!count||treatmentEndsAt>0)return;const cost={wood:count*8,stone:count*5,gold:count*3};if(resources.wood<cost.wood||resources.stone<cost.stone||resources.gold<cost.gold)return;for(const key of Object.keys(cost))resources[key]-=cost[key];treatmentEndsAt=Date.now()+30000;refreshResources();saveCity();renderHospital()});
  panel.append(button);
 }
+function processHospital(){
+ if(!treatmentEndsAt)return;
+ const now=Date.now();
+ while(treatmentEndsAt>0&&now>=treatmentEndsAt){
+  const type=Object.keys(wounded).find(key=>(Number(wounded[key])||0)>0);
+  if(!type){treatmentEndsAt=0;break;}
+  wounded[type]--;army[type]=(army[type]||0)+1;
+  const remaining=Object.values(wounded).reduce((sum,n)=>sum+Math.max(0,Number(n)||0),0);
+  treatmentEndsAt=remaining? treatmentEndsAt+30000:0;
+ }
+ renderArmyInCity?.();
+ updateArmyStatus?.();
+ saveCity();
+ renderHospital();
+}
+processHospital();
+setInterval(processHospital,1000);
 renderHospital();
 const troopGroups=[];
 const troopColors={infantry:0x9b493b,spearman:0x71808b,archer:0x527b4d,cavalry:0x987044,knight:0xb7b8bd};
