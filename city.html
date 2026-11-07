@@ -15,14 +15,14 @@ h1{font-size:17px;letter-spacing:.08em;margin:0;text-shadow:0 2px 5px #000}heade
 button{border:1px solid #b49a6b;border-radius:9px;background:#51402bdf;color:#fff1d9;padding:11px 12px;font-size:12px;font-weight:700}
 #info{flex:1;min-width:0;background:#111c20e8;border:1px solid #657066;border-radius:9px;padding:8px 10px;font-size:11px;line-height:1.3;color:#e5ddcc}
 #info b{display:block;color:#f3d69d;font-size:12px;margin-bottom:3px}
-#help{position:fixed;top:104px;left:12px;right:12px;text-align:center;font-size:11px;color:#fff1d9;text-shadow:0 1px 4px #000;pointer-events:none}
+#recruit{display:none;position:fixed;z-index:5;left:10px;right:10px;bottom:calc(76px + env(safe-area-inset-bottom));padding:12px;background:#111c20f2;border:1px solid #9b8258;border-radius:12px;box-shadow:0 8px 25px #0008}#recruit.open{display:block}#recruit label{font-size:11px;color:#e6d5b4;display:block;margin-bottom:5px}#recruit select,#recruit input{width:100%;padding:9px;border-radius:7px;border:1px solid #75664c;background:#172127;color:#fff;font-size:13px}#recruit .fields{display:grid;grid-template-columns:1fr 90px;gap:8px}#recruit .actions{display:flex;gap:8px;margin-top:9px}#recruit .actions button{flex:1}#armyStatus{font-size:11px;color:#e6d5b4;margin-top:8px}#help{position:fixed;top:104px;left:12px;right:12px;text-align:center;font-size:11px;color:#fff1d9;text-shadow:0 1px 4px #000;pointer-events:none}
 </style>
 </head>
 <body>
 <div id="scene"></div>
 <header><h1>TAXT VƏ QILINC</h1><p>QALA-ŞƏHƏR · 3D BLOKLAMA PROTOTİPİ</p><div style="display:flex;gap:7px;flex-wrap:wrap;pointer-events:auto"><a id="back" href="./index.html">← Əsas səhifə</a><a id="back" href="./battle.html">⚔ Döyüş meydanı</a></div></header>
 <div id="resources"><span>🪵 <b id="wood">1200</b></span><span>🪨 <b id="stone">1000</b></span><span>🪙 <b id="gold">500</b></span></div><div id="help">Şəhəri fırlatmaq üçün sürüşdür · yaxınlaşdırmaq üçün iki barmaqla aç</div>
-<div id="panel"><div id="info"><b>Şəhər meydanı</b>Obyekt seçmək üçün binaya toxun</div><button id="upgrade">İnkişaf et</button><button id="home">Mərkəzlə</button></div>
+<section id="recruit"><div class="fields"><div><label for="troopType">Qoşun növü</label><select id="troopType"><option value="infantry">Piyada — 10 odun, 5 qızıl</option><option value="spearman">Nizəçi — 15 odun, 5 daş</option><option value="archer">Oxçu — 10 odun, 10 daş</option><option value="cavalry">Süvari — 20 odun, 10 qızıl</option><option value="knight">Cəngavər — 20 daş, 20 qızıl</option></select></div><div><label for="troopCount">Say</label><input id="troopCount" type="number" min="1" max="500" value="10"></div></div><div class="actions"><button id="train">Hazırla</button><button id="sendArmy">Döyüşə göndər</button></div><div id="armyStatus">Hazır qoşun: 0</div></section><div id="panel"><div id="info"><b>Şəhər meydanı</b>Obyekt seçmək üçün binaya toxun</div><button id="upgrade">İnkişaf et</button><button id="recruitToggle">Qoşun</button><button id="home">Mərkəzlə</button></div>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.166.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.166.1/examples/jsm/"}}</script>
 <script type="module" src="./src/city.js"></script>
 </body></html>
