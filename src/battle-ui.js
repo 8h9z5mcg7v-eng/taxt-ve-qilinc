@@ -584,7 +584,7 @@ document.getElementById('fight').addEventListener('click', () => {
   const commanderId=['alp','tomris','babek'].includes(dispatched.get('commander'))?dispatched.get('commander'):(commander.id||'alp');
   commander.id=commanderId;
   const result = resolveBattle({ attacker, defender, direction, tactic, terrain, siege, defenseCatapult, wallLevel, priorWallDamage, commander, seed: Date.now() % 100000 });
-  if(isWorldMapAttack){
+  if(isWorldMapAttack || isBorderBattle){
    try{const key='tvq_general_v1';const current=JSON.parse(localStorage.getItem(key)||'{}');current.id=commanderId;current.xp=Math.max(0,Number(current.xp)||0)+25+(result.winner==='attacker'?25:0);localStorage.setItem(key,JSON.stringify(current));}
    catch(error){console.warn('Sərkərdə təcrübəsi saxlanmadı',error)}
   }
