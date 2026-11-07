@@ -13,6 +13,17 @@ mine:{title:'Dəmir mədəni',description:'Mədən resurs məntəqəsidir. Gəl�
 enemy:{title:'Qırmızı Qala — Düşmən',description:'Düşmən qarnizonu: 300 əsgər. Bu, sınaq döyüşüdür; nəticələr hələ serverdə qorunmur.',enemy:true}
 };
 let selected=null;
+let fortressState={};
+try{fortressState=JSON.parse(localStorage.getItem('tvq_world_state_v1')||'{}').redFortress||{}}catch{}
+if(fortressState.captured){
+ const enemy=document.querySelector('[data-id="enemy"]');
+ enemy.querySelector('span').textContent='🏰 Sənin qalən';
+ enemy.querySelector('small').textContent='Fəth olunub';
+ targets.enemy.title='Qırmızı Qala — Sənin mülkün';
+ targets.enemy.description='Bu qala artıq sənin krallığına məxsusdur. Qarnizon yerləşdirmə funksiyası növbəti mərhələdə əlavə olunacaq.';
+ targets.enemy.enemy=false;
+}
+
 const journeyKey='tvq_active_journey_v1';
 const marchButton=document.querySelector('#march');
 let journey=null;
