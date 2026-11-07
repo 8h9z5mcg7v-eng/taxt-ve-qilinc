@@ -77,6 +77,10 @@ document.getElementById('fight').addEventListener('click', () => {
   document.getElementById('dp').textContent = result.power?.defender ?? '—';
   document.getElementById('ar').textContent = total(result.remaining?.attacker ?? attacker);
   document.getElementById('dr').textContent = total(result.remaining?.defender ?? defender);
+  const lossText = losses => troopIds.filter(id => (losses?.[id] || 0) > 0)
+    .map(id => troopNames[id] + ': ' + losses[id]).join(' · ') || 'İtki yoxdur';
+  document.getElementById('aLoss').textContent = lossText(result.losses?.attacker);
+  document.getElementById('dLoss').textContent = lossText(result.losses?.defender);
   const log = [
     'İstiqamət: ' + labels[result.direction],
     'Taktika: ' + labels[result.tactic],
