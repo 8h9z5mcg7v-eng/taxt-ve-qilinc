@@ -20,18 +20,34 @@ function showOutpostControls(id){
  const now=Date.now(),last=Number(territory[id]?.lastCollectedAt||now);
  const hours=Math.min(24,Math.max(0,(now-last)/3600000));
  const gain={wood:Math.floor(hours*target.wood),stone:Math.floor(hours*target.stone),gold:Math.floor(hours*target.gold)};
- panel.innerHTML='<b>'+target.name+'</b><p>'+(owned?'Ərazi sənin nəzarətindədir. Toplanmamış gəlir: '+gain.wood+' odun, '+gain.stone+' daş, '+gain.gold+' qızıl.':'Məntəqə hələ sənin nəzarətində deyil. Bu prototipdə sınaq fəthi açıqdır.')+'</p><div class="stats"><span>🪵 '+target.wood+'/saat</span><span>🪨 '+target.stone+'/saat</span><span>🪙 '+target.gold+'/saat</span></div><button id="captureOutpost" style="margin-top:10px">'+(owned?'Gəliri topla':'Məntəqəni ələ keçir')+'</button>';
- panel.querySelector('#captureOutpost').addEventListener('click',()=>{
-  if(owned){
-   let city={};try{city=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}')}catch{}
-   city.resources=city.resources||{wood:1200,stone:1000,gold:500};
-   for(const key of ['wood','stone','gold'])city.resources[key]=Math.max(0,Number(city.resources[key])||0)+gain[key];
-   try{localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(city))}catch{}
-   territory[id].lastCollectedAt=Date.now();try{localStorage.setItem(territoryKey,JSON.stringify(territory))}catch{}
-  }else{
-   territory[id]={captured:true,lastCollectedAt:Date.now()};try{localStorage.setItem(territoryKey,JSON.stringify(territory))}catch{}
-   const el=document.querySelector('[data-id="'+id+'"]');el.querySelector('span').textContent='🏳 '+target.name;el.querySelector('small').textContent='Sənin nəzarətində';
-  }
+ const guard=territory[id]?.garrison||{infantry:0,spearman:0,archer:0,cavalry:0,knight:0};
+ const guardTotal=Object.values(guard).reduce((a,n)=>a+(Number(n)||0),0);
+ panel.innerHTML='<b>'+target.name+'</b><p>'+(owned?'Sənin nəzarətindədir. Toplanmamış gəlir: '+gain.wood+' odun, '+gain.stone+' daş, '+gain.gold+' qızıl.':'Məntəqə hələ sənin nəzarətində deyil. Sınaq fəthi aktivdir.')+'</p><div class="stats"><span>🪵 '+target.wood+'/saat</span><span>🪨 '+target.stone+'/saat</span><span>🪙 '+target.gold+'/saat</span></div>'+(owned?'<p>🛡️ Qarnizon: '+guardTotal+'</p><button id="collectOutpost">Gəliri topla</button><div style="margin-top:10px"><label>Piyada <input id="ogInf" type="number" min="0" max="'+army.infantry+'" value="0"></label><label>Nizəçi <input id="ogSp" type="number" min="0" max="'+army.spearman+'" value="0"></label><label>Oxçu <input id="ogAr" type="number" min="0" max="'+army.archer+'" value="0"></label><label>Süvari <input id="ogCa" type="number" min="0" max="'+army.cavalry+'" value="0"></label><label>Cəngavər <input id="ogKn" type="number" min="0" max="'+army.knight+'" value="0"></label><button id="assignOutpostGuard">Qarnizon yerləşdir</button></div>':'<button id="captureOutpost">Məntəqəni ələ keçir</button>');
+ if(!owned){
+  panel.querySelector('#captureOutpost').addEventListener('click',()=>{
+   territory[id]={captured:true,lastCollectedAt:Date.now(),garrison:{infantry:0,spearman:0,archer:0,cavalry:0,knight:0}};
+   try{localStorage.setItem(territoryKey,JSON.stringify(territory))}catch{}
+   const el=document.querySelector('[data-id="'+id+'"]');if(el){el.querySelector('span').textContent='🏳 '+target.name;el.querySelector('small').textContent='Sənin nəzarətində'}
+   showOutpostControls(id);
+  });
+  return;
+ }
+ panel.querySelector('#collectOutpost').addEventListener('click',()=>{
+  let city={};try{city=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}')}catch{}
+  city.resources=city.resources||{wood:1200,stone:1000,gold:500};
+  for(const key of ['wood','stone','gold'])city.resources[key]=Math.max(0,Number(city.resources[key])||0)+gain[key];
+  try{localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(city))}catch{}
+  territory[id].lastCollectedAt=Date.now();try{localStorage.setItem(territoryKey,JSON.stringify(territory))}catch{}
+  showOutpostControls(id);
+ });
+ panel.querySelector('#assignOutpostGuard').addEventListener('click',()=>{
+  const keys=['infantry','spearman','archer','cavalry','knight'],ids=['ogInf','ogSp','ogAr','ogCa','ogKn'];
+  const chosen=Object.fromEntries(keys.map((k,i)=>[k,Math.max(0,Math.min(army[k],Math.floor(Number(panel.querySelector('#'+ids[i]).value)||0)))]));
+  if(Object.values(chosen).every(n=>n===0)){panel.querySelector('p').textContent='Qarnizona yerləşdirmək üçün əsgər seç.';return}
+  for(const k of keys){army[k]-=chosen[k];guard[k]=(Number(guard[k])||0)+chosen[k]}
+  territory[id].garrison=guard;
+  try{localStorage.setItem(territoryKey,JSON.stringify(territory));const city=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}');city.army={...army};localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(city))}catch{}
+  stats.innerHTML=keys.filter(k=>army[k]>0).map(k=>'<span>'+names[k]+': '+army[k]+'</span>').join('')||'<span>Səyyar ordu qalmayıb</span>';
   showOutpostControls(id);
  });
 }
