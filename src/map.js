@@ -666,7 +666,7 @@ function renderCapturedFrontiers(){
   marker.type='button';marker.className='frontier-marker';marker.style.left=site.left;marker.style.top=site.top;
   marker.textContent=site.icon;marker.dataset.label='Sənin qalən';marker.setAttribute('aria-label',site.name);
   marker.addEventListener('click',()=>{
-   info.innerHTML='<b>'+site.icon+' '+site.name+'</b><p>Bu qala sənin krallığının nəzarətindədir. Qarnizon: <b>'+count+'</b> əsgər.</p><p>İstehsal: '+site.rate+'.</p><p>'+(count?'Qarnizon düşmən basqınlarına qarşı müdafiə yaradır.':'Qala müdafiəsizdir — qarnizon yerləşdirmək lazımdır.')+'</p><small>Son basqın: '+(campaign.lastRaidAt?new Date(campaign.lastRaidAt).toLocaleString('az-AZ'):'Hələ basqın olmayıb')+'</small>';
+   info.innerHTML='<b>'+site.icon+' '+site.name+'</b><p>Bu qala sənin krallığının nəzarətindədir. Qarnizon: <b>'+count+'</b> əsgər.</p><p>İstehsal: '+site.rate+'.</p><p>'+(count?'Qarnizon düşmən basqınlarına qarşı müdafiə yaradır.':'Qala müdafiəsizdir — qarnizon yerləşdirmək lazımdır.')+'</p><small>Son basqın: '+(campaign.lastRaidAt?new Date(campaign.lastRaidAt).toLocaleString('az-AZ'):'Hələ basqın olmayıb')+'</small><p><a href="./frontier.html?kingdom='+site.id+'" style="display:inline-block;margin-top:8px;padding:8px 10px;border:1px solid #b49a6b;border-radius:7px;color:#fff1d9;text-decoration:none;background:#59452d">🏰 3D qalaya daxil ol</a></p>';
   });
   map.append(marker);
  }
