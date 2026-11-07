@@ -390,8 +390,13 @@ document.querySelectorAll('.place').forEach(el=>el.addEventListener('click',()=>
 marchButton.addEventListener('click',()=>{
  if(journey&&journey.target==='red-fortress'&&Date.now()>=journey.arrivesAt){const next=new URLSearchParams(params);let plan={};try{plan=JSON.parse(localStorage.getItem('tvq_attack_plan_v1')||'{}')}catch{};next.set('target','red-fortress');next.set('garrison','300');next.set('direction',plan.direction||'south');next.set('tactic',plan.tactic||'balanced');next.set('ram',String(plan.ram??1));next.set('catapult',String(plan.catapult??1));location.href='./battle.html?'+next.toString();return;}
  if(!selected?.enemy||!total||journey)return;
- const duration=Math.max(30000,Math.round(180000/Math.sqrt(total)));
- journey={target:'red-fortress',startedAt:Date.now(),arrivesAt:Date.now()+duration,army};
+ const marchArmy=Object.fromEntries(['infantry','spearman','archer','cavalry','knight'].map(type=>[type,Math.max(0,Math.floor(Number(army[type])||0))]));
+ const speed={infantry:1,spearman:0.96,archer:1.04,cavalry:1.48,knight:1.22};
+ const weighted=Object.entries(marchArmy).reduce((sum,[type,count])=>sum+count*speed[type],0)/Math.max(1,total);
+ const siegeCount=Math.max(0,Math.floor(Number(document.querySelector('#attackRam')?.value)||0))+Math.max(0,Math.floor(Number(document.querySelector('#attackCatapult')?.value)||0));
+ const duration=Math.max(45000,Math.min(12*60*1000,Math.round((150000+Math.sqrt(total)*9000+siegeCount*18000)/Math.max(.7,weighted))));
+
+ journey={target:'red-fortress',startedAt:Date.now(),arrivesAt:Date.now()+duration,duration,army:marchArmy,siege:siegeCount};
  try{localStorage.setItem(journeyKey,JSON.stringify(journey));}catch{}
  renderJourney();
 });
