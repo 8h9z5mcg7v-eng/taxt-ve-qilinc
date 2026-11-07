@@ -396,12 +396,35 @@ function playCombatAnimation(attacker = {}, defender = {}, siege = {}, result = 
   [...defendLayer.querySelectorAll('g')].forEach((group, index) => {
     const formation = group.getAttribute('transform');
     const type = group.getAttribute('data-unit-type');
-    const shieldHold = type === 'infantry' || type === 'knight';
-    group.animate(
-      [{ transform: formation },
-       { transform: formation + (result.siege?.wallBreached ? ' translate(0,12)' : shieldHold ? ' translate(0,3) scale(1.03)' : ' translate(0,5)') },
-       { transform: formation }],
-      { duration: type === 'cavalry' ? 920 : 680, delay: index * 100, easing: 'ease-out' }
+    const breached = !!result.siege?.wallBreached;
+    const attackerWon = result.winner === 'attacker';
+    const retreatDistance = type === 'cavalry' || type === 'knight' ? 34 : type === 'archer' ? 27 : 21;
+    const defenderAdvance = type === 'cavalry' || type === 'knight' ? 30 : 19;
+    const motion = breached
+      ? attackerWon
+        ? [{ transform: formation }, { transform: formation + ' translate(0,8)' }, { transform: formation + ` translate(0,${-retreatDistance})` }]
+        : [{ transform: formation }, { transform: formation + ' translate(0,13) scale(1.04)' }, { transform: formation + ` translate(0,${defenderAdvance})` }]
+      : [{ transform: formation }, { transform: formation + (type === 'infantry' || type === 'knight' ? ' translate(0,3) scale(1.03)' : ' translate(0,5)') }, { transform: formation }];
+    group.animate(motion, {
+      duration: breached ? 1680 : type === 'cavalry' ? 920 : 680,
+      delay: index * 125, fill: breached ? 'forwards' : 'none', easing: 'ease-in-out'
+    });
+    if (breached && type === 'archer') {
+      group.animate(
+        [{ opacity: 1 }, { opacity: .9 }, { opacity: .45 }],
+        { duration: 980, delay: 480 + index * 90, fill: 'forwards', easing: 'ease-out' }
+      );
+    }
+  });
+  const wallGuards = field.querySelectorAll('#fortressDefenses > g');
+  wallGuards.forEach((guard, index) => {
+    const base = guard.getAttribute('transform');
+    const retreat = result.winner === 'attacker' && result.siege?.wallBreached;
+    guard.animate(
+      retreat
+        ? [{ transform: base, opacity: 1 }, { transform: base + ' translate(0,5)', opacity: 1 }, { transform: base + ' translate(0,-25)', opacity: 0 }]
+        : [{ transform: base }, { transform: base + ' translate(0,3)' }, { transform: base }],
+      { duration: retreat ? 1420 : 640, delay: 420 + index * 110, fill: retreat ? 'forwards' : 'none', easing: 'ease-in-out' }
     );
   });
   // A breached gate triggers a visible melee only after the attackers reach
