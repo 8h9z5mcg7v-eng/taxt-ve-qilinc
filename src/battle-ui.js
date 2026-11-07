@@ -444,7 +444,16 @@ document.getElementById('fight').addEventListener('click', () => {
   } else if (isBorderBattle) {
     try { const diplomacy=JSON.parse(localStorage.getItem('tvq_diplomacy_v1')||'{}'); const kingdom=dispatched.get('kingdom')||localStorage.getItem('tvq_border_battle_kingdom'); priorWallDamage=Number(diplomacy.borderCampaigns?.[kingdom]?.wallDamage)||0; } catch {}
   }
-  const result = resolveBattle({ attacker, defender, direction, tactic, terrain, siege, defenseCatapult, priorWallDamage, seed: Date.now() % 100000 });
+  let wallLevel = 1;
+  if (terrain === 'fortress') {
+    try {
+      const city = JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1') || '{}');
+      const levels = city.levels || {};
+      const names = ['Şimal qala divarı','Cənub qala divarı','Qərb qala divarı','Şərq qala divarı'];
+      wallLevel = Math.max(1, Math.min(10, Math.round(names.reduce((sum, name) => sum + (Number(levels[name]) || 1), 0) / names.length)));
+    } catch {}
+  }
+  const result = resolveBattle({ attacker, defender, direction, tactic, terrain, siege, defenseCatapult, wallLevel, priorWallDamage, seed: Date.now() % 100000 });
   fightButton.textContent = isWorldMapAttack ? 'DÖYÜŞ TAMAMLANDI' : 'YENİ DÖYÜŞÜ HESABLA';
   if (!isWorldMapAttack) fightButton.disabled = false;
   const survivingAttacker = result.remaining?.attacker ?? attacker;
@@ -477,7 +486,7 @@ document.getElementById('fight').addEventListener('click', () => {
   document.getElementById('dp').textContent = result.power?.defender ?? '—';
   document.getElementById('ar').textContent = total(result.remaining?.attacker ?? attacker);
   document.getElementById('dr').textContent = total(result.remaining?.defender ?? defender);
-  document.getElementById('wallDamage').textContent = result.siege?.wallMax ? `${result.siege.wallDamage}/100` : 'Tətbiq edilmir';
+  document.getElementById('wallDamage').textContent = result.siege?.wallMax ? `${Math.round(result.siege.wallDamage)}/100 · Səviyyə ${result.siege.wallLevel}/10` : 'Tətbiq edilmir';
   document.getElementById('wallState').textContent = result.siege?.wallMax ? (result.siege.wallBreached ? 'Yarılıb' : 'Möhkəm') : 'Açıq ərazi';
   const lossText = losses => troopIds.filter(id => (losses?.[id] || 0) > 0)
     .map(id => troopNames[id] + ': ' + losses[id]).join(' · ') || 'İtki yoxdur';
