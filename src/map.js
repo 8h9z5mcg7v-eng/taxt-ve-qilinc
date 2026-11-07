@@ -397,4 +397,42 @@ marchButton.addEventListener('click',()=>{
 });
 if(journey){setInterval(renderJourney,1000);}
 
+
+function mountKingdomMarket(){
+ const wrap=document.querySelector('.wrap');
+ if(!wrap||document.querySelector('#kingdomMarket'))return;
+ const market=document.createElement('section');market.id='kingdomMarket';market.className='panel';
+ market.innerHTML='<h2>🏛 Krallıqlar bazarı</h2><p>Qonşu krallıqların tacirləri ilə odun və daş mübadiləsi et. Qiymətlər hər gün dəyişir; alış və satış arasında bazar fərqi var.</p><div id="marketRates" class="stats"></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px"><label style="font-size:12px">Resurs<select id="marketResource" style="display:block;width:100%;padding:10px;margin-top:5px;border-radius:7px;background:#172127;color:#fff;border:1px solid #756448"><option value="wood">Odun</option><option value="stone">Daş</option></select></label><label style="font-size:12px">Əməliyyat<select id="marketSide" style="display:block;width:100%;padding:10px;margin-top:5px;border-radius:7px;background:#172127;color:#fff;border:1px solid #756448"><option value="buy">Al</option><option value="sell">Sat</option></select></label></div><label style="display:block;font-size:12px;margin-top:9px">Miqdar <input id="marketAmount" type="number" min="1" max="5000" value="100" style="display:block;width:100%;padding:10px;margin-top:5px;border-radius:7px;background:#172127;color:#fff;border:1px solid #756448"></label><div class="actions"><button id="marketTrade">Mübadilə et</button></div><p id="marketStatus" aria-live="polite">Ticarət qiymətləri gündəlik yenilənir.</p>';
+ wrap.append(market);
+ const day=new Date().toISOString().slice(0,10);
+ const daySeed=Number(day.replaceAll('-',''));
+ const rates={wood:2+(daySeed%5),stone:4+((daySeed*7)%5)};
+ const buyPrice={wood:Math.ceil(rates.wood*1.12),stone:Math.ceil(rates.stone*1.12)};
+ const sellPrice={wood:Math.max(1,Math.floor(rates.wood*.88)),stone:Math.max(1,Math.floor(rates.stone*.88))};
+ const renderRates=()=>{market.querySelector('#marketRates').innerHTML='<span>🪵 Odun: alış '+buyPrice.wood+' 🪙 · satış '+sellPrice.wood+' 🪙</span><span>🪨 Daş: alış '+buyPrice.stone+' 🪙 · satış '+sellPrice.stone+' 🪙</span>'};
+ renderRates();
+ market.querySelector('#marketTrade').addEventListener('click',()=>{
+  const resource=market.querySelector('#marketResource').value;
+  const side=market.querySelector('#marketSide').value;
+  const amount=Math.max(1,Math.min(5000,Math.floor(Number(market.querySelector('#marketAmount').value)||0)));
+  if(!amount){market.querySelector('#marketStatus').textContent='Miqdarı düzgün daxil et.';return}
+  let city={};try{city=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}')}catch{}
+  city.resources=city.resources||{wood:1200,stone:1000,gold:500};
+  const price=side==='buy'?buyPrice[resource]:sellPrice[resource];
+  const totalGold=price*amount;
+  if(side==='buy'){
+   if((Number(city.resources.gold)||0)<totalGold){market.querySelector('#marketStatus').textContent='Qızıl çatmır. Lazımdır: '+totalGold+' · Mövcud: '+(Number(city.resources.gold)||0)+'.';return}
+   city.resources.gold-=totalGold;
+   city.resources[resource]=(Number(city.resources[resource])||0)+amount;
+  }else{
+   if((Number(city.resources[resource])||0)<amount){market.querySelector('#marketStatus').textContent='Anbarda kifayət qədər '+(resource==='wood'?'odun':'daş')+' yoxdur.';return}
+   city.resources[resource]-=amount;
+   city.resources.gold=(Number(city.resources.gold)||0)+totalGold;
+  }
+  try{localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(city))}catch{market.querySelector('#marketStatus').textContent='Yaddaşa yazmaq mümkün olmadı. Yenidən cəhd et.';return}
+  market.querySelector('#marketStatus').textContent=(side==='buy'?'Aldın: ':'Satdın: ')+amount+' '+(resource==='wood'?'odun':'daş')+'. '+(side==='buy'?'Xərc: ':'Qazanc: ')+totalGold+' qızıl. Şəhər resursları yadda saxlanıldı.';
+ });
+}
+mountKingdomMarket();
+
 if(!total)document.querySelector('#description').textContent='Şəhərdə əvvəlcə qoşun hazırla. Sonra xəritəyə qayıdıb yürüşə başla.';
