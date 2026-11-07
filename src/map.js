@@ -18,12 +18,25 @@ function settleCaravan(id){
   try{localStorage.setItem(caravanKey,JSON.stringify(caravans))}catch{}
   return true;
  }
- const reward={wood:target.wood*2,stone:target.stone*2,gold:target.gold*2};
  let city={};try{city=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}')}catch{}
  city.resources=city.resources||{wood:1200,stone:1000,gold:500};
+ city.army=city.army||{};
+ const escort=trip.escort||{infantry:0,spearman:0,archer:0,cavalry:0,knight:0};
+ const escortCount=Object.values(escort).reduce((sum,n)=>sum+(Number(n)||0),0);
+ const banditRoll=(Math.abs(Math.floor(Number(trip.sentAt)||0)*17+id.length*31)%100);
+ let survivors={...escort},banditResult='none',reward={wood:target.wood*2,stone:target.stone*2,gold:target.gold*2};
+ if(banditRoll<35){
+  const bandits={infantry:12,spearman:8,archer:10,cavalry:5,knight:0};
+  const fight=resolveBattle({attacker:escort,defender:bandits,direction:'south',tactic:'balanced',terrain:'forest',seed:banditRoll+Math.floor(trip.sentAt/1000)%100000});
+  survivors=fight.remaining.attacker;
+  if(fight.winner==='attacker')banditResult='defeated';
+  else if(escortCount>0){banditResult='damaged';reward={wood:Math.floor(reward.wood/2),stone:Math.floor(reward.stone/2),gold:Math.floor(reward.gold/2)};}
+  else{banditResult='captured';reward={wood:0,stone:0,gold:0};}
+ }
+ for(const key of troopIds)city.army[key]=(Number(city.army[key])||0)+(Number(survivors[key])||0);
  for(const key of Object.keys(reward))city.resources[key]=(Number(city.resources[key])||0)+reward[key];
  try{localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(city))}catch{}
- caravans[id]={status:'returned',sentAt:trip.sentAt,arrivesAt:trip.arrivesAt,reward};
+ caravans[id]={status:'returned',sentAt:trip.sentAt,arrivesAt:trip.arrivesAt,reward,escortSurvivors:survivors,banditResult};
  try{localStorage.setItem(caravanKey,JSON.stringify(caravans))}catch{}
  return true;
 }
@@ -45,7 +58,7 @@ function showOutpostControls(id){
  const gain={wood:Math.floor(hours*target.wood),stone:Math.floor(hours*target.stone),gold:Math.floor(hours*target.gold)};
  const guard=territory[id]?.garrison||{infantry:0,spearman:0,archer:0,cavalry:0,knight:0};
  const guardTotal=Object.values(guard).reduce((a,n)=>a+(Number(n)||0),0);
- panel.innerHTML='<b>'+target.name+'</b><p>'+(owned?'Sənin nəzarətindədir. Toplanmamış gəlir: '+gain.wood+' odun, '+gain.stone+' daş, '+gain.gold+' qızıl.':'Məntəqə düşmən tərəfindən qorunur. Ələ keçirmək üçün döyüşdə qalib gəl.')+'</p><div class="stats"><span>🪵 '+target.wood+'/saat</span><span>🪨 '+target.stone+'/saat</span><span>🪙 '+target.gold+'/saat</span></div>'+(owned?'<p>🛡️ Qarnizon: '+guardTotal+'</p><button id="collectOutpost">Gəliri topla</button><button id="sendCaravan" style="margin:8px 0">🚚 Ticarət karvanı göndər · 10 qızıl</button><div id="caravanStatus" style="font-size:12px;margin:6px 0"></div><button id="enemyRaid" style="margin:8px 0">⚔ Düşmən basqınını sına</button><div style="margin-top:10px"><label>Piyada <input id="ogInf" type="number" min="0" max="'+army.infantry+'" value="0"></label><label>Nizəçi <input id="ogSp" type="number" min="0" max="'+army.spearman+'" value="0"></label><label>Oxçu <input id="ogAr" type="number" min="0" max="'+army.archer+'" value="0"></label><label>Süvari <input id="ogCa" type="number" min="0" max="'+army.cavalry+'" value="0"></label><label>Cəngavər <input id="ogKn" type="number" min="0" max="'+army.knight+'" value="0"></label><button id="assignOutpostGuard">Qarnizon yerləşdir</button></div>':'<button id="captureOutpost">Məntəqəni ələ keçir</button>');
+ panel.innerHTML='<b>'+target.name+'</b><p>'+(owned?'Sənin nəzarətindədir. Toplanmamış gəlir: '+gain.wood+' odun, '+gain.stone+' daş, '+gain.gold+' qızıl.':'Məntəqə düşmən tərəfindən qorunur. Ələ keçirmək üçün döyüşdə qalib gəl.')+'</p><div class="stats"><span>🪵 '+target.wood+'/saat</span><span>🪨 '+target.stone+'/saat</span><span>🪙 '+target.gold+'/saat</span></div>'+(owned?'<p>🛡️ Qarnizon: '+guardTotal+'</p><button id="collectOutpost">Gəliri topla</button><label style="display:block;margin:8px 0">🛡️ Müşayiətçi piyada <input id="caravanEscort" type="number" min="0" max="'+army.infantry+'" value="0" style="width:70px"></label><button id="sendCaravan" style="margin:8px 0">🚚 Ticarət karvanı göndər · 10 qızıl</button><div id="caravanStatus" style="font-size:12px;margin:6px 0"></div><button id="enemyRaid" style="margin:8px 0">⚔ Düşmən basqınını sına</button><div style="margin-top:10px"><label>Piyada <input id="ogInf" type="number" min="0" max="'+army.infantry+'" value="0"></label><label>Nizəçi <input id="ogSp" type="number" min="0" max="'+army.spearman+'" value="0"></label><label>Oxçu <input id="ogAr" type="number" min="0" max="'+army.archer+'" value="0"></label><label>Süvari <input id="ogCa" type="number" min="0" max="'+army.cavalry+'" value="0"></label><label>Cəngavər <input id="ogKn" type="number" min="0" max="'+army.knight+'" value="0"></label><button id="assignOutpostGuard">Qarnizon yerləşdir</button></div>':'<button id="captureOutpost">Məntəqəni ələ keçir</button>');
  if(!owned){
   panel.querySelector('#captureOutpost').addEventListener('click',()=>{
    if(total===0){panel.querySelector('p').textContent='Məntəqəni ələ keçirmək üçün ordun olmalıdır.';return;}
@@ -88,10 +101,15 @@ function showOutpostControls(id){
   let city={};try{city=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}')}catch{}
   city.resources=city.resources||{wood:1200,stone:1000,gold:500};
   if((Number(city.resources.gold)||0)<10){caravanStatus.textContent='Karvan üçün 10 qızıl lazımdır.';return;}
+  const escortCount=Math.max(0,Math.min(army.infantry,Math.floor(Number(panel.querySelector('#caravanEscort').value)||0)));
+  if(escortCount>army.infantry){caravanStatus.textContent='Müşayiətçi sayı ordudan çox ola bilməz.';return;}
   city.resources.gold-=10;
+  city.army=city.army||{};
+  city.army.infantry=Math.max(0,(Number(city.army.infantry)||0)-escortCount);
+  army.infantry=Math.max(0,army.infantry-escortCount);
   try{localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(city))}catch{}
   const sentAt=Date.now(),arrivesAt=sentAt+60000;
-  caravans[id]={status:'traveling',sentAt,arrivesAt};
+  caravans[id]={status:'traveling',sentAt,arrivesAt,escort:{infantry:escortCount,spearman:0,archer:0,cavalry:0,knight:0}};
   try{localStorage.setItem(caravanKey,JSON.stringify(caravans))}catch{}
   caravanButton.disabled=true;
   caravanStatus.textContent='🚚 Karvan yola düşdü. Təxmini qayıdış: 60 saniyə.';
@@ -99,7 +117,7 @@ function showOutpostControls(id){
    if(settleCaravan(id)){
     clearInterval(timer);
     const trip=caravans[id];
-    if(trip.status==='returned')caravanStatus.textContent='Karvan qayıtdı: '+trip.reward.wood+' odun, '+trip.reward.stone+' daş, '+trip.reward.gold+' qızıl.';
+    if(trip.status==='returned')caravanStatus.textContent='Karvan qayıtdı: '+trip.reward.wood+' odun, '+trip.reward.stone+' daş, '+trip.reward.gold+' qızıl. '+(trip.banditResult==='defeated'?'Müşayiətçilər quldurları məğlub etdi.':trip.banditResult==='damaged'?'Quldur pusqusunda yükün yarısı itirildi.':trip.banditResult==='captured'?'Quldurlar karvanı və yükü ələ keçirdi.':'Yol təhlükəsiz idi.');
     else caravanStatus.textContent='Karvan ələ keçirildi: məntəqə səfər zamanı düşmənə keçdi.';
     caravanButton.disabled=false;
    }else if(Date.now()>=arrivesAt)clearInterval(timer);
