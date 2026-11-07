@@ -29,13 +29,14 @@ function calculatePower(army, defending, formation, opponents) {
  * direction: north | east | south | west
  * tactic: balanced | wedge | line | volley
  */
-export function resolveBattle({ attacker, defender, direction = 'south', tactic = 'balanced', terrain = 'plains', siege = {}, seed = 1 }) {
+export function resolveBattle({ attacker, defender, direction = 'south', tactic = 'balanced', defenderTactic = 'balanced', terrain = 'plains', siege = {}, seed = 1 }) {
   const attackArmy = createArmy(attacker);
   const defendArmy = createArmy(defender);
   const attackCount = armySize(attackArmy);
   const defendCount = armySize(defendArmy);
   const safeDirection = DIRECTIONS.has(direction) ? direction : 'south';
   const safeTactic = TACTICS.has(tactic) ? tactic : 'balanced';
+  const safeDefenderTactic = TACTICS.has(defenderTactic) ? defenderTactic : 'balanced';
   const safeTerrain = TERRAIN.has(terrain) ? terrain : 'plains';
   const siegeEngines = { ram: siegeCount(siege.ram), catapult: siegeCount(siege.catapult) };
 
@@ -58,7 +59,7 @@ export function resolveBattle({ attacker, defender, direction = 'south', tactic 
   const wallProtection = wallMax > 0 ? (1 + (wallRemaining / wallMax) * 0.32) / 1.32 : 1;
   const siegeAttackBonus = wallMax > 0 ? siegeEngines.catapult * 14 + (wallBreached ? siegeEngines.ram * 6 : 0) : 0;
   const attackPower = rawAttackPower * directionBonus * terrainAttackBonus * cavalryTerrainFactor + siegeAttackBonus;
-  const defendPower = calculatePower(defendArmy, true, 'balanced', attackArmy) * (wallBreached ? 1 : terrainDefenseBonus * wallProtection);
+  const defendPower = calculatePower(defendArmy, true, safeDefenderTactic, attackArmy) * (wallBreached ? 1 : terrainDefenseBonus * wallProtection);
   const ratio = attackPower / Math.max(1, defendPower);
   const attackerWins = ratio >= 1;
   const random = (Math.sin(seed * 9301 + 49297) * 233280) % 1;
@@ -74,7 +75,7 @@ export function resolveBattle({ attacker, defender, direction = 'south', tactic 
   const defenderLosses = losses(defendArmy, defenderLossRate, false);
 
   return {
-    winner, direction: safeDirection, tactic: safeTactic, terrain: safeTerrain,
+    winner, direction: safeDirection, tactic: safeTactic, defenderTactic: safeDefenderTactic, terrain: safeTerrain,
     siege: { ...siegeEngines, wallMax, wallDamage, wallRemaining, wallBreached, attackBonus: siegeAttackBonus },
     modifiers: { direction: directionBonus, attackerTerrain: terrainAttackBonus * cavalryTerrainFactor, defenderTerrain: wallBreached ? 1 : terrainDefenseBonus * wallProtection },
     power: { attacker: Math.round(attackPower), defender: Math.round(defendPower) },
@@ -85,7 +86,8 @@ export function resolveBattle({ attacker, defender, direction = 'south', tactic 
     losses: { attacker: attackerLosses, defender: defenderLosses },
     log: [
       `Hücum istiqaməti: ${safeDirection}`,
-      `Taktika: ${safeTactic}`,
+      `Hücum taktikası: ${safeTactic}`,
+      `Müdafiə taktikası: ${safeDefenderTactic}`,
       `Ərazi: ${safeTerrain}`,
       `Mühasirə: qoçbaşı ${siegeEngines.ram}, katapult ${siegeEngines.catapult}`,
       ...(wallMax ? [`Divar zədəsi: ${wallDamage}/100 · ${wallBreached ? 'divar yarıldı' : 'divar hələ dayanır'}`] : []),
