@@ -415,7 +415,8 @@ mountGeneralPanel();
 
  });
 }
-function processReturningArmy(){
+function processReturningArmy(){return withCityEconomyLock(()=>processReturningArmyLocked())}
+function processReturningArmyLocked(){
  const queueKey='tvq_return_journeys_v1';
  let trips=[];
  try{trips=JSON.parse(localStorage.getItem(queueKey)||'[]');if(!Array.isArray(trips))trips=[]}catch{trips=[]}
