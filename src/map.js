@@ -179,6 +179,18 @@ if(fortressState.captured){
   enemy.querySelector('small').textContent='Düşmən nəzarətində — son basqın nəticələndi';
  }
 }
+function renderRaidAlert(){
+ let alert=document.querySelector('#raidAlert');
+ if(!fortressState.captured){alert?.remove();return;}
+ if(!alert){alert=document.createElement('section');alert.id='raidAlert';alert.style.cssText='margin-top:12px;padding:12px;border:1px solid #a87942;border-radius:10px;background:#35291f;color:#f7dfb0';document.querySelector('.panel').append(alert);}
+ const base=Number(fortressState.lastRaidAt||fortressState.capturedAt||Date.now());
+ const next=base+6*60*60*1000;
+ const left=Math.max(0,next-Date.now());
+ const hours=Math.floor(left/3600000),minutes=Math.floor((left%3600000)/60000);
+ alert.innerHTML='<b>⚠ Qala müdafiəsi</b><p>'+(left===0?'Basqın vaxtı çatıb. Xəritəni yenilədikdə müdafiə döyüşü hesablanacaq.':left<=60*60*1000?'DİQQƏT: düşmən basqını yaxınlaşır!':'Növbəti mümkün basqına qalan vaxt: '+hours+' saat '+minutes+' dəqiqə.')+'</p><small>Qarnizonunu gücləndir. Basqın yalnız xəritə yenidən yüklənəndə hesablanır.</small>';
+}
+renderRaidAlert();
+setInterval(renderRaidAlert,60000);
 
 for(const id of ['village','mine']){if(territory[id]?.captured){const el=document.querySelector('[data-id="'+id+'"]');if(el){el.querySelector('span').textContent='🏳 '+territories.find(t=>t.id===id).name;el.querySelector('small').textContent='Sənin nəzarətində';}}}
 const journeyKey='tvq_active_journey_v1';
