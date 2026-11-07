@@ -229,11 +229,11 @@ function renderBattlefield(attacker, defender, direction, terrain = 'plains', wa
 const dispatched=new URLSearchParams(location.search);
 const isWorldMapAttack=dispatched.get('target')==='red-fortress';
 const isBorderBattle=dispatched.get('target')==='border';
+let strategicBattleLockReason='';
+const todayKey=(()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')})();
 const battleId=dispatched.get('battleId')||(isWorldMapAttack?(()=>{try{return 'red-'+(JSON.parse(localStorage.getItem('tvq_active_journey_v1')||'{}').startedAt||'unknown')}catch{return 'red-unknown'}})():isBorderBattle?'border-'+(dispatched.get('kingdom')||'unknown')+'-'+todayKey:'local-'+Date.now());
 let resolvedBattles={};try{resolvedBattles=JSON.parse(localStorage.getItem('tvq_resolved_battles_v1')||'{}')}catch{}
 if(resolvedBattles[battleId])strategicBattleLockReason='Bu döyüşün nəticəsi artıq hesablanıb.';
-let strategicBattleLockReason='';
-const todayKey=(()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')})();
 if(isWorldMapAttack){
  let journey=null;try{journey=JSON.parse(localStorage.getItem('tvq_active_journey_v1')||'null')}catch{}
  if(!journey||journey.target!=='red-fortress')strategicBattleLockReason='Bu yürüş artıq tamamlanıb və ya ləğv edilib.';
