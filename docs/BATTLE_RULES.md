@@ -17,3 +17,11 @@
 `src/battle.js` deterministik prototip döyüş hesablayıcısıdır.
 
 Bu mexanika ilk balans sınağı üçündür; multiplayer, server təsdiqi, animasiyalı döyüş və real vaxt taktiki hərəkət hələ yoxdur. Rəqəmlər ilkin oyun balansıdır, yekun deyil.
+
+## Ərazi bonusları
+- **Açıq düzənlik:** əlavə bonus yoxdur.
+- **Meşə:** müdafiəçi üçün 12% müdafiə üstünlüyü; süvari hücum effektivliyi azalır.
+- **Təpəlik:** hücum edənə 6%, müdafiəçiyə 18% mövqe üstünlüyü.
+- **Möhkəmləndirilmiş qala:** müdafiəçiyə 32% müdafiə bonusu; süvarinin manevr effektivliyi azalır.
+
+Bunlar ilkin balans parametrləridir; oyun testləri ilə dəyişdiriləcək.
