@@ -371,7 +371,7 @@ let returnJourney=null;
 try{returnJourney=JSON.parse(localStorage.getItem('tvq_return_journey_v1')||'null')}catch{returnJourney=null}
 const returnPanel=document.createElement('section');
 returnPanel.id='returnJourneyPanel';returnPanel.className='panel';returnPanel.style.display='none';
-returnPanel.innerHTML='<h2>↩️ Geri qayıdan ordu</h2><p id="returnJourneyText"></p><div class="stats" id="returnArmyStats"></div><div class="actions"><a href="./city.html">🏰 Şəhərə keç</a></div>';
+returnPanel.innerHTML='<h2>↩️ Geri qayıdan ordu</h2><p id="returnJourneyText"></p><div class="return-progress"><div id="returnProgressFill"></div></div><div class="stats" id="returnArmyStats"></div><div id="returnArmyComposition" class="return-composition"></div><div class="actions"><a href="./city.html">🏰 Şəhərə keç</a></div>';
 document.querySelector('.wrap').append(returnPanel);
 function renderReturnJourney(){
  if(!returnJourney)return;
@@ -383,7 +383,10 @@ function renderReturnJourney(){
  document.querySelector('#path').style.display='block';
  returnPanel.style.display='block';
  document.querySelector('#returnJourneyText').textContent=left>0?'Sağ qalan əsgərlər düşmən qalasından paytaxta qayıdır. Çatmağa: '+Math.ceil(left/1000)+' saniyə.':'Ordu paytaxta çatıb. Əsgərləri şəhər qarnizonuna qəbul etmək üçün şəhərə keç.';
- document.querySelector('#returnArmyStats').innerHTML='<span>⚔ Sağ qalan: '+count+'</span><span>🏁 '+(left>0?'Yolda':'Çatıb')+'</span>';
+ document.querySelector('#returnProgressFill').style.width=(progress*100)+'%';
+ document.querySelector('#returnArmyStats').innerHTML='<span>⚔ Sağ qalan: '+count+'</span><span>🏁 '+(left>0?'Yolda':'Çatıb')+'</span><span>⏱ '+(left>0?Math.ceil(left/1000)+' san.':'Tamamlandı')+'</span>';
+ const labels={infantry:'Piyada',spearman:'Nizəçi',archer:'Oxçu',cavalry:'Süvari',knight:'Cəngavər'};
+ document.querySelector('#returnArmyComposition').innerHTML=Object.entries(labels).filter(([type])=>Number(army[type])>0).map(([type,label])=>'<span>'+label+': <b>'+Math.floor(Number(army[type])||0)+'</b></span>').join('')||'<span>Sağ qalan əsgər yoxdur</span>';
  if(left>0){marchButton.disabled=true;marchButton.textContent='↩️ Ordu geri qayıdır';}
  else{marchButton.disabled=true;marchButton.textContent='Ordu çatıb';}
 }
