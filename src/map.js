@@ -412,15 +412,22 @@ function mountKingdomMarket(){
   let diplomacy={};try{diplomacy=JSON.parse(localStorage.getItem('tvq_diplomacy_v1')||'{}')}catch{}
   const standings=diplomacy.standings||{};
   const reputation=Object.values(standings).reduce((sum,value)=>sum+Math.max(0,Number(value)||0),0);
-  const discount=reputation>=25?0.10:reputation>=10?0.05:0;
-  const premium=reputation>=25?0.05:0;
-  const buyPrice={wood:Math.max(1,Math.ceil(rates.wood*1.12*(1-discount))),stone:Math.max(1,Math.ceil(rates.stone*1.12*(1-discount)))};
-  const sellPrice={wood:Math.max(1,Math.floor(rates.wood*.88*(1+premium))),stone:Math.max(1,Math.floor(rates.stone*.88*(1+premium)))};
-  return {buyPrice,sellPrice,reputation,discount,premium};
+  const relations=diplomacy.relations||{};
+  const alliedCount=Object.values(relations).filter(value=>value==='allied').length;
+  const warCount=Object.values(relations).filter(value=>value==='war').length;
+  const reputationDiscount=reputation>=25?0.10:reputation>=10?0.05:0;
+  const allianceDiscount=Math.min(0.15,alliedCount*0.03);
+  const warSurcharge=Math.min(0.24,warCount*0.08);
+  const discount=Math.max(0,reputationDiscount+allianceDiscount-warSurcharge);
+  const premium=Math.max(0,(reputation>=25?0.05:0)-Math.min(0.15,warCount*0.05));
+  const buyPenalty=1+warSurcharge;
+  const buyPrice={wood:Math.max(1,Math.ceil(rates.wood*1.12*(1-discount)*buyPenalty)),stone:Math.max(1,Math.ceil(rates.stone*1.12*(1-discount)*buyPenalty))};
+  const sellPrice={wood:Math.max(1,Math.floor(rates.wood*.88*(1+premium)/(1+warCount*0.05))),stone:Math.max(1,Math.floor(rates.stone*.88*(1+premium)/(1+warCount*0.05)))};
+  return {buyPrice,sellPrice,reputation,discount,premium,alliedCount,warCount};
  }
  const renderRates=()=>{
   const terms=getMarketTerms();
-  market.querySelector('#marketRates').innerHTML='<span>🪵 Odun: alış '+terms.buyPrice.wood+' 🪙 · satış '+terms.sellPrice.wood+' 🪙</span><span>🪨 Daş: alış '+terms.buyPrice.stone+' 🪙 · satış '+terms.sellPrice.stone+' 🪙</span><small style="grid-column:1/-1">Diplomatik nüfuz: '+terms.reputation+' · '+(terms.discount?'Alışda '+Math.round(terms.discount*100)+'% güzəşt':terms.premium?'Satışda '+Math.round(terms.premium*100)+'% bonus':'Hələ güzəşt yoxdur')+'</small>';
+  market.querySelector('#marketRates').innerHTML='<span>🪵 Odun: alış '+terms.buyPrice.wood+' 🪙 · satış '+terms.sellPrice.wood+' 🪙</span><span>🪨 Daş: alış '+terms.buyPrice.stone+' 🪙 · satış '+terms.sellPrice.stone+' 🪙</span><small style="grid-column:1/-1">Diplomatik nüfuz: '+terms.reputation+' · Müttəfiq: '+terms.alliedCount+' · Müharibə: '+terms.warCount+' · '+(terms.discount?'Alışda '+Math.round(terms.discount*100)+'% xalis güzəşt':terms.premium?'Satışda '+Math.round(terms.premium*100)+'% bonus':'Xüsusi ticarət güzəşti yoxdur')+(terms.warCount?' · Müharibə bazar qiymətlərini artırır.':'')+'</small>';
  };
  renderRates();
  market.querySelector('#marketTrade').addEventListener('click',()=>{
