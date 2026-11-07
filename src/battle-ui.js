@@ -6,7 +6,7 @@ const readArmy = prefix => Object.fromEntries(troopIds.map(id => {
   return [id, Math.max(0, Math.min(9999, Math.floor(Number(input.value) || 0)))];
 }));
 const total = army => Object.values(army).reduce((sum, n) => sum + n, 0);
-const labels = { north: 'Şimal', south: 'Cənub', east: 'Şərq', west: 'Qərb', balanced: 'Balanslı', wedge: 'Paz', line: 'Xətt', volley: 'Yaylım' };
+const labels = { north: 'Şimal', south: 'Cənub', east: 'Şərq', west: 'Qərb', balanced: 'Balanslı', wedge: 'Paz', line: 'Xətt', volley: 'Yaylım', plains: 'Açıq düzənlik', forest: 'Meşə', hill: 'Təpəlik', fortress: 'Möhkəmləndirilmiş qala' };
 const troopLabels = { infantry: 'P', spearman: 'N', archer: 'O', cavalry: 'S', knight: 'C' };
 const troopNames = { infantry: 'Piyada', spearman: 'Nizəçi', archer: 'Oxçu', cavalry: 'Süvari', knight: 'Cəngavər' };
 const svgNS = 'http://www.w3.org/2000/svg';
@@ -65,7 +65,8 @@ document.getElementById('fight').addEventListener('click', () => {
   const defender = readArmy('d');
   const direction = document.getElementById('direction').value;
   const tactic = document.getElementById('tactic').value;
-  const result = resolveBattle({ attacker, defender, direction, tactic, seed: Date.now() % 100000 });
+  const terrain = document.getElementById('terrain').value;
+  const result = resolveBattle({ attacker, defender, direction, tactic, terrain, seed: Date.now() % 100000 });
   renderBattlefield(attacker, defender, direction);
   const panel = document.getElementById('result');
   panel.style.display = 'block';
@@ -84,6 +85,7 @@ document.getElementById('fight').addEventListener('click', () => {
   const log = [
     'İstiqamət: ' + labels[result.direction],
     'Taktika: ' + labels[result.tactic],
+    'Ərazi: ' + labels[result.terrain || 'plains'],
     ...(result.log || [])
   ];
   document.getElementById('log').replaceChildren(...log.map(line => {
