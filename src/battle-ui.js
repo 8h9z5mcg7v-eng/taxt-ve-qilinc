@@ -110,7 +110,7 @@ for(const type of troopIds){
   field.value=String(Math.max(0,Math.min(9999,Math.floor(Number(dispatched.get(type))||0))));
  }
 }
-function playCombatAnimation() {
+function playCombatAnimation(attacker = {}, siege = {}) {
   const field = document.getElementById('battlefield');
   const svgNS = 'http://www.w3.org/2000/svg';
   const projectileLayer = document.createElementNS(svgNS, 'g');
@@ -129,10 +129,12 @@ function playCombatAnimation() {
       { duration: 520, delay, easing: 'ease-in' }
     );
   };
-  for (let i = 0; i < 5; i++) {
+  const archerShots = Math.min(8, Math.ceil((attacker.archer || 0) / 20));
+  for (let i = 0; i < archerShots; i++) {
     launch(90 + i * 18, 235 + (i % 2) * 12, 380 + i * 7, 150 + (i % 3) * 15, '#e8d7ad', i * 95, 2);
   }
-  for (let i = 0; i < 3; i++) {
+  const catapultShots = Math.min(4, siege.catapult || 0);
+  for (let i = 0; i < catapultShots; i++) {
     launch(115 + i * 24, 210, 365 + i * 10, 158 + i * 12, '#e1a34b', i * 170, 5);
   }
   const attackLayer = document.getElementById('attackerUnits');
@@ -213,7 +215,7 @@ document.getElementById('fight').addEventListener('click', () => {
   }
   const survivingDefender = result.remaining?.defender ?? defender;
   renderBattlefield(survivingAttacker, survivingDefender, direction, terrain);
-  playCombatAnimation();
+  playCombatAnimation(attacker, siege);
   const panel = document.getElementById('result');
   panel.style.display = 'block';
   if(isWorldMapAttack){try{const worldKey='tvq_world_state_v1';const world=JSON.parse(localStorage.getItem(worldKey)||'{}');const previous=world.redFortress||{};const captured=result.winner==='attacker';const now=Date.now();world.redFortress={...previous,captured,updatedAt:now,capturedAt:captured?now:(previous.capturedAt||null),garrison:captured?{infantry:0,spearman:0,archer:0,cavalry:0,knight:0}:survivingDefender,remainingDefenders:total(survivingDefender),lastBattle:{winner:result.winner,at:now,attackerLosses:result.losses?.attacker||{},defenderLosses:result.losses?.defender||{},survivingAttackers:total(survivingAttacker)}};localStorage.setItem(worldKey,JSON.stringify(world));localStorage.removeItem('tvq_active_journey_v1');const outcome=document.createElement('p');outcome.style.cssText='margin-top:12px;color:#f0d69d;font-weight:700';outcome.textContent=captured?'Qırmızı Qala fəth edildi! Şəhərə qayıdaraq nəticəni gör.':'Hücum uğursuz oldu. Sağ qalan ordu şəhərə qaytarıldı.';panel.appendChild(outcome);const back=document.createElement('a');back.href='./city.html';back.textContent='Şəhərə qayıt';back.style.cssText='display:block;text-align:center;margin-top:10px;padding:12px;background:#76542c;border-radius:9px;color:white;text-decoration:none';panel.appendChild(back);}catch(error){console.warn('Döyüş nəticəsi saxlanmadı',error)}}
