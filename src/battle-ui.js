@@ -666,8 +666,7 @@ document.getElementById('fight').addEventListener('click', async () => {
     const ledger=JSON.parse(localStorage.getItem('tvq_resolved_battles_v1')||'{}');
     if(ledger[battleId]){strategicBattleLockReason='Bu döyüşün nəticəsi artıq hesablanıb.';fightButton.disabled=true;document.getElementById('winner').textContent=strategicBattleLockReason;return;}
     ledger[battleId]={resolvedAt:Date.now(),winner:result.winner};
-    const ids=Object.keys(ledger);
-    if(ids.length>100)for(const oldId of ids.slice(0,ids.length-100))delete ledger[oldId];
+    // Preserve resolved IDs permanently so an old URL cannot replay rewards or losses.
     localStorage.setItem('tvq_resolved_battles_v1',JSON.stringify(ledger));
    }catch(error){fightButton.disabled=false;document.getElementById('winner').textContent='Nəticəni təhlükəsiz yadda saxlamaq mümkün olmadı. Döyüşü təkrar hesablamadan əvvəl yaddaşı yoxla.';console.warn('Döyüş qoruma qeydi saxlanmadı',error);return;}
   }
