@@ -1,6 +1,7 @@
 import { TROOPS, createArmy, armySize } from './troops.js';
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+const siegeCount = value => clamp(Math.floor(Number(value) || 0), 0, 20);
 const DIRECTIONS = new Set(['north', 'east', 'south', 'west']);
 const TACTICS = new Set(['balanced', 'wedge', 'line', 'volley']);
 const TERRAIN = new Set(['plains', 'forest', 'hill', 'fortress']);
@@ -36,7 +37,7 @@ export function resolveBattle({ attacker, defender, direction = 'south', tactic 
   const safeDirection = DIRECTIONS.has(direction) ? direction : 'south';
   const safeTactic = TACTICS.has(tactic) ? tactic : 'balanced';
   const safeTerrain = TERRAIN.has(terrain) ? terrain : 'plains';
-  const siegeEngines = { ram: Math.max(0, Math.floor(Number(siege.ram) || 0)), catapult: Math.max(0, Math.floor(Number(siege.catapult) || 0)) };
+  const siegeEngines = { ram: siegeCount(siege.ram), catapult: siegeCount(siege.catapult) };
 
   if (!attackCount || !defendCount) {
     return { winner: attackCount ? 'attacker' : 'defender', direction: safeDirection, tactic: safeTactic, attacker: attackArmy, defender: defendArmy, log: ['Döyüş üçün hər iki tərəfdə qoşun olmalıdır.'] };
