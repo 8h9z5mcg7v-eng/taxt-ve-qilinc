@@ -289,6 +289,23 @@ document.querySelector('#sendArmy').addEventListener('click',()=>{
  const params=new URLSearchParams();for(const [type,count] of Object.entries(army))params.set(type,String(count));
  location.href='./world-map.html?'+params.toString();
 });
+function processReturningArmy(){
+ let trip=null;
+ try{trip=JSON.parse(localStorage.getItem('tvq_return_journey_v1')||'null')}catch{}
+ const panelId='returnJourneyPanel';
+ let panel=document.getElementById(panelId);
+ if(!trip){panel?.remove();return}
+ const left=Math.max(0,Number(trip.arrivesAt)-Date.now());
+ if(left<=0){
+  for(const type of Object.keys(army)){army[type]=(army[type]||0)+Math.max(0,Math.floor(Number(trip.army?.[type])||0))}
+  localStorage.removeItem('tvq_return_journey_v1');
+  saveCity();updateArmyStatus();renderArmyInCity();panel?.remove();
+  const note=document.createElement('div');note.id=panelId;note.textContent='🏰 Sağ qalan qoşunlar şəhərə qayıtdı və orduya qoşuldu.';note.style.cssText='position:absolute;left:12px;bottom:90px;z-index:8;padding:10px 13px;border:1px solid #b58a55;border-radius:9px;background:#1d2b25ed;color:#f4e6c8';document.body.append(note);
+  return;
+ }
+ if(!panel){panel=document.createElement('section');panel.id=panelId;panel.style.cssText='position:absolute;left:12px;bottom:90px;z-index:8;padding:10px 13px;border:1px solid #b58a55;border-radius:9px;background:#1d2b25ed;color:#f4e6c8;font:12px/1.5 system-ui;pointer-events:none';document.body.append(panel)}
+ panel.textContent='⚔ Ordu şəhərə qayıdır · '+Math.ceil(left/1000)+' saniyə qalıb · sağ qalan: '+Object.values(trip.army||{}).reduce((a,n)=>a+(Number(n)||0),0);
+}
 updateArmyStatus();
 renderArmyInCity();
 processHospital();
