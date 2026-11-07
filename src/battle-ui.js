@@ -19,7 +19,30 @@ function svgNode(tag, attrs, parent, value) {
   return node;
 }
 
-function renderBattlefield(attacker, defender, direction) {
+function renderTerrain(terrain) {
+  const field = document.getElementById('battlefield');
+  field.querySelector('#terrainBackdrop')?.remove();
+  const scene = document.createElementNS(svgNS, 'g');
+  scene.setAttribute('id', 'terrainBackdrop');
+  const sky = svgNode('rect', { x: 0, y: 0, width: 600, height: 340, fill: terrain === 'forest' ? '#263d2d' : terrain === 'hill' ? '#59654a' : terrain === 'fortress' ? '#45463f' : '#8b805b' }, scene);
+  svgNode('path', { d: terrain === 'hill' ? 'M0 210 Q100 95 210 190 T420 165 T600 190 L600 340 L0 340Z' : 'M0 220 Q150 195 300 220 T600 210 L600 340 L0 340Z', fill: terrain === 'forest' ? '#35583a' : terrain === 'fortress' ? '#65665b' : '#a18a58' }, scene);
+  if (terrain === 'forest') {
+    for (let i = 0; i < 12; i++) {
+      const x = 18 + i * 52;
+      svgNode('path', { d: `M${x} 205 l-17 35 h34Z`, fill: i % 2 ? '#1d3425' : '#29452d' }, scene);
+    }
+  } else if (terrain === 'fortress') {
+    svgNode('rect', { x: 214, y: 76, width: 172, height: 54, fill: '#77786d', stroke: '#282b27', 'stroke-width': 5 }, scene);
+    for (let x = 220; x < 386; x += 28) svgNode('rect', { x, y: 65, width: 14, height: 15, fill: '#99998a', stroke: '#282b27', 'stroke-width': 2 }, scene);
+    svgNode('rect', { x: 270, y: 35, width: 58, height: 44, fill: '#858679', stroke: '#282b27', 'stroke-width': 4 }, scene);
+    svgNode('path', { d: 'M262 36 L299 8 L336 36Z', fill: '#6f4032', stroke: '#282b27', 'stroke-width': 3 }, scene);
+    svgNode('rect', { x: 284, y: 91, width: 24, height: 39, fill: '#332c25' }, scene);
+  }
+  field.insertBefore(scene, field.firstChild);
+}
+
+function renderBattlefield(attacker, defender, direction, terrain = 'plains') {
+  renderTerrain(terrain);
   const attackLayer = document.getElementById('attackerUnits');
   const defendLayer = document.getElementById('defenderUnits');
   const arrowLayer = document.getElementById('attackArrow');
@@ -105,7 +128,7 @@ function playCombatAnimation() {
 }
 
 function refreshPreview() {
-  renderBattlefield(readArmy('a'), readArmy('d'), document.getElementById('direction').value);
+  renderBattlefield(readArmy('a'), readArmy('d'), document.getElementById('direction').value, document.getElementById('terrain').value);
 }
 
 refreshPreview();
@@ -148,7 +171,7 @@ document.getElementById('fight').addEventListener('click', () => {
     console.warn('Ordunun nəticəsini yadda saxlamaq mümkün olmadı.', error);
   }
   const survivingDefender = result.remaining?.defender ?? defender;
-  renderBattlefield(survivingAttacker, survivingDefender, direction);
+  renderBattlefield(survivingAttacker, survivingDefender, direction, terrain);
   playCombatAnimation();
   const panel = document.getElementById('result');
   panel.style.display = 'block';
