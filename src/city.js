@@ -301,6 +301,22 @@ function renderLastBattleReport(){
  panel.innerHTML='<b>📜 Son döyüş hesabatı</b><div style="margin:5px 0;color:'+(won?'#a9df9b':'#f0a18c')+'">'+(won?'QƏLƏBƏ':'MƏĞLUBİYYƏT')+(report.captured?' · QALA FƏTH EDİLDİ':'')+'</div><small>'+new Date(Number(report.at)||Date.now()).toLocaleString('az-AZ')+'</small><hr style="border-color:#66583e"><b>İtkilərimiz</b>'+lines(report.attackerLosses)+'<b>Sağ qalan ordumuz</b>'+lines(report.survivingAttackers)+'<b>Düşmən itkiləri</b>'+lines(report.defenderLosses)+'<div style="margin-top:7px">Divar zədəsi: '+Math.max(0,Math.floor(Number(report.wallDamage)||0))+'% · '+(report.wallBreached?'Divar yarılıb':'Divar dayanıb')+'</div><button id="dismissBattleReport" style="margin-top:10px;width:100%">Hesabatı bağla</button>';
  panel.querySelector('#dismissBattleReport').addEventListener('click',()=>{localStorage.removeItem('tvq_last_battle_report_v1');panel.remove()});
 }
+function renderBattleHistory(){
+ let history=[];
+ try{history=JSON.parse(localStorage.getItem('tvq_battle_history_v1')||'[]')}catch{}
+ let panel=document.getElementById('battleHistoryPanel');
+ if(!panel){panel=document.createElement('section');panel.id='battleHistoryPanel';panel.style.cssText='position:absolute;right:12px;top:calc(112px + min(42vh,330px) + 12px);z-index:8;width:min(330px,calc(100vw - 24px));max-height:30vh;overflow:auto;padding:12px;border:1px solid #806d4a;border-radius:10px;background:#17251fee;color:#f4e6c8;font:12px/1.5 system-ui;box-shadow:0 8px 24px #0008';document.body.append(panel)}
+ if(!history.length){panel.innerHTML='<b>📚 Döyüş tarixçəsi</b><p>Hələ qeydə alınmış döyüş yoxdur.</p>';return}
+ const totalLoss=(items)=>Object.values(items||{}).reduce((sum,n)=>sum+Math.max(0,Number(n)||0),0);
+ panel.innerHTML='<b>📚 Döyüş tarixçəsi · '+history.length+'/20</b>'+history.map((r,index)=>{
+  const won=r.winner==='attacker',date=new Date(Number(r.at)||Date.now()).toLocaleString('az-AZ');
+  return '<details style="margin-top:8px;padding:8px;border:1px solid #66583e;border-radius:7px;background:#202d29"><summary style="cursor:pointer;color:'+(won?'#a9df9b':'#f0a18c')+'">'+(index+1)+'. '+(won?'Qələbə':'Məğlubiyyət')+(r.captured?' · Qala alındı':'')+'<br><small style="color:#d7c8a9">'+date+'</small></summary><div style="margin-top:7px">Öz itkilərimiz: <b>'+totalLoss(r.attackerLosses)+'</b><br>Düşmən itkiləri: <b>'+totalLoss(r.defenderLosses)+'</b><br>Sağ qalan əsgərlər: <b>'+totalLoss(r.survivingAttackers)+'</b><br>Divar zədəsi: <b>'+Math.max(0,Math.floor(Number(r.wallDamage)||0))+'%</b></div></details>';
+ }).join('')+'<button id="clearBattleHistory" style="margin-top:10px;width:100%">Tarixçəni təmizlə</button>';
+ panel.querySelector('#clearBattleHistory').addEventListener('click',()=>{
+  if(!confirm('Bütün döyüş tarixçəsi silinsin?'))return;
+  localStorage.removeItem('tvq_battle_history_v1');renderBattleHistory();
+ });
+}
 function processReturningArmy(){
  let trip=null;
  try{trip=JSON.parse(localStorage.getItem('tvq_return_journey_v1')||'null')}catch{}
@@ -324,6 +340,7 @@ processHospital();
 setInterval(processHospital,1000);
 processReturningArmy();
 renderLastBattleReport();
+renderBattleHistory();
 setInterval(processReturningArmy,1000);
 collectOfflineTerritoryIncome();
 saveCity();
