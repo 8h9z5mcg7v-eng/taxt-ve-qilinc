@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test src/*.test.js"
+    "test": "node --test src/*.test.js",
+    "check": "for file in src/*.js; do node --check \"$file\" || exit 1; done"
   }
 }
