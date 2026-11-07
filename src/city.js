@@ -120,6 +120,10 @@ function getTerritoryIncome(){
  ];
  for(const item of sources){if(outposts[item.id]?.captured){owned.push(item.name);for(const key of Object.keys(rates))rates[key]+=item[key]}}
  if(world.redFortress?.captured){owned.push('Qırmızı Qala');rates.wood+=20;rates.stone+=15;rates.gold+=5}
+ const diplomacy=(()=>{try{return JSON.parse(localStorage.getItem('tvq_diplomacy_v1')||'{}')}catch{return {}}})();
+ const borderRates={north:{wood:12,stone:5,gold:3},iron:{wood:5,stone:12,gold:4},sun:{wood:10,stone:7,gold:6}};
+ const borderNames={north:'Şimal sərhəd məntəqəsi',iron:'Dəmir Tac sərhəd məntəqəsi',sun:'Günəş sərhəd məntəqəsi'};
+ for(const [id,campaign] of Object.entries(diplomacy.borderCampaigns||{})){if(campaign?.captured&&borderRates[id]){owned.push(borderNames[id]);for(const key of Object.keys(rates))rates[key]+=borderRates[id][key]}}
  return {rates,owned};
 }
 function renderTerritorySummary(){
@@ -141,6 +145,9 @@ function collectOfflineTerritoryIncome(){
   {id:'mine',rates:{wood:4,stone:18,gold:5},state:outposts.mine},
   {id:'redFortress',rates:{wood:20,stone:15,gold:5},state:world.redFortress}
  ];
+ const diplomacy=(()=>{try{return JSON.parse(localStorage.getItem('tvq_diplomacy_v1')||'{}')}catch{return {}}})();
+ const borderRates={north:{wood:12,stone:5,gold:3},iron:{wood:5,stone:12,gold:4},sun:{wood:10,stone:7,gold:6}};
+ for(const [id,campaign] of Object.entries(diplomacy.borderCampaigns||{})){if(campaign?.captured&&borderRates[id])sources.push({id:'border_'+id,rates:borderRates[id],state:campaign})}
  let collected={wood:0,stone:0,gold:0},changed=false;
  for(const source of sources){
   const state=source.state;
