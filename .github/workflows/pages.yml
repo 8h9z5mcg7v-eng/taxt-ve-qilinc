@@ -22,6 +22,12 @@ jobs:
         uses: actions/checkout@v4
       - name: Configure Pages
         uses: actions/configure-pages@v5
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Test battle mechanics
+        run: npm test
       - name: Upload static site
         uses: actions/upload-pages-artifact@v4
         with:
