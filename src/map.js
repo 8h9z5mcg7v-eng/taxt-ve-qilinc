@@ -23,12 +23,28 @@ function showOutpostControls(id){
  const gain={wood:Math.floor(hours*target.wood),stone:Math.floor(hours*target.stone),gold:Math.floor(hours*target.gold)};
  const guard=territory[id]?.garrison||{infantry:0,spearman:0,archer:0,cavalry:0,knight:0};
  const guardTotal=Object.values(guard).reduce((a,n)=>a+(Number(n)||0),0);
- panel.innerHTML='<b>'+target.name+'</b><p>'+(owned?'Sənin nəzarətindədir. Toplanmamış gəlir: '+gain.wood+' odun, '+gain.stone+' daş, '+gain.gold+' qızıl.':'Məntəqə hələ sənin nəzarətində deyil. Sınaq fəthi aktivdir.')+'</p><div class="stats"><span>🪵 '+target.wood+'/saat</span><span>🪨 '+target.stone+'/saat</span><span>🪙 '+target.gold+'/saat</span></div>'+(owned?'<p>🛡️ Qarnizon: '+guardTotal+'</p><button id="collectOutpost">Gəliri topla</button><button id="enemyRaid" style="margin:8px 0">⚔ Düşmən basqınını sına</button><div style="margin-top:10px"><label>Piyada <input id="ogInf" type="number" min="0" max="'+army.infantry+'" value="0"></label><label>Nizəçi <input id="ogSp" type="number" min="0" max="'+army.spearman+'" value="0"></label><label>Oxçu <input id="ogAr" type="number" min="0" max="'+army.archer+'" value="0"></label><label>Süvari <input id="ogCa" type="number" min="0" max="'+army.cavalry+'" value="0"></label><label>Cəngavər <input id="ogKn" type="number" min="0" max="'+army.knight+'" value="0"></label><button id="assignOutpostGuard">Qarnizon yerləşdir</button></div>':'<button id="captureOutpost">Məntəqəni ələ keçir</button>');
+ panel.innerHTML='<b>'+target.name+'</b><p>'+(owned?'Sənin nəzarətindədir. Toplanmamış gəlir: '+gain.wood+' odun, '+gain.stone+' daş, '+gain.gold+' qızıl.':'Məntəqə düşmən tərəfindən qorunur. Ələ keçirmək üçün döyüşdə qalib gəl.')+'</p><div class="stats"><span>🪵 '+target.wood+'/saat</span><span>🪨 '+target.stone+'/saat</span><span>🪙 '+target.gold+'/saat</span></div>'+(owned?'<p>🛡️ Qarnizon: '+guardTotal+'</p><button id="collectOutpost">Gəliri topla</button><button id="enemyRaid" style="margin:8px 0">⚔ Düşmən basqınını sına</button><div style="margin-top:10px"><label>Piyada <input id="ogInf" type="number" min="0" max="'+army.infantry+'" value="0"></label><label>Nizəçi <input id="ogSp" type="number" min="0" max="'+army.spearman+'" value="0"></label><label>Oxçu <input id="ogAr" type="number" min="0" max="'+army.archer+'" value="0"></label><label>Süvari <input id="ogCa" type="number" min="0" max="'+army.cavalry+'" value="0"></label><label>Cəngavər <input id="ogKn" type="number" min="0" max="'+army.knight+'" value="0"></label><button id="assignOutpostGuard">Qarnizon yerləşdir</button></div>':'<button id="captureOutpost">Məntəqəni ələ keçir</button>');
  if(!owned){
   panel.querySelector('#captureOutpost').addEventListener('click',()=>{
-   territory[id]={captured:true,lastCollectedAt:Date.now(),garrison:{infantry:0,spearman:0,archer:0,cavalry:0,knight:0}};
+   if(total===0){panel.querySelector('p').textContent='Məntəqəni ələ keçirmək üçün ordun olmalıdır.';return;}
+   const defenders=id==='mine'
+    ?{infantry:24,spearman:18,archer:20,cavalry:8,knight:0}
+    :{infantry:30,spearman:12,archer:14,cavalry:5,knight:0};
+   const battle=resolveBattle({attacker:army,defender:defenders,direction:'south',tactic:'balanced',terrain:id==='mine'?'hill':'forest',seed:Date.now()%100000});
+   const surviving=battle.remaining.attacker;
+   for(const k of troopIds)army[k]=surviving[k]||0;
+   let city={};try{city=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}')}catch{}
+   city.army={...army};
+   try{localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(city))}catch{}
+   if(battle.winner!=='attacker'){
+    panel.querySelector('p').textContent='Hücum uğursuz oldu. İtki: '+Object.values(battle.losses.attacker).reduce((a,n)=>a+n,0)+' əsgər. Məntəqə düşməndə qaldı.';
+    stats.innerHTML=troopIds.filter(k=>army[k]>0).map(k=>'<span>'+names[k]+': '+army[k]+'</span>').join('')||'<span>Səyyar ordu qalmayıb</span>';
+    return;
+   }
+   territory[id]={captured:true,lastCollectedAt:Date.now(),garrison:{infantry:0,spearman:0,archer:0,cavalry:0,knight:0},lastBattle:{winner:battle.winner,losses:battle.losses,at:Date.now()}};
    try{localStorage.setItem(territoryKey,JSON.stringify(territory))}catch{}
    const el=document.querySelector('[data-id="'+id+'"]');if(el){el.querySelector('span').textContent='🏳 '+target.name;el.querySelector('small').textContent='Sənin nəzarətində'}
+   stats.innerHTML=troopIds.filter(k=>army[k]>0).map(k=>'<span>'+names[k]+': '+army[k]+'</span>').join('')||'<span>Səyyar ordu qalmayıb</span>';
    showOutpostControls(id);
   });
   return;
