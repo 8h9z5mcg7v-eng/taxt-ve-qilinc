@@ -259,10 +259,19 @@ document.querySelectorAll('.place').forEach(el=>el.addEventListener('click',()=>
  document.querySelector('#path').style.display='block';
  if(el.dataset.id==='enemy'&&fortressState.captured){showGarrisonControls();showTerritoryEconomy();}
  else document.querySelector('#garrisonControls')?.remove();
+ if(el.dataset.id==='enemy'){
+  let prep=document.querySelector('#attackPreparation');
+  if(!prep){prep=document.createElement('div');prep.id='attackPreparation';prep.style.cssText='margin-top:12px;padding:12px;border:1px solid #8b7048;border-radius:10px;background:#202d29';document.querySelector('.panel').append(prep);}
+  let plan={direction:'south',tactic:'balanced',ram:1,catapult:1};try{plan={...plan,...JSON.parse(localStorage.getItem('tvq_attack_plan_v1')||'{}')}}catch{}
+  prep.innerHTML='<b>⚔ Hücum hazırlığı</b><p>Yürüşə başlamazdan əvvəl istiqaməti, taktikanı və mühasirə qurğularını seç.</p><label>Hücum istiqaməti<select id="attackDirection"><option value="south">Cənub</option><option value="north">Şimal</option><option value="east">Şərq</option><option value="west">Qərb</option></select></label><label style="display:block;margin-top:8px">Taktika<select id="attackTactic"><option value="balanced">Balanslı</option><option value="line">Piyada xətti</option><option value="volley">Oxçu yaylımı</option><option value="wedge">Süvari pazı</option></select></label><div style="display:flex;gap:10px;margin-top:8px"><label>Qoçbaşı <input id="attackRam" type="number" min="0" max="20" value="1" style="width:65px"></label><label>Katapult <input id="attackCatapult" type="number" min="0" max="20" value="1" style="width:65px"></label></div><small id="attackPlanSaved">Əmrlər bu telefonda saxlanılır.</small>';
+  prep.querySelector('#attackDirection').value=plan.direction;prep.querySelector('#attackTactic').value=plan.tactic;prep.querySelector('#attackRam').value=plan.ram;prep.querySelector('#attackCatapult').value=plan.catapult;
+  const savePlan=()=>{const next={direction:prep.querySelector('#attackDirection').value,tactic:prep.querySelector('#attackTactic').value,ram:Math.max(0,Math.min(20,Math.floor(Number(prep.querySelector('#attackRam').value)||0))),catapult:Math.max(0,Math.min(20,Math.floor(Number(prep.querySelector('#attackCatapult').value)||0)))};try{localStorage.setItem('tvq_attack_plan_v1',JSON.stringify(next))}catch{};prep.querySelector('#attackPlanSaved').textContent='Hücum əmrləri yadda saxlanıldı.'};
+  prep.querySelectorAll('select,input').forEach(x=>x.addEventListener('change',savePlan));
+ }else document.querySelector('#attackPreparation')?.remove();
  if(el.dataset.id==='village'||el.dataset.id==='mine')showOutpostControls(el.dataset.id);else document.querySelector('#outpostControls')?.remove();
 }));
 marchButton.addEventListener('click',()=>{
- if(journey&&journey.target==='red-fortress'&&Date.now()>=journey.arrivesAt){const next=new URLSearchParams(params);next.set('target','red-fortress');next.set('garrison','300');location.href='./battle.html?'+next.toString();return;}
+ if(journey&&journey.target==='red-fortress'&&Date.now()>=journey.arrivesAt){const next=new URLSearchParams(params);let plan={};try{plan=JSON.parse(localStorage.getItem('tvq_attack_plan_v1')||'{}')}catch{};next.set('target','red-fortress');next.set('garrison','300');next.set('direction',plan.direction||'south');next.set('tactic',plan.tactic||'balanced');next.set('ram',String(plan.ram??1));next.set('catapult',String(plan.catapult??1));location.href='./battle.html?'+next.toString();return;}
  if(!selected?.enemy||!total||journey)return;
  const duration=Math.max(30000,Math.round(180000/Math.sqrt(total)));
  journey={target:'red-fortress',startedAt:Date.now(),arrivesAt:Date.now()+duration,army};
