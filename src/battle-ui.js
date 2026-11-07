@@ -588,7 +588,12 @@ document.getElementById('fight').addEventListener('click', () => {
     try {
       const saveKey = 'taxt-ve-qilinc-city-v1';
       const saved = JSON.parse(localStorage.getItem(saveKey) || '{}');
-      localStorage.setItem(saveKey, JSON.stringify({ ...saved, army: survivingAttacker }));
+      const wounded = { infantry: 0, spearman: 0, archer: 0, cavalry: 0, knight: 0, ...(saved.wounded || {}) };
+      for (const type of troopIds) {
+        const battleLoss = Math.max(0, Number(result.losses?.attacker?.[type]) || 0);
+        wounded[type] = (Number(wounded[type]) || 0) + Math.floor(battleLoss * 0.3);
+      }
+      localStorage.setItem(saveKey, JSON.stringify({ ...saved, army: survivingAttacker, wounded }));
     } catch (error) {
       console.warn('Ordunun nəticəsini yadda saxlamaq mümkün olmadı.', error);
     }
