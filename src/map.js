@@ -173,11 +173,29 @@ function showOutpostControls(id){
   showOutpostControls(id);
  });
  panel.querySelector('#collectOutpost').addEventListener('click',()=>{
-  let city={};try{city=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}')}catch{}
+  let city={};
+  try{city=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}')}catch{
+   panel.querySelector('p').textContent='Gəlir toplanmadı: şəhər yaddaşı oxunmadı.';return;
+  }
   city.resources=city.resources||{wood:1200,stone:1000,gold:500};
-  for(const key of ['wood','stone','gold'])city.resources[key]=Math.max(0,Number(city.resources[key])||0)+gain[key];
-  try{localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(city))}catch{}
-  territory[id].lastCollectedAt=Date.now();try{localStorage.setItem(territoryKey,JSON.stringify(territory))}catch{}
+  city.outpostCollections=city.outpostCollections||{};
+  const collectionId=id+':'+String(last);
+  let collection=city.outpostCollections[collectionId];
+  if(!collection){
+   const collectedAt=Date.now();
+   collection={collectedAt,gain:{...gain}};
+   for(const key of ['wood','stone','gold'])city.resources[key]=Math.max(0,Number(city.resources[key])||0)+gain[key];
+   city.outpostCollections[collectionId]=collection;
+   const ids=Object.keys(city.outpostCollections);
+   if(ids.length>60)for(const oldId of ids.slice(0,ids.length-60))delete city.outpostCollections[oldId];
+   try{localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(city))}catch{
+    panel.querySelector('p').textContent='Gəlir toplanmadı: resurslar yadda saxlanmadı.';return;
+   }
+  }
+  territory[id].lastCollectedAt=Number(collection.collectedAt)||Date.now();
+  try{localStorage.setItem(territoryKey,JSON.stringify(territory))}catch{
+   panel.querySelector('p').textContent='Gəlir artıq bir dəfə hesablanıb; vaxt möhürü saxlanmadı. Yenidən basmaq resursları təkrar artırmayacaq.';return;
+  }
   showOutpostControls(id);
  });
  panel.querySelector('#assignOutpostGuard').addEventListener('click',()=>{
