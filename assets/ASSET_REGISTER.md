@@ -6,20 +6,30 @@ Bu fayla yalnız mənbəsi və lisenziyası yoxlanmış aktivlər əlavə edilir
 
 | Aktiv | Mənbə | Lisenziya | Status | İstifadə / risk |
 |---|---|---|---|---|
-| Castle with Keep (GLB, 17.1 MB) | https://www.innerscene.com/tools/library/3d-parts/castle-with-keep-1a75a9e1 | CC0 | Əsas qala üçün birinci namizəd | 49.3 × 49.7 × 29.1 m; dörd dairəvi künc qülləsi, daxili keep, əkiz qülləli darvaza, divarlar və böyük zal. GLB materiallıdır. Poliqon sayı, tekstura ölçüləri və mobil FPS hələ yoxlanmayıb. |
-| Medieval Gatehouse (GLB, 11.6 MB) | https://www.innerscene.com/tools/library/3d-parts/medieval-gatehouse-8fd67334 | CC0 | Ehtiyat namizəd | Əsas qala modelindəki darvaza ilə üst-üstə düşə bilər; ayrıca qala girişində istifadə yalnız uyğunluq sınağından sonra. |
+| Castle with Keep (GLB, 17.1 MB) | https://www.innerscene.com/tools/library/3d-parts/castle-with-keep-1a75a9e1 | CC0 | Əsas qala üçün birinci namizəd | 49.3 × 49.7 × 29.1 m; dörd dairəvi künc qülləsi, daxili keep, öz əkiz qülləli darvazası, divarlar və böyük zal. GLB materiallıdır. Poliqon sayı, tekstura ölçüləri və mobil FPS hələ yoxlanmayıb. Bu model artıq divar və darvaza ehtiva edir; eyni hissələr ayrıca model ilə təkrarlanmamalıdır. |
+| Medieval Gatehouse (GLB, 11.6 MB) | https://www.innerscene.com/tools/library/3d-parts/medieval-gatehouse-8fd67334 | CC0 | Alternativ giriş modeli | 36.6 × 10.8 × 17.5 m; ayrıca iki qülləli giriş. Əsas qala modelinin darvazasını əvəz etmək üçün alternativdir, üstünə əlavə edilməməlidir. |
 
 ## Şəhər binaları və ətraf mühit
 
 | Aktiv | Mənbə | Lisenziya | Status | İstifadə / risk |
 |---|---|---|---|---|
-| Medieval Village (26 GLB model, ZIP 1.4 MB) | https://shuriken.studio/kits/medieval-village | Free Model License, 2026-10-25 | Birinci şəhər dəsti namizədi | Meyxana, yel dəyirmanı, darvaza, saman damlı ev, katapult, su mişarxanası, tövlə, dəmirçi, oxçuluq meydançası, fəvvarə, bazar köşkləri, modul divar, ibadətgah və digər dekorlar. Paketdə göstərilən modellər təxminən 2.1k–8.7k tris aralığındadır. Üslub stilizə olunub; final realizm səviyyəsi kimi təsdiqlənməyib. |
-| Medieval Castle Construction (149 GLB, 2.4 MB) | https://3dassets.dev/packs/medieval-castle-construction | CC0 1.0 | Yalnız modul/prototip namizədi | Yüngül, sadə həndəsəli modulyar daş istehkamlar; yüksək realizm finalı üçün təkbaşına yetərli deyil. |
+| Medieval Village (26 GLB model, ZIP 1.4 MB) | https://shuriken.studio/kits/medieval-village | Free Model License, 2026-10-25 | Şəhər prop və bina namizədi | Meyxana, yel dəyirmanı, saman damlı ev, katapult, su mişarxanası, tövlə, dəmirçi, oxçuluq meydançası, fəvvarə, bazar köşkləri, modul divar, ibadətgah və dekorlar. Modellər təxminən 2.1k–8.7k tris aralığındadır. Üslub stilizə olunub; final realizm səviyyəsi kimi təsdiqlənməyib. |
+| Medieval Castle Construction (149 GLB, 2.4 MB, 47,140 tris cəmi) | https://3dassets.dev/packs/medieval-castle-construction | CC0 1.0 | Modul istehkam prototipi | Divar, keçid, qala hissələri və həyət avadanlığı. Kiçik həndəsəli və AI ilə yaradılmışdır; final qala üçün deyil, modul ölçü/yerləşmə sınağı üçündür. |
+| Kenney Castle Kit | https://kenney.nl/assets/castle-kit | CC0 | Stilizə edilmiş ehtiyat dəst | GLB/FBX/OBJ və teksturalar; stilizə olunmuş vizual dili səbəbilə final realizm üçün uyğunluğu təsdiqlənməyib. |
+
+## İlkin kompozisiya qərarı
+1. Castle with Keep əsas qala kimi sınaqdan keçiriləcək; onun daxili divarları və darvazası saxlanılacaq.
+2. Ayrı Medieval Gatehouse yalnız alternativ qala girişi kimi qiymətləndiriləcək.
+3. Şəhər həyətində kazarma, tövlə, dəmirçi, oxçuluq meydançası və bazar ayrıca yerləşdiriləcək.
+4. Stilizə edilmiş paketlərdən yalnız dekor/boz qutu prototipi üçün istifadə oluna bilər; fotorealistik final səhnəyə qarışdırılmayacaq.
+5. Final vizualı üçün PBR materialları, daş/taxta detalları, torpaq teksturası, fərqli dam örtükləri, LOD və işıqlandırma sınağı tələb olunur.
 
 ## Lisenziya qeydləri
-- Innerscene Castle with Keep səhifəsi modeli CC0/public domain kimi göstərir: kommersiya istifadəsi, dəyişiklik və yenidən paylama mümkündür.
+- Innerscene Castle with Keep və Medieval Gatehouse səhifələri CC0/public domain göstərir: kommersiya istifadəsi, dəyişiklik və yenidən paylama mümkündür.
 - Shuriken Studio Free Model License (versiya 2026-10-25) modelləri kommersiya oyunlarında istifadəyə və dəyişdirilməyə icazə verir; kredit tələb olunmur. Model fayllarını ayrıca və ya asset paketi kimi satmaq/paylamaq olmaz. Lisenziya: https://shuriken.studio/legal/models
-- Lisenziyanın bu gün görünməsi modelin repozitoriyaya yükləndiyini, yaxud cihazda sınaqdan keçdiyini bildirmir.
+- 3DAssets.dev paketi CC0 1.0 kimi göstərilir.
+- Kenney Castle Kit CC0 kimi göstərilir; paketin özündəki lisenziya faylı layihə qeydlərində saxlanmalıdır.
+- Lisenziya məlumatı modelin yükləndiyini, yaxud cihazda sınaqdan keçdiyini bildirmir.
 
 ## Qəbul yoxlaması
 - [x] Mənbə linkləri qeydə alınıb
@@ -34,5 +44,5 @@ Bu fayla yalnız mənbəsi və lisenziyası yoxlanmış aktivlər əlavə edilir
 ## Qaydalar
 - Ödənişli aktivlər istifadəçinin ayrıca razılığı olmadan alınmır.
 - Lisenziya qeydi olmayan aktiv qəbul edilmir.
-- Sadə low-poly aktivlər final qrafika kimi təqdim edilmir.
+- Sadə low-poly/stilizə aktivlər final qrafika kimi təqdim edilmir.
 - Model yüklənməyibsə və real cihazda sınaqdan keçməyibsə, “inteqrasiya edildi” deyilmir.
