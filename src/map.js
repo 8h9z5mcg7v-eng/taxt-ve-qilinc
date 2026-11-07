@@ -665,6 +665,9 @@ function mountDiplomacyContracts(){
    const aidButton=document.createElement('button');
    aidButton.type='button';
    aidButton.style.cssText='margin-top:8px;width:100%';
+   let cityAidClaims={};try{const savedCity=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}');cityAidClaims=savedCity.aidClaims||{}}catch{}
+   state.aidClaims=state.aidClaims||{};
+   if(cityAidClaims[kingdom.id]===day)state.aidClaims[kingdom.id]=day;
    const aidClaimed=state.aidClaims[kingdom.id]===day;
    aidButton.disabled=relation!=='allied'||aidClaimed;
    aidButton.textContent=relation!=='allied'?'Hərbi yardım üçün müttəfiq ol':aidClaimed?'✓ Bugünkü hərbi yardım alındı':'🛡 Müttəfiqdən hərbi yardım istə';
@@ -674,13 +677,17 @@ function mountDiplomacyContracts(){
    aidButton.addEventListener('click',()=>{
     if((state.relations[kingdom.id]||'neutral')!=='allied'||state.aidClaims[kingdom.id]===day)return;
     let city={};try{city=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}')}catch{}
-    city.army=city.army||{};
+    city.army=city.army||{};city.aidClaims=city.aidClaims||{};
+    if(city.aidClaims[kingdom.id]===day){state.aidClaims[kingdom.id]=day;render();return}
     city.army.infantry=(Number(city.army.infantry)||0)+40;
     city.army.archer=(Number(city.army.archer)||0)+20;
     city.army.cavalry=(Number(city.army.cavalry)||0)+10;
-    state.aidClaims[kingdom.id]=day;
-    try{localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(city));localStorage.setItem(key,JSON.stringify(state))}
+    city.aidClaims[kingdom.id]=day;
+    try{localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(city))}
     catch{aidStatus.textContent='Yardım yadda saxlanmadı. Yenidən cəhd et.';return}
+    state.aidClaims[kingdom.id]=day;
+    try{localStorage.setItem(key,JSON.stringify(state))}
+    catch{aidStatus.textContent='Qoşunlar saxlanıldı; gündəlik yardım qeydi şəhər yaddaşında qorunur.';return}
     render();
    });
    card.append(aidButton,aidStatus);
