@@ -102,7 +102,8 @@ export function resolveBattle({ attacker, defender, direction = 'south', tactic 
       `Hücum taktikası: ${safeTactic}`,
       `Müdafiə taktikası: ${safeDefenderTactic}`,
       `Ərazi: ${safeTerrain}`,
-      `Mühasirə: qoçbaşı ${siegeEngines.ram}, katapult ${siegeEngines.catapult}, mühasirə qülləsi ${siegeEngines.tower}`,\n      ...(defensiveCatapults ? [`Qala müdafiə katapultları: ${defensiveCatapults} · hücum gücünə zərər: ${defensiveStoneDamage}`] : []),
+      `Mühasirə: qoçbaşı ${siegeEngines.ram}, katapult ${siegeEngines.catapult}, mühasirə qülləsi ${siegeEngines.tower}`,
+      ...(defensiveCatapults ? [`Qala müdafiə katapultları: ${defensiveCatapults} · hücum gücünə zərər: ${defensiveStoneDamage}`] : []),
       ...(wallMax ? [`Divar səviyyəsi: ${safeWallLevel}/10 · zədə: ${Math.round(wallDamage)}/100 · ${wallBreached ? 'divar yarıldı' : 'divar hələ dayanır'}`] : []),
       `Hücum gücü: ${Math.round(attackPower)} · Müdafiə gücü: ${Math.round(defendPower)}`,
       winner === 'attacker' ? 'Hücum edən tərəf üstün gəldi.' : 'Müdafiə tərəfi qalib gəldi.'
