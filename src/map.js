@@ -220,13 +220,18 @@ function showOutpostControls(id){
   }
   showOutpostControls(id);
  });
- panel.querySelector('#assignOutpostGuard').addEventListener('click',()=>{
+ panel.querySelector('#assignOutpostGuard').addEventListener('click',async()=>{
+  const transfer=()=>{
   const keys=['infantry','spearman','archer','cavalry','knight'],ids=['ogInf','ogSp','ogAr','ogCa','ogKn'];
   let city={};try{city=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}')}catch{panel.querySelector('p').textContent='Şəhər yaddaşı oxunmadı; qarnizon dəyişdirilmədi.';return}
   city.army=city.army||{};city.outpostGarrisonTransfers=city.outpostGarrisonTransfers||{};
   const chosen=Object.fromEntries(keys.map((k,i)=>[k,Math.max(0,Math.floor(Number(panel.querySelector('#'+ids[i]).value)||0))]));
   if(Object.values(chosen).every(n=>n===0)){panel.querySelector('p').textContent='Qarnizona yerləşdirmək üçün əsgər seç.';return}
-  const before={...guard},transferId=id+':assign:'+keys.map(k=>Number(before[k])||0).join('-')+':'+keys.map(k=>chosen[k]).join('-');
+  let latestTerritory={};
+  try{latestTerritory=JSON.parse(localStorage.getItem(territoryKey)||'{}')}catch{panel.querySelector('p').textContent='Məntəqə yaddaşı oxunmadı; qarnizon dəyişdirilmədi.';return}
+  if(!latestTerritory[id]?.captured){panel.querySelector('p').textContent='Məntəqə artıq sənin nəzarətində deyil.';return}
+  territory[id]=latestTerritory[id];
+  const before={...(latestTerritory[id].garrison||{})},transferId=id+':assign:'+keys.map(k=>Number(before[k])||0).join('-')+':'+keys.map(k=>chosen[k]).join('-');
   const prior=city.outpostGarrisonTransfers[transferId];let next;
   if(prior)next={...prior.after};
   else{
@@ -243,6 +248,9 @@ function showOutpostControls(id){
   for(const k of keys)army[k]=Number(city.army[k])||0;
   stats.innerHTML=keys.filter(k=>army[k]>0).map(k=>'<span>'+names[k]+': '+army[k]+'</span>').join('')||'<span>Səyyar ordu qalmayıb</span>';
   showOutpostControls(id);
+  };
+  if(navigator.locks?.request)await navigator.locks.request('tvq-city-economy',transfer);
+  else transfer();
  });
 
  panel.querySelector('#recallOutpostGuard')?.addEventListener('click',()=>{
