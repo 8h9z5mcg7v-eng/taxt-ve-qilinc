@@ -377,10 +377,12 @@ document.querySelectorAll('.place').forEach(el=>el.addEventListener('click',()=>
  }else document.querySelector('#attackPreparation')?.remove();
  if(el.dataset.id==='village'||el.dataset.id==='mine')showOutpostControls(el.dataset.id);else document.querySelector('#outpostControls')?.remove();
 }));
+let marchDispatchInProgress=false;
 marchButton.addEventListener('click',async()=>{
- if(returnJourney)return;
+ if(returnJourney||marchDispatchInProgress)return;
  if(journey&&journey.target==='red-fortress'&&Date.now()>=journey.arrivesAt){const next=new URLSearchParams(params);let plan={};try{plan=JSON.parse(localStorage.getItem('tvq_attack_plan_v1')||'{}')}catch{};next.set('target','red-fortress');next.set('battleId','red-'+String(journey.startedAt||0));next.set('garrison','300');next.set('direction',plan.direction||'south');next.set('tactic',plan.tactic||'balanced');next.set('ram',String(plan.ram??1));next.set('catapult',String(plan.catapult??1));let commander={};try{commander=JSON.parse(localStorage.getItem('tvq_general_v1')||'{}')}catch{};next.set('commander',commander.id||'alp');location.href='./battle.html?'+next.toString();return;}
  if(!selected?.enemy||!total||journey)return;
+ marchDispatchInProgress=true;
  const marchArmy=Object.fromEntries(['infantry','spearman','archer','cavalry','knight'].map(type=>[type,Math.max(0,Math.floor(Number(army[type])||0))]));
  const dispatch=()=>{
   let latest={};try{latest=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}')}catch{document.querySelector('#description').textContent='Şəhər ordusu oxunmadı; yürüş başladılmadı.';return false}
@@ -390,14 +392,22 @@ marchButton.addEventListener('click',async()=>{
   try{localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(latest));return true}catch{document.querySelector('#description').textContent='Qoşun çıxışı yadda saxlanmadı; yürüş başlamadı.';return false}
  };
  const dispatchedOk=navigator.locks?.request?await navigator.locks.request('tvq-city-economy',dispatch):dispatch();
- if(!dispatchedOk)return;
+ if(!dispatchedOk){marchDispatchInProgress=false;return}
  const speed={infantry:1,spearman:0.96,archer:1.04,cavalry:1.48,knight:1.22};
  const weighted=Object.entries(marchArmy).reduce((sum,[type,count])=>sum+count*speed[type],0)/Math.max(1,total);
  const siegeCount=Math.max(0,Math.floor(Number(document.querySelector('#attackRam')?.value)||0))+Math.max(0,Math.floor(Number(document.querySelector('#attackCatapult')?.value)||0));
  const duration=Math.max(45000,Math.min(12*60*1000,Math.round((150000+Math.sqrt(total)*9000+siegeCount*18000)/Math.max(.7,weighted))));
 
  journey={target:'red-fortress',startedAt:Date.now(),arrivesAt:Date.now()+duration,duration,army:marchArmy,siege:siegeCount};
- try{localStorage.setItem(journeyKey,JSON.stringify(journey));}catch{document.querySelector('#description').textContent='Yürüş qeydi saxlanmadı. Şəhərdəki qoşun artıq çıxılıb; səhifəni yenilə və yürüşü bərpa et.';return}
+ try{localStorage.setItem(journeyKey,JSON.stringify(journey));}catch{
+  const restore=()=>{let latest={};try{latest=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}')}catch{return}
+   latest.army=latest.army||{};for(const type of Object.keys(marchArmy))latest.army[type]=(Number(latest.army[type])||0)+marchArmy[type];
+   try{localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(latest))}catch{}
+  };
+  if(navigator.locks?.request)await navigator.locks.request('tvq-city-economy',restore);else restore();
+  marchDispatchInProgress=false;document.querySelector('#description').textContent='Yürüş qeydi saxlanmadı; qoşun şəhər ehtiyatına qaytarıldı.';return
+ }
+ marchDispatchInProgress=false;
  renderJourney();
 });
 if(journey){setInterval(renderJourney,1000);}
