@@ -1,3 +1,4 @@
+import { resolveBattle } from './battle.js';
 const params=new URLSearchParams(location.search);
 const troopIds=['infantry','spearman','archer','cavalry','knight'];
 const names={infantry:'Piyada',spearman:'Nizəçi',archer:'Oxçu',cavalry:'Süvari',knight:'Cəngavər'};
@@ -22,7 +23,7 @@ function showOutpostControls(id){
  const gain={wood:Math.floor(hours*target.wood),stone:Math.floor(hours*target.stone),gold:Math.floor(hours*target.gold)};
  const guard=territory[id]?.garrison||{infantry:0,spearman:0,archer:0,cavalry:0,knight:0};
  const guardTotal=Object.values(guard).reduce((a,n)=>a+(Number(n)||0),0);
- panel.innerHTML='<b>'+target.name+'</b><p>'+(owned?'Sənin nəzarətindədir. Toplanmamış gəlir: '+gain.wood+' odun, '+gain.stone+' daş, '+gain.gold+' qızıl.':'Məntəqə hələ sənin nəzarətində deyil. Sınaq fəthi aktivdir.')+'</p><div class="stats"><span>🪵 '+target.wood+'/saat</span><span>🪨 '+target.stone+'/saat</span><span>🪙 '+target.gold+'/saat</span></div>'+(owned?'<p>🛡️ Qarnizon: '+guardTotal+'</p><button id="collectOutpost">Gəliri topla</button><div style="margin-top:10px"><label>Piyada <input id="ogInf" type="number" min="0" max="'+army.infantry+'" value="0"></label><label>Nizəçi <input id="ogSp" type="number" min="0" max="'+army.spearman+'" value="0"></label><label>Oxçu <input id="ogAr" type="number" min="0" max="'+army.archer+'" value="0"></label><label>Süvari <input id="ogCa" type="number" min="0" max="'+army.cavalry+'" value="0"></label><label>Cəngavər <input id="ogKn" type="number" min="0" max="'+army.knight+'" value="0"></label><button id="assignOutpostGuard">Qarnizon yerləşdir</button></div>':'<button id="captureOutpost">Məntəqəni ələ keçir</button>');
+ panel.innerHTML='<b>'+target.name+'</b><p>'+(owned?'Sənin nəzarətindədir. Toplanmamış gəlir: '+gain.wood+' odun, '+gain.stone+' daş, '+gain.gold+' qızıl.':'Məntəqə hələ sənin nəzarətində deyil. Sınaq fəthi aktivdir.')+'</p><div class="stats"><span>🪵 '+target.wood+'/saat</span><span>🪨 '+target.stone+'/saat</span><span>🪙 '+target.gold+'/saat</span></div>'+(owned?'<p>🛡️ Qarnizon: '+guardTotal+'</p><button id="collectOutpost">Gəliri topla</button><button id="enemyRaid" style="margin:8px 0">⚔ Düşmən basqınını sına</button><div style="margin-top:10px"><label>Piyada <input id="ogInf" type="number" min="0" max="'+army.infantry+'" value="0"></label><label>Nizəçi <input id="ogSp" type="number" min="0" max="'+army.spearman+'" value="0"></label><label>Oxçu <input id="ogAr" type="number" min="0" max="'+army.archer+'" value="0"></label><label>Süvari <input id="ogCa" type="number" min="0" max="'+army.cavalry+'" value="0"></label><label>Cəngavər <input id="ogKn" type="number" min="0" max="'+army.knight+'" value="0"></label><button id="assignOutpostGuard">Qarnizon yerləşdir</button></div>':'<button id="captureOutpost">Məntəqəni ələ keçir</button>');
  if(!owned){
   panel.querySelector('#captureOutpost').addEventListener('click',()=>{
    territory[id]={captured:true,lastCollectedAt:Date.now(),garrison:{infantry:0,spearman:0,archer:0,cavalry:0,knight:0}};
@@ -32,6 +33,18 @@ function showOutpostControls(id){
   });
   return;
  }
+ panel.querySelector('#enemyRaid').addEventListener('click',()=>{
+  const raider={infantry:35,spearman:20,archer:25,cavalry:15,knight:5};
+  if(guardTotal===0){territory[id].captured=false;try{localStorage.setItem(territoryKey,JSON.stringify(territory))}catch{};panel.querySelector('p').textContent='Qarnizon olmadığı üçün düşmən məntəqəni ələ keçirdi!';return}
+  const battle=resolveBattle({attacker:raider,defender:guard,direction:'south',tactic:'balanced',terrain:'forest',seed:Date.now()%100000});
+  territory[id].garrison=battle.remaining.defender;
+  territory[id].lastRaidAt=Date.now();
+  if(battle.winner==='attacker')territory[id].captured=false;
+  try{localStorage.setItem(territoryKey,JSON.stringify(territory))}catch{}
+  panel.querySelector('p').textContent=(battle.winner==='defender'?'Müdafiə uğurludur! ':'Düşmən məntəqəni ələ keçirdi. ')+ 'Qarnizon: '+Object.values(battle.remaining.defender).reduce((a,n)=>a+n,0)+' · Hücumçu itkisi: '+Object.values(battle.losses.attacker).reduce((a,n)=>a+n,0);
+  const place=document.querySelector('[data-id="'+id+'"]');if(place){place.querySelector('small').textContent=territory[id].captured?'Sənin nəzarətində':'Düşmən nəzarətində'}
+  showOutpostControls(id);
+ });
  panel.querySelector('#collectOutpost').addEventListener('click',()=>{
   let city={};try{city=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}')}catch{}
   city.resources=city.resources||{wood:1200,stone:1000,gold:500};
