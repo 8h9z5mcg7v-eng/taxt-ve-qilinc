@@ -594,6 +594,14 @@ document.getElementById('fight').addEventListener('click', () => {
       return;
     }
     for(const type of troopIds)attacker[type]=Math.min(attacker[type],Math.max(0,Math.floor(Number(active.army?.[type])||0)));
+    if(total(attacker)<=0){
+      const message='Yürüş ordusunda döyüşə biləcək sağ əsgər qalmayıb.';
+      strategicBattleLockReason=message;
+      const button=document.getElementById('fight');
+      button.disabled=true;button.textContent='DÖYÜŞ MÜMKÜN DEYİL';
+      document.getElementById('winner').textContent=message;
+      return;
+    }
   }
   const defender = readArmy('d');
   const dispatchedPlan={};try{Object.assign(dispatchedPlan,JSON.parse(localStorage.getItem('tvq_attack_plan_v1')||'{}'))}catch{}
