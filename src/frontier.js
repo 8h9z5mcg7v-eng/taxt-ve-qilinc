@@ -57,8 +57,8 @@ function animatePatrols(time){
 }
 let dragging=false,lastX=0,lastY=0,rotation=0,tilt=0;renderer.domElement.addEventListener('pointerdown',e=>{dragging=true;lastX=e.clientX;lastY=e.clientY;renderer.domElement.setPointerCapture(e.pointerId)});
 renderer.domElement.addEventListener('pointermove',e=>{if(!dragging)return;rotation+=(e.clientX-lastX)*.008;tilt=Math.max(-.25,Math.min(.35,tilt+(e.clientY-lastY)*.004));lastX=e.clientX;lastY=e.clientY});renderer.domElement.addEventListener('pointerup',()=>dragging=false);renderer.domElement.addEventListener('pointercancel',()=>dragging=false);
-renderer.domElement.addEventListener('wheel',e=>{camera.position.multiplyScalar(e.deltaY>0?1.08:.92);camera.position.clampLength(70,230)},{passive:true});
-const orbitRadius=150;function animate(time=0){requestAnimationFrame(animate);animatePatrols(time);camera.position.x=Math.sin(rotation)*orbitRadius*.72;camera.position.z=Math.cos(rotation)*orbitRadius*.72;camera.position.y=Math.max(55,88+tilt*100);camera.lookAt(0,8,0);renderer.render(scene,camera)}animate();
+let zoom=150;renderer.domElement.addEventListener('wheel',e=>{zoom=Math.max(90,Math.min(230,zoom*(e.deltaY>0?1.08:.92)))},{passive:true});
+function animate(time=0){requestAnimationFrame(animate);animatePatrols(time);camera.position.x=Math.sin(rotation)*zoom*.72;camera.position.z=Math.cos(rotation)*zoom*.72;camera.position.y=Math.max(45,zoom*.58+tilt*100);camera.lookAt(0,8,0);renderer.render(scene,camera)}animate();
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 document.querySelector('#name').textContent=site.name;const total=Object.values(campaign?.garrison||{}).reduce((n,v)=>n+(Number(v)||0),0);
 document.querySelector('#desc').textContent=campaign?.captured?'Bu məntəqə sənin krallığının nəzarətindədir. Müdafiə qarnizonunu dünya xəritəsindən idarə et.':'Bu qala hazırda sənin nəzarətində deyil. Dünya xəritəsində sərhəd kampaniyasını davam etdir.';
