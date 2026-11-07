@@ -46,13 +46,10 @@ export function resolveBattle({ attacker, defender, direction = 'south', tactic 
   const terrainDefenseBonus = safeTerrain === 'forest' ? 1.12 : safeTerrain === 'hill' ? 1.18 : safeTerrain === 'fortress' ? 1.32 : 1;
   const cavalryPenalty = safeTerrain === 'forest' || safeTerrain === 'fortress' ? 0.88 : 1;
   const rawAttackPower = calculatePower(attackArmy, false, safeTactic, defendArmy);
-  const adjustedAttackPower = Object.entries(attackArmy).reduce((sum, [type, count]) => {
-    const unitPower = count * TROOPS[type].attack;
-    const terrainFactor = type === 'cavalry' ? cavalryPenalty : 1;
-    return sum + unitPower * terrainFactor;
-  }, 0);
-  const formationRatio = rawAttackPower > 0 ? adjustedAttackPower / rawAttackPower : 1;
-  const attackPower = rawAttackPower * directionBonus * terrainAttackBonus * formationRatio;
+  const totalAttackers = Math.max(1, attackCount);
+  const cavalryShare = attackArmy.cavalry / totalAttackers;
+  const cavalryTerrainFactor = 1 - (1 - cavalryPenalty) * cavalryShare;
+  const attackPower = rawAttackPower * directionBonus * terrainAttackBonus * cavalryTerrainFactor;
   const defendPower = calculatePower(defendArmy, true, 'balanced', attackArmy) * terrainDefenseBonus;
   const ratio = attackPower / Math.max(1, defendPower);
   const attackerWins = ratio >= 1;
@@ -70,7 +67,7 @@ export function resolveBattle({ attacker, defender, direction = 'south', tactic 
 
   return {
     winner, direction: safeDirection, tactic: safeTactic, terrain: safeTerrain,
-    modifiers: { direction: directionBonus, attackerTerrain: terrainAttackBonus * formationRatio, defenderTerrain: terrainDefenseBonus },
+    modifiers: { direction: directionBonus, attackerTerrain: terrainAttackBonus * cavalryTerrainFactor, defenderTerrain: terrainDefenseBonus },
     power: { attacker: Math.round(attackPower), defender: Math.round(defendPower) },
     remaining: {
       attacker: Object.fromEntries(Object.keys(attackArmy).map(type => [type, attackArmy[type] - attackerLosses[type]])),
