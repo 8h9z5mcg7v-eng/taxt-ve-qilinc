@@ -76,7 +76,9 @@ function showOutpostControls(id){
  const gain={wood:Math.floor(hours*target.wood),stone:Math.floor(hours*target.stone),gold:Math.floor(hours*target.gold)};
  const guard=territory[id]?.garrison||{infantry:0,spearman:0,archer:0,cavalry:0,knight:0};
  const guardTotal=Object.values(guard).reduce((a,n)=>a+(Number(n)||0),0);
- panel.innerHTML='<b>'+target.name+'</b><p>'+(owned?'Sənin nəzarətindədir. Toplanmamış gəlir: '+gain.wood+' odun, '+gain.stone+' daş, '+gain.gold+' qızıl.':'Məntəqə düşmən tərəfindən qorunur. Ələ keçirmək üçün döyüşdə qalib gəl.')+'</p><div class="stats"><span>🪵 '+target.wood+'/saat</span><span>🪨 '+target.stone+'/saat</span><span>🪙 '+target.gold+'/saat</span></div>'+(owned?'<p>🛡️ Qarnizon: '+guardTotal+'</p><button id="collectOutpost">Gəliri topla</button><label style="display:block;margin:8px 0">🛡️ Müşayiətçi piyada <input id="caravanEscort" type="number" min="0" max="'+army.infantry+'" value="0" style="width:70px"></label><button id="sendCaravan" style="margin:8px 0">🚚 Ticarət karvanı göndər · 10 qızıl</button><div id="caravanStatus" style="font-size:12px;margin:6px 0"></div><button id="enemyRaid" style="margin:8px 0">⚔ Düşmən basqınını sına</button><div style="margin-top:10px"><label>Piyada <input id="ogInf" type="number" min="0" max="'+army.infantry+'" value="0"></label><label>Nizəçi <input id="ogSp" type="number" min="0" max="'+army.spearman+'" value="0"></label><label>Oxçu <input id="ogAr" type="number" min="0" max="'+army.archer+'" value="0"></label><label>Süvari <input id="ogCa" type="number" min="0" max="'+army.cavalry+'" value="0"></label><label>Cəngavər <input id="ogKn" type="number" min="0" max="'+army.knight+'" value="0"></label><button id="assignOutpostGuard">Qarnizon yerləşdir</button></div>':'<button id="captureOutpost">Məntəqəni ələ keçir</button>');
+ const raidCooldown=6*60*60*1000;
+ const raidRemaining=Math.max(0,raidCooldown-(now-Number(territory[id]?.lastRaidAt||0)));
+ panel.innerHTML='<b>'+target.name+'</b><p>'+(owned?'Sənin nəzarətindədir. Toplanmamış gəlir: '+gain.wood+' odun, '+gain.stone+' daş, '+gain.gold+' qızıl.':'Məntəqə düşmən tərəfindən qorunur. Ələ keçirmək üçün döyüşdə qalib gəl.')+'</p><div class="stats"><span>🪵 '+target.wood+'/saat</span><span>🪨 '+target.stone+'/saat</span><span>🪙 '+target.gold+'/saat</span></div>'+(owned?'<p>🛡️ Qarnizon: '+guardTotal+'</p><button id="collectOutpost">Gəliri topla</button><label style="display:block;margin:8px 0">🛡️ Müşayiətçi piyada <input id="caravanEscort" type="number" min="0" max="'+army.infantry+'" value="0" style="width:70px"></label><button id="sendCaravan" style="margin:8px 0">🚚 Ticarət karvanı göndər · 10 qızıl</button><div id="caravanStatus" style="font-size:12px;margin:6px 0"></div><button id="enemyRaid" style="margin:8px 0" '+(raidRemaining?'disabled':'')+'>'+(raidRemaining?'⏳ Basqına qədər: '+Math.ceil(raidRemaining/3600000)+' saat':'⚔ Düşmən basqınını sına')+'</button><div style="margin-top:10px"><label>Piyada <input id="ogInf" type="number" min="0" max="'+army.infantry+'" value="0"></label><label>Nizəçi <input id="ogSp" type="number" min="0" max="'+army.spearman+'" value="0"></label><label>Oxçu <input id="ogAr" type="number" min="0" max="'+army.archer+'" value="0"></label><label>Süvari <input id="ogCa" type="number" min="0" max="'+army.cavalry+'" value="0"></label><label>Cəngavər <input id="ogKn" type="number" min="0" max="'+army.knight+'" value="0"></label><button id="assignOutpostGuard">Qarnizon yerləşdir</button></div>':'<button id="captureOutpost">Məntəqəni ələ keçir</button>');
  if(!owned){
   panel.querySelector('#captureOutpost').addEventListener('click',()=>{
    if(total===0){panel.querySelector('p').textContent='Məntəqəni ələ keçirmək üçün ordun olmalıdır.';return;}
@@ -146,6 +148,7 @@ function showOutpostControls(id){
   },1000);
  });
  panel.querySelector('#enemyRaid').addEventListener('click',()=>{
+  if(Date.now()-Number(territory[id]?.lastRaidAt||0)<raidCooldown){panel.querySelector('p').textContent='Bu məntəqəyə düşmən basqını edilib. Yeni sınaq üçün 6 saat gözləməlisən.';return;}
   const raider={infantry:35,spearman:20,archer:25,cavalry:15,knight:5};
   if(guardTotal===0){territory[id].captured=false;try{localStorage.setItem(territoryKey,JSON.stringify(territory))}catch{};panel.querySelector('p').textContent='Qarnizon olmadığı üçün düşmən məntəqəni ələ keçirdi!';return}
   const battle=resolveBattle({attacker:raider,defender:guard,direction:'south',tactic:'balanced',terrain:'forest',seed:Date.now()%100000});
@@ -677,19 +680,47 @@ mountDiplomacyContracts();
 
 function renderCapturedFrontiers(){
  const map=document.querySelector('#map');if(!map)return;
- map.querySelectorAll('.frontier-marker,.frontier-info').forEach(node=>node.remove());
+ map.querySelectorAll('.frontier-marker').forEach(node=>node.remove());
+ document.querySelectorAll('#frontierInfo').forEach(node=>node.remove());
  let diplomacy={};try{diplomacy=JSON.parse(localStorage.getItem('tvq_diplomacy_v1')||'{}')}catch{}
  const campaigns=diplomacy.borderCampaigns||{};
  const sites=[
-  {id:'north',name:'Şimal sərhəd qalası',icon:'❄️',left:'84%',top:'18%',rate:'12 odun · 5 daş · 3 qızıl/saat'},
-  {id:'iron',name:'Dəmir Tac qalası',icon:'⚒️',left:'84%',top:'43%',rate:'5 odun · 12 daş · 4 qızıl/saat'},
-  {id:'sun',name:'Günəş sərhəd qalası',icon:'☀️',left:'17%',top:'39%',rate:'10 odun · 7 daş · 6 qızıl/saat'}
+  {id:'north',name:'Şimal sərhəd qalası',icon:'❄️',left:'84%',top:'18%',rate:'12 odun · 5 daş · 3 qızıl/saat',wood:12,stone:5,gold:3},
+  {id:'iron',name:'Dəmir Tac qalası',icon:'⚒️',left:'84%',top:'43%',rate:'5 odun · 12 daş · 4 qızıl/saat',wood:5,stone:12,gold:4},
+  {id:'sun',name:'Günəş sərhəd qalası',icon:'☀️',left:'17%',top:'39%',rate:'10 odun · 7 daş · 6 qızıl/saat',wood:10,stone:7,gold:6}
  ];
  const owned=sites.filter(site=>campaigns[site.id]?.captured);
  if(!owned.length)return;
  const info=document.createElement('section');info.className='frontier-info';info.id='frontierInfo';
- info.innerHTML='<b>🏴 Fəth edilmiş sərhəd qalaları</b><p>Xəritədə nişana toxunaraq qarnizon və istehsal məlumatlarına bax.</p>';
+ info.style.cssText='margin-top:12px;padding:12px;border:1px solid #80633f;border-radius:10px;background:#202d29';
+ info.innerHTML='<b>🏴 Fəth edilmiş sərhəd qalaları</b><div id="frontierDetails"><p>Xəritədə nişana toxunaraq qarnizon və istehsal məlumatlarına bax.</p></div><p id="frontierIncomeStatus" style="font-size:12px"></p><button id="collectFrontierIncome" type="button">💰 Sərhəd gəlirlərini topla</button>';
  map.after(info);
+ const collectButton=info.querySelector('#collectFrontierIncome');
+ collectButton.addEventListener('click',()=>{
+  let current={};try{current=JSON.parse(localStorage.getItem('tvq_diplomacy_v1')||'{}')}catch{}
+  current.borderCampaigns=current.borderCampaigns||{};
+  let city={};try{city=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}')}catch{}
+  city.resources=city.resources||{wood:1200,stone:1000,gold:500};
+  const now=Date.now();
+  const earned={wood:0,stone:0,gold:0};
+  for(const site of sites){
+   const campaign=current.borderCampaigns[site.id];
+   if(!campaign?.captured)continue;
+   const last=Math.max(0,Number(campaign.lastCollectedAt)||Number(campaign.capturedAt)||now);
+   const hours=Math.min(24,Math.max(0,(now-last)/3600000));
+   earned.wood+=Math.floor(hours*site.wood);
+   earned.stone+=Math.floor(hours*site.stone);
+   earned.gold+=Math.floor(hours*site.gold);
+   campaign.lastCollectedAt=now;
+  }
+  for(const key of Object.keys(earned))city.resources[key]=(Number(city.resources[key])||0)+earned[key];
+  try{
+   localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(city));
+   localStorage.setItem('tvq_diplomacy_v1',JSON.stringify(current));
+  }catch{info.querySelector('#frontierIncomeStatus').textContent='Gəliri yadda saxlamaq mümkün olmadı.';return;}
+  info.querySelector('#frontierIncomeStatus').textContent='Toplandı: '+earned.wood+' odun · '+earned.stone+' daş · '+earned.gold+' qızıl. Növbəti gəlir bundan sonra hesablanacaq.';
+  collectButton.disabled=true;
+ });
  for(const site of owned){
   const campaign=campaigns[site.id];
   const guard=campaign.garrison||{};
@@ -698,7 +729,7 @@ function renderCapturedFrontiers(){
   marker.type='button';marker.className='frontier-marker';marker.style.left=site.left;marker.style.top=site.top;
   marker.textContent=site.icon;marker.dataset.label='Sənin qalən';marker.setAttribute('aria-label',site.name);
   marker.addEventListener('click',()=>{
-   info.innerHTML='<b>'+site.icon+' '+site.name+'</b><p>Bu qala sənin krallığının nəzarətindədir. Qarnizon: <b>'+count+'</b> əsgər.</p><p>İstehsal: '+site.rate+'.</p><p>'+(count?'Qarnizon düşmən basqınlarına qarşı müdafiə yaradır.':'Qala müdafiəsizdir — qarnizon yerləşdirmək lazımdır.')+'</p><small>Son basqın: '+(campaign.lastRaidAt?new Date(campaign.lastRaidAt).toLocaleString('az-AZ'):'Hələ basqın olmayıb')+'</small><p><a href="./frontier.html?kingdom='+site.id+'" style="display:inline-block;margin-top:8px;padding:8px 10px;border:1px solid #b49a6b;border-radius:7px;color:#fff1d9;text-decoration:none;background:#59452d">🏰 3D qalaya daxil ol</a></p>';
+   info.querySelector('#frontierDetails').innerHTML='<b>'+site.icon+' '+site.name+'</b><p>Bu qala sənin krallığının nəzarətindədir. Qarnizon: <b>'+count+'</b> əsgər.</p><p>İstehsal: '+site.rate+'.</p><p>'+(count?'Qarnizon düşmən basqınlarına qarşı müdafiə yaradır.':'Qala müdafiəsizdir — qarnizon yerləşdirmək lazımdır.')+'</p><small>Son basqın: '+(campaign.lastRaidAt?new Date(campaign.lastRaidAt).toLocaleString('az-AZ'):'Hələ basqın olmayıb')+'</small><p><a href="./frontier.html?kingdom='+site.id+'" style="display:inline-block;margin-top:8px;padding:8px 10px;border:1px solid #b49a6b;border-radius:7px;color:#fff1d9;text-decoration:none;background:#59452d">🏰 3D qalaya daxil ol</a></p>';
   });
   map.append(marker);
  }
