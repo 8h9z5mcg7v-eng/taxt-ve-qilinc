@@ -19,7 +19,7 @@ function svgNode(tag, attrs, parent, value) {
   return node;
 }
 
-function renderTerrain(terrain) {
+function renderTerrain(terrain, wallDamage = 0) {
   const field = document.getElementById('battlefield');
   field.querySelector('#terrainBackdrop')?.remove();
   const scene = document.createElementNS(svgNS, 'g');
@@ -37,6 +37,18 @@ function renderTerrain(terrain) {
     svgNode('rect', { x: 270, y: 35, width: 58, height: 44, fill: '#858679', stroke: '#282b27', 'stroke-width': 4 }, scene);
     svgNode('path', { d: 'M262 36 L299 8 L336 36Z', fill: '#6f4032', stroke: '#282b27', 'stroke-width': 3 }, scene);
     svgNode('rect', { x: 284, y: 91, width: 24, height: 39, fill: '#332c25' }, scene);
+    const damage = Math.max(0, Math.min(100, Number(wallDamage) || 0));
+    if (damage >= 25) {
+      svgNode('path', { d: damage >= 70 ? 'M248 78 L270 96 L258 111 L284 130 M270 96 L292 85 L307 101 L328 91 M307 101 L300 124' : 'M268 78 L281 92 L272 108 M281 92 L299 83', fill: 'none', stroke: '#292722', 'stroke-width': damage >= 70 ? 5 : 3, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, scene);
+    }
+    if (damage >= 50) {
+      svgNode('path', { d: 'M214 109 L247 109 L259 130 L235 130Z M340 109 L371 109 L386 130 L354 130Z', fill: '#4c4b43', stroke: '#282b27', 'stroke-width': 2 }, scene);
+    }
+    if (damage >= 100) {
+      svgNode('rect', { x: 264, y: 76, width: 68, height: 54, fill: '#a18a58' }, scene);
+      svgNode('path', { d: 'M252 131 L266 114 L278 131 M322 131 L337 113 L350 131', fill: '#77786d', stroke: '#282b27', 'stroke-width': 3 }, scene);
+      svgNode('text', { x: 300, y: 148, 'text-anchor': 'middle', fill: '#ffe0a1', 'font-size': 11, 'font-weight': 700 }, scene, 'DİVAR YARILIB');
+    }
   }
   field.insertBefore(scene, field.firstChild);
 }
@@ -214,7 +226,7 @@ document.getElementById('fight').addEventListener('click', () => {
     console.warn('Ordunun nəticəsini yadda saxlamaq mümkün olmadı.', error);
   }
   const survivingDefender = result.remaining?.defender ?? defender;
-  renderBattlefield(survivingAttacker, survivingDefender, direction, terrain);
+  renderBattlefield(survivingAttacker, survivingDefender, direction, terrain, result.siege?.wallDamage || 0);
   playCombatAnimation(attacker, siege);
   const panel = document.getElementById('result');
   panel.style.display = 'block';
