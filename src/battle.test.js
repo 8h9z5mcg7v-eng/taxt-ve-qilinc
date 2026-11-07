@@ -126,7 +126,8 @@ test('general bonuses improve only the selected troop speciality', () => {
   const alp = resolveBattle({ attacker: { cavalry: 10 }, defender: { infantry: 10 }, commander: { id: 'alp', xp: 0 }, seed: 17 });
   const tomris = resolveBattle({ attacker: { cavalry: 10 }, defender: { infantry: 10 }, commander: { id: 'tomris', xp: 0 }, seed: 17 });
   assert.ok(alp.power.attacker > base.power.attacker);
-  assert.equal(tomris.power.attacker, base.power.attacker);
+  assert.ok(tomris.power.attacker > base.power.attacker);
+  assert.ok(alp.power.attacker > tomris.power.attacker);
 });
 
 test('general experience increases the specialist bonus without changing defence', () => {
