@@ -9,6 +9,21 @@ stats.innerHTML=troopIds.filter(k=>army[k]>0).map(k=>'<span>'+names[k]+': '+army
 const caravanKey='tvq_caravans_v1';
 let caravans={};
 try{caravans=JSON.parse(localStorage.getItem(caravanKey)||'{}')}catch{caravans={}}
+// Recover dispatches whose resource debit was saved before the caravan record.
+try{
+ const city=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}');
+ const pending=city.pendingCaravanDispatches||{};
+ let changed=false;
+ for(const id of Object.keys(pending)){
+  const trip=pending[id];
+  if(trip&&(!caravans[id]||Number(caravans[id].sentAt)<Number(trip.sentAt))){caravans[id]=trip;changed=true;}
+ }
+ if(changed){
+  localStorage.setItem(caravanKey,JSON.stringify(caravans));
+  city.pendingCaravanDispatches={};
+  localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(city));
+ }
+}catch(error){console.warn('Karvan göndərişi bərpa edilə bilmədi',error)}
 function settleCaravan(id){
  const trip=caravans[id];if(!trip||trip.status!=='traveling'||Date.now()<trip.arrivesAt)return false;
  const target=territories.find(x=>x.id===id);if(!target)return false;
@@ -130,21 +145,29 @@ function showOutpostControls(id){
  caravanButton.addEventListener('click',()=>{
   if(!territory[id]?.captured){caravanStatus.textContent='Karvan üçün məntəqə sənin nəzarətində olmalıdır.';return;}
   if(caravans[id]?.status==='traveling'&&Date.now()<caravans[id].arrivesAt){caravanStatus.textContent='Bu məntəqədən artıq karvan yoldadır.';return;}
-  let city={};try{city=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}')}catch{}
+  let city={};
+  try{city=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}')}catch{caravanStatus.textContent='Karvan göndərilmədi: şəhər yaddaşı oxunmadı.';return;}
   city.resources=city.resources||{wood:1200,stone:1000,gold:500};
-  if((Number(city.resources.gold)||0)<10){caravanStatus.textContent='Karvan üçün 10 qızıl lazımdır.';return;}
-  const requestedEscort=Math.max(0,Math.floor(Number(panel.querySelector('#caravanEscort').value)||0));
-  if(requestedEscort>army.infantry){caravanStatus.textContent='Müşayiətçi sayı mövcud piyadadan çox ola bilməz.';return;}
-  const escortCount=requestedEscort;
-  city.resources.gold-=10;
   city.army=city.army||{};
-  city.army.infantry=Math.max(0,(Number(city.army.infantry)||0)-escortCount);
-  army.infantry=Math.max(0,army.infantry-escortCount);
-  try{localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(city))}catch{}
-  stats.innerHTML=troopIds.filter(k=>army[k]>0).map(k=>'<span>'+names[k]+': '+army[k]+'</span>').join('')||'<span>Səyyar ordu qalmayıb</span>';
+  const availableInfantry=Math.max(0,Math.floor(Number(city.army.infantry)||0));
+  if((Number(city.resources.gold)||0)<10){caravanStatus.textContent='Karvan üçün 10 qızıl lazımdır.';return;}
+  const escortCount=Math.max(0,Math.floor(Number(panel.querySelector('#caravanEscort').value)||0));
+  if(escortCount>Math.min(army.infantry,availableInfantry)){caravanStatus.textContent='Müşayiətçi sayı şəhərdəki mövcud piyadadan çox ola bilməz.';return;}
   const sentAt=Date.now(),arrivesAt=sentAt+60000;
-  caravans[id]={status:'traveling',sentAt,arrivesAt,escort:{infantry:escortCount,spearman:0,archer:0,cavalry:0,knight:0}};
-  try{localStorage.setItem(caravanKey,JSON.stringify(caravans))}catch{}
+  const trip={status:'traveling',sentAt,arrivesAt,escort:{infantry:escortCount,spearman:0,archer:0,cavalry:0,knight:0}};
+  city.resources.gold=Math.max(0,Number(city.resources.gold)||0)-10;
+  city.army.infantry=availableInfantry-escortCount;
+  city.pendingCaravanDispatches={...(city.pendingCaravanDispatches||{}),[id]:trip};
+  try{localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(city));}
+  catch{caravanStatus.textContent='Karvan göndərilmədi: qızıl və qoşun dəyişiklikləri yadda saxlanmadı.';return;}
+  army.infantry=Math.max(0,army.infantry-escortCount);
+  caravans[id]=trip;
+  try{
+   localStorage.setItem(caravanKey,JSON.stringify(caravans));
+   delete city.pendingCaravanDispatches[id];
+   localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(city));
+  }catch{caravanStatus.textContent='Karvan göndərişi yaddaşa yazıldı; ehtiyat bərpa qeydi saxlanılıb.';}
+  stats.innerHTML=troopIds.filter(k=>army[k]>0).map(k=>'<span>'+names[k]+': '+army[k]+'</span>').join('')||'<span>Səyyar ordu qalmayıb</span>';
   caravanButton.disabled=true;
   caravanStatus.textContent='🚚 Karvan yola düşdü. Təxmini qayıdış: 60 saniyə.';
   renderCaravanMarkers();
