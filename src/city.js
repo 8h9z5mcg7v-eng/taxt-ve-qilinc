@@ -289,6 +289,18 @@ document.querySelector('#sendArmy').addEventListener('click',()=>{
  const params=new URLSearchParams();for(const [type,count] of Object.entries(army))params.set(type,String(count));
  location.href='./world-map.html?'+params.toString();
 });
+function renderLastBattleReport(){
+ let report=null;
+ try{report=JSON.parse(localStorage.getItem('tvq_last_battle_report_v1')||'null')}catch{}
+ if(!report)return;
+ let panel=document.getElementById('battleReportPanel');
+ if(!panel){panel=document.createElement('section');panel.id='battleReportPanel';panel.style.cssText='position:absolute;right:12px;top:112px;z-index:9;width:min(330px,calc(100vw - 24px));max-height:42vh;overflow:auto;padding:12px;border:1px solid #b58a55;border-radius:10px;background:#17251ff2;color:#f4e6c8;font:12px/1.5 system-ui;box-shadow:0 8px 24px #0008';document.body.append(panel)}
+ const labels={infantry:'Piyada',spearman:'Nizəçi',archer:'Oxçu',cavalry:'Süvari',knight:'Cəngavər'};
+ const lines=(items)=>Object.entries(labels).map(([type,label])=>'<div>'+label+': '+Math.max(0,Math.floor(Number(items?.[type])||0))+'</div>').join('');
+ const won=report.winner==='attacker';
+ panel.innerHTML='<b>📜 Son döyüş hesabatı</b><div style="margin:5px 0;color:'+(won?'#a9df9b':'#f0a18c')+'">'+(won?'QƏLƏBƏ':'MƏĞLUBİYYƏT')+(report.captured?' · QALA FƏTH EDİLDİ':'')+'</div><small>'+new Date(Number(report.at)||Date.now()).toLocaleString('az-AZ')+'</small><hr style="border-color:#66583e"><b>İtkilərimiz</b>'+lines(report.attackerLosses)+'<b>Sağ qalan ordumuz</b>'+lines(report.survivingAttackers)+'<b>Düşmən itkiləri</b>'+lines(report.defenderLosses)+'<div style="margin-top:7px">Divar zədəsi: '+Math.max(0,Math.floor(Number(report.wallDamage)||0))+'% · '+(report.wallBreached?'Divar yarılıb':'Divar dayanıb')+'</div><button id="dismissBattleReport" style="margin-top:10px;width:100%">Hesabatı bağla</button>';
+ panel.querySelector('#dismissBattleReport').addEventListener('click',()=>{localStorage.removeItem('tvq_last_battle_report_v1');panel.remove()});
+}
 function processReturningArmy(){
  let trip=null;
  try{trip=JSON.parse(localStorage.getItem('tvq_return_journey_v1')||'null')}catch{}
@@ -311,6 +323,7 @@ renderArmyInCity();
 processHospital();
 setInterval(processHospital,1000);
 processReturningArmy();
+renderLastBattleReport();
 setInterval(processReturningArmy,1000);
 collectOfflineTerritoryIncome();
 saveCity();
