@@ -442,8 +442,8 @@ function processReturningArmyLocked(){
     }
     latest.processedReturnJourneys[journeyId]={processedAt:now};
    }
-   const ids=Object.keys(latest.processedReturnJourneys);
-   if(ids.length>100)for(const oldId of ids.slice(0,ids.length-100))delete latest.processedReturnJourneys[oldId];
+   // Keep the idempotency ledger: an old journey must never be credited twice
+   // if a stale tab or restored queue entry reappears much later.
    localStorage.setItem(SAVE_KEY,JSON.stringify(latest));
    trips=trips.filter(t=>Number(t.arrivesAt)>now);
    localStorage.setItem(queueKey,JSON.stringify(trips));
