@@ -28,7 +28,7 @@ function calculatePower(army, defending, formation, opponents) {
  * direction: north | east | south | west
  * tactic: balanced | wedge | line | volley
  */
-export function resolveBattle({ attacker, defender, direction = 'south', tactic = 'balanced', terrain = 'plains', seed = 1 }) {
+export function resolveBattle({ attacker, defender, direction = 'south', tactic = 'balanced', terrain = 'plains', siege = {}, seed = 1 }) {
   const attackArmy = createArmy(attacker);
   const defendArmy = createArmy(defender);
   const attackCount = armySize(attackArmy);
@@ -36,6 +36,7 @@ export function resolveBattle({ attacker, defender, direction = 'south', tactic 
   const safeDirection = DIRECTIONS.has(direction) ? direction : 'south';
   const safeTactic = TACTICS.has(tactic) ? tactic : 'balanced';
   const safeTerrain = TERRAIN.has(terrain) ? terrain : 'plains';
+  const siegeEngines = { ram: Math.max(0, Math.floor(Number(siege.ram) || 0)), catapult: Math.max(0, Math.floor(Number(siege.catapult) || 0)) };
 
   if (!attackCount || !defendCount) {
     return { winner: attackCount ? 'attacker' : 'defender', direction: safeDirection, tactic: safeTactic, attacker: attackArmy, defender: defendArmy, log: ['Döyüş üçün hər iki tərəfdə qoşun olmalıdır.'] };
@@ -49,8 +50,14 @@ export function resolveBattle({ attacker, defender, direction = 'south', tactic 
   const totalAttackers = Math.max(1, attackCount);
   const cavalryShare = attackArmy.cavalry / totalAttackers;
   const cavalryTerrainFactor = 1 - (1 - cavalryPenalty) * cavalryShare;
-  const attackPower = rawAttackPower * directionBonus * terrainAttackBonus * cavalryTerrainFactor;
-  const defendPower = calculatePower(defendArmy, true, 'balanced', attackArmy) * terrainDefenseBonus;
+  const wallMax = safeTerrain === 'fortress' ? 100 : 0;
+  const wallDamage = Math.min(wallMax, siegeEngines.ram * 18 + siegeEngines.catapult * 30);
+  const wallRemaining = Math.max(0, wallMax - wallDamage);
+  const wallBreached = wallMax > 0 && wallRemaining === 0;
+  const wallProtection = wallMax > 0 ? 1 + (wallRemaining / wallMax) * 0.32 : 1;
+  const siegeAttackBonus = siegeEngines.catapult * 14 + (wallBreached ? siegeEngines.ram * 6 : 0);
+  const attackPower = rawAttackPower * directionBonus * terrainAttackBonus * cavalryTerrainFactor + siegeAttackBonus;
+  const defendPower = calculatePower(defendArmy, true, 'balanced', attackArmy) * (wallBreached ? 1 : terrainDefenseBonus * wallProtection);
   const ratio = attackPower / Math.max(1, defendPower);
   const attackerWins = ratio >= 1;
   const random = (Math.sin(seed * 9301 + 49297) * 233280) % 1;
@@ -67,7 +74,8 @@ export function resolveBattle({ attacker, defender, direction = 'south', tactic 
 
   return {
     winner, direction: safeDirection, tactic: safeTactic, terrain: safeTerrain,
-    modifiers: { direction: directionBonus, attackerTerrain: terrainAttackBonus * cavalryTerrainFactor, defenderTerrain: terrainDefenseBonus },
+    siege: { ...siegeEngines, wallMax, wallDamage, wallRemaining, wallBreached, attackBonus: siegeAttackBonus },
+    modifiers: { direction: directionBonus, attackerTerrain: terrainAttackBonus * cavalryTerrainFactor, defenderTerrain: wallBreached ? 1 : terrainDefenseBonus * wallProtection },
     power: { attacker: Math.round(attackPower), defender: Math.round(defendPower) },
     remaining: {
       attacker: Object.fromEntries(Object.keys(attackArmy).map(type => [type, attackArmy[type] - attackerLosses[type]])),
@@ -78,6 +86,8 @@ export function resolveBattle({ attacker, defender, direction = 'south', tactic 
       `Hücum istiqaməti: ${safeDirection}`,
       `Taktika: ${safeTactic}`,
       `Ərazi: ${safeTerrain}`,
+      `Mühasirə: qoçbaşı ${siegeEngines.ram}, katapult ${siegeEngines.catapult}`,
+      ...(wallMax ? [`Divar zədəsi: ${wallDamage}/100 · ${wallBreached ? 'divar yarıldı' : 'divar hələ dayanır'}`] : []),
       `Hücum gücü: ${Math.round(attackPower)} · Müdafiə gücü: ${Math.round(defendPower)}`,
       winner === 'attacker' ? 'Hücum edən tərəf üstün gəldi.' : 'Müdafiə tərəfi qalib gəldi.'
     ]
