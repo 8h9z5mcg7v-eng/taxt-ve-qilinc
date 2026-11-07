@@ -88,6 +88,17 @@ document.getElementById('fight').addEventListener('click', () => {
   };
   const result = resolveBattle({ attacker, defender, direction, tactic, terrain, siege, seed: Date.now() % 100000 });
   const survivingAttacker = result.remaining?.attacker ?? attacker;
+  // Keep the surviving dispatched army in the same local save used by the city.
+  try {
+    const saveKey = 'taxt-ve-qilinc-city-v1';
+    const saved = JSON.parse(localStorage.getItem(saveKey) || '{}');
+    localStorage.setItem(saveKey, JSON.stringify({
+      ...saved,
+      army: survivingAttacker
+    }));
+  } catch (error) {
+    console.warn('Ordunun nəticəsini yadda saxlamaq mümkün olmadı.', error);
+  }
   const survivingDefender = result.remaining?.defender ?? defender;
   renderBattlefield(survivingAttacker, survivingDefender, direction);
   const panel = document.getElementById('result');
