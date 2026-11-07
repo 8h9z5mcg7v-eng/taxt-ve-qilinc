@@ -601,8 +601,8 @@ function mountDiplomacyContracts(){
     const battleDone=state.borderBattles[kingdom.id]===day;
     const campaign=state.borderCampaigns?.[kingdom.id]||{wins:0,captured:false};
     battleButton.disabled=battleDone;
-    battleButton.textContent=battleDone?'✓ Sərhəd bu gün qorunub':'⚔ Sərhəd basqınını dəf et';
-    battleStatus.textContent=(battleDone?'Bu gün bu krallığın basqını dəf edilib. ':'Tələb: 30 piyada, 20 oxçu, 10 süvari. Qələbə mükafatı: 80 qızıl. ')+(campaign.captured?'🏴 Sərhəd məntəqəsi ələ keçirilib.':('Sərhəd kampaniyası: '+Math.min(3,Number(campaign.wins)||0)+'/3 qələbə'+((Number(campaign.wins)||0)>=2?' · Növbəti qələbə məntəqəni açacaq.':'.')));
+    battleButton.textContent=battleDone?'✓ Bu gün döyüş tamamlanıb':'⚔ Sərhəd basqınını dəf et';
+    battleStatus.textContent=(battleDone?'Bu krallıqla bu gün döyüş artıq aparılıb. Növbəti cəhd sabah mümkündür. ':'Tələb: 30 piyada, 20 oxçu, 10 süvari. Qələbə mükafatı: 80 qızıl. ')+(campaign.captured?'🏴 Sərhəd məntəqəsi ələ keçirilib.':('Sərhəd kampaniyası: '+Math.min(3,Number(campaign.wins)||0)+'/3 qələbə'+((Number(campaign.wins)||0)>=2?' · Növbəti qələbə məntəqəni açacaq.':'.')));
     battleButton.addEventListener('click',()=>{
      if(state.borderBattles[kingdom.id]===day)return;
      let city={};try{city=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}')}catch{}
