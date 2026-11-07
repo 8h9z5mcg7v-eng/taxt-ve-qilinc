@@ -435,4 +435,64 @@ function mountKingdomMarket(){
 }
 mountKingdomMarket();
 
+function mountDiplomacyContracts(){
+ const wrap=document.querySelector('.wrap');
+ if(!wrap||document.querySelector('#diplomacyContracts'))return;
+ const panel=document.createElement('section');panel.id='diplomacyContracts';panel.className='panel';
+ panel.innerHTML='<h2>🤝 Qonşu krallıqlarla diplomatiya</h2><p>Gündəlik təchizat müqavilələrini yerinə yetir, qızıl və nüfuz qazan. Nüfuz gələcək diplomatik imkanlar üçün saxlanılır.</p><div id="diplomacyList"></div>';
+ wrap.append(panel);
+ const localDay=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+ const day=localDay();
+ const key='tvq_diplomacy_v1';
+ let state={day,standings:{},completed:{}};
+ try{state={...state,...JSON.parse(localStorage.getItem(key)||'{}')}}catch{}
+ state.standings=state.standings||{};
+ state.completed=state.completed||{};
+ if(state.day!==day){state.day=day;state.completed={};}
+ const kingdoms=[
+  {id:'north',name:'Şimal İttifaqı',resource:'wood',base:180,bonus:260,rep:3,icon:'❄️'},
+  {id:'iron',name:'Dəmir Tac',resource:'stone',base:140,bonus:320,rep:4,icon:'⚒️'},
+  {id:'sun',name:'Günəş Torpaqları',resource:'wood',base:260,bonus:380,rep:5,icon:'☀️'}
+ ];
+ const seed=Number(day.replaceAll('-',''));
+ const list=panel.querySelector('#diplomacyList');
+ function render(){
+  list.innerHTML='';
+  for(const kingdom of kingdoms){
+   const amount=kingdom.base+((seed*(kingdom.id==='north'?3:kingdom.id==='iron'?5:7))%5)*20;
+   const reward=amount+kingdom.bonus;
+   const completed=state.completed[kingdom.id]===day;
+   const standing=Math.max(0,Number(state.standings[kingdom.id])||0);
+   const card=document.createElement('article');
+   card.style.cssText='margin-top:10px;padding:12px;border:1px solid #80633f;border-radius:10px;background:#202d29';
+   const resourceName=kingdom.resource==='wood'?'odun':'daş';
+   card.innerHTML='<b>'+kingdom.icon+' '+kingdom.name+'</b><div style="font-size:12px;margin:5px 0 9px">Nüfuz: '+standing+' · Gündəlik müqavilə</div><p style="margin:0 0 8px">'+amount+' '+resourceName+' təhvil ver · '+reward+' qızıl və '+kingdom.rep+' nüfuz qazan</p><button type="button" '+(completed?'disabled':'')+'>'+ (completed?'✓ Müqavilə tamamlandı':'Müqaviləni yerinə yetir')+'</button><small class="contractStatus" style="display:block;margin-top:7px">'+(completed?'Bu günün mükafatı artıq alınıb.':'Resurslar şəhər anbarından çıxılacaq.')+'</small>';
+   const button=card.querySelector('button');
+   button.addEventListener('click',()=>{
+    let city={};try{city=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}')}catch{}
+    city.resources=city.resources||{wood:1200,stone:1000,gold:500};
+    const available=Math.max(0,Number(city.resources[kingdom.resource])||0);
+    if(available<amount){card.querySelector('.contractStatus').textContent='Resurs çatmır. Lazımdır: '+amount+' · Mövcud: '+available+'.';return}
+    city.resources[kingdom.resource]=available-amount;
+    city.resources.gold=Math.max(0,Number(city.resources.gold)||0)+reward;
+    state.completed[kingdom.id]=day;
+    state.standings[kingdom.id]=standing+kingdom.rep;
+    try{
+     localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(city));
+     localStorage.setItem(key,JSON.stringify(state));
+    }catch{
+     card.querySelector('.contractStatus').textContent='Yaddaşa yazmaq mümkün olmadı. Müqavilə tamamlanmadı.';
+     return;
+    }
+    render();
+   });
+   list.append(card);
+  }
+ }
+ render();
+ try{localStorage.setItem(key,JSON.stringify(state))}catch{}
+}
+mountDiplomacyContracts();
+
+
 if(!total)document.querySelector('#description').textContent='Şəhərdə əvvəlcə qoşun hazırla. Sonra xəritəyə qayıdıb yürüşə başla.';
