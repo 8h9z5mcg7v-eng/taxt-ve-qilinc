@@ -245,7 +245,6 @@ function showOutpostControls(id){
   stats.innerHTML=keys.filter(k=>army[k]>0).map(k=>'<span>'+names[k]+': '+army[k]+'</span>').join('')||'<span>Səyyar ordu qalmayıb</span>';
   showOutpostControls(id);
  });
- }
  controls.querySelector('#defenseTactic').value=plan.tactic||'balanced';
  const scout=document.createElement('div');scout.style.cssText='margin-top:12px;padding-top:10px;border-top:1px solid #80633f';
  const report=fortressState.scoutReport;
