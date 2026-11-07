@@ -75,8 +75,9 @@ function renderTerrain(terrain, wallDamage = 0, siege = {}) {
     const rams = Math.min(2, Math.max(0, Number(siege.ram) || 0));
     for (let i = 0; i < rams; i++) {
       const x = 185 + i * 42;
-      svgNode('path', { d: `M${x-17} 282 L${x+17} 282 L${x+12} 292 L${x-12} 292Z M${x} 282 L${x} 253`, fill: '#80552e', stroke: '#30251e', 'stroke-width': 4, 'stroke-linejoin': 'round' }, machines);
-      svgNode('path', { d: `M${x-10} 252 L${x+10} 252 L${x+6} 260 L${x-6} 260Z`, fill: '#777d86', stroke: '#292722', 'stroke-width': 2 }, machines);
+      const ram = svgNode('g', { id: `batteringRam${i}`, transform: `translate(${x} 0)` }, machines);
+      svgNode('path', { d: 'M-17 282 L17 282 L12 292 L-12 292Z M0 282 L0 253', fill: '#80552e', stroke: '#30251e', 'stroke-width': 4, 'stroke-linejoin': 'round' }, ram);
+      svgNode('path', { d: 'M-10 252 L10 252 L6 260 L-6 260Z', fill: '#777d86', stroke: '#292722', 'stroke-width': 2 }, ram);
     }
     scene.appendChild(machines);
   }
@@ -210,6 +211,23 @@ function playCombatAnimation(attacker = {}, siege = {}) {
   const catapultShots = Math.min(4, siege.catapult || 0);
   for (let i = 0; i < catapultShots; i++) {
     launch(115 + i * 24, 210, 365 + i * 10, 158 + i * 12, '#e1a34b', i * 170, 5);
+  }
+  // Bring siege engines forward during the assault sequence.
+  const siegeLayer = field.querySelector('#siegeMachines');
+  if (siegeLayer) {
+    [...siegeLayer.children].forEach((machine, index) => {
+      if (machine.id?.startsWith('batteringRam')) {
+        machine.animate(
+          [{ transform: 'translate(0px,0px)' }, { transform: 'translate(0px,-16px)' }, { transform: 'translate(0px,0px)' }],
+          { duration: 360, delay: 250 + index * 220, iterations: 3, easing: 'ease-in-out' }
+        );
+      } else if (index >= catapultShots && index < catapultShots + Math.min(2, siege.tower || 0)) {
+        machine.animate(
+          [{ transform: 'translate(0px,0px)' }, { transform: 'translate(-46px,-8px)' }],
+          { duration: 1250, delay: 180 + index * 180, fill: 'forwards', easing: 'ease-in' }
+        );
+      }
+    });
   }
   const attackLayer = document.getElementById('attackerUnits');
   const defendLayer = document.getElementById('defenderUnits');
