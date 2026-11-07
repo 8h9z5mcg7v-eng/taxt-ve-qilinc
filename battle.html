@@ -42,8 +42,10 @@ footer{text-align:center;color:#85918e;font-size:11px;padding:0 10px 22px}
 <div class="field"><label for="direction">Hücum istiqaməti</label><select id="direction"><option value="south">Cənub</option><option value="north">Şimal</option><option value="east">Şərq — cinah</option><option value="west">Qərb — cinah</option></select></div>
 <div class="field"><label for="tactic">Döyüş taktikası</label><select id="tactic"><option value="balanced">Balanslı</option><option value="wedge">Paz — süvari</option><option value="line">Xətt — piyada</option><option value="volley">Yaylım — oxçu</option></select></div>
 <div class="field" style="grid-column:1/-1"><label for="terrain">Döyüş ərazisi</label><select id="terrain"><option value="plains">Açıq düzənlik</option><option value="forest">Meşə</option><option value="hill">Təpəlik</option><option value="fortress">Möhkəmləndirilmiş qala</option></select></div>
+<div class="field"><label for="ram">Qoçbaşı sayı</label><input id="ram" type="number" min="0" max="20" value="1"></div>
+<div class="field"><label for="catapult">Katapult sayı</label><input id="catapult" type="number" min="0" max="20" value="1"></div>
 </div><div style="margin-top:12px"><button id="fight">DÖYÜŞÜ HESABLA</button></div></section>
-<section class="card"><h2>Döyüş meydanı</h2><p class="sub">Qoşun düzülüşünün sxematik görünüşü · canlı 3D animasiya deyil.</p>
+<section class="card"><h2>Döyüş meydanı</h2><p class="sub">Qoşun düzülüşünün sxematik görünüşü · canlı 3D animasiya deyil. Mühasirə qurğuları divara zərər verir.</p>
 <svg id="battlefield" viewBox="0 0 600 330" role="img" aria-label="Hücum və müdafiə qoşunlarının döyüş meydanında yerləşməsi">
 <defs><pattern id="grass" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M3 8l4 -2m13 18l5 -3m-1 -16l4 2" stroke="#6b8059" stroke-width="1" opacity=".35"/></pattern></defs>
 <rect width="600" height="330" fill="#263b2d"/><rect width="600" height="330" fill="url(#grass)"/>
@@ -52,6 +54,7 @@ footer{text-align:center;color:#85918e;font-size:11px;padding:0 10px 22px}
 <text x="16" y="24" fill="#f2c3a8" font-size="14" font-weight="bold">MÜDAFİƏ</text><text x="16" y="316" fill="#c8e0b7" font-size="14" font-weight="bold">HÜCUM</text>
 </svg><div class="legend"><span><i class="dot" style="background:#c8e0b7"></i>Hücum ordusu</span><span><i class="dot" style="background:#e5a18b"></i>Müdafiə ordusu</span><span>━━ Döyüş xətti</span></div></section>
 <section class="card" id="result" aria-live="polite"><div class="winner" id="winner"></div><div class="stats"><div class="stat"><small>Hücum gücü</small><strong id="ap">—</strong></div><div class="stat"><small>Müdafiə gücü</small><strong id="dp">—</strong></div><div class="stat"><small>Hücumda qalan</small><strong id="ar">—</strong></div><div class="stat"><small>Müdafiədə qalan</small><strong id="dr">—</strong></div></div>
+<div class="stats" style="margin-top:8px"><div class="stat"><small>Divar zədəsi</small><strong id="wallDamage">—</strong></div><div class="stat"><small>Divarın vəziyyəti</small><strong id="wallState">—</strong></div></div>
 <div class="stats" style="margin-top:8px"><div class="stat"><small>Hücum itkiləri</small><div id="aLoss" style="font-size:12px;line-height:1.6;margin-top:5px">—</div></div><div class="stat"><small>Müdafiə itkiləri</small><div id="dLoss" style="font-size:12px;line-height:1.6;margin-top:5px">—</div></div></div><ul id="log"></ul></section>
 </main><footer>İlkin balans sınağıdır. Animasiya, real vaxt hərəkəti və multiplayer hələ əlavə edilməyib.</footer>
 <script type="module" src="./src/battle-ui.js"></script>
