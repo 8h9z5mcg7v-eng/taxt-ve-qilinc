@@ -149,24 +149,26 @@ if(fortressState.captured){
  const firstSeen=Number(fortressState.capturedAt||Date.now());
  if(!fortressState.capturedAt){fortressState.capturedAt=firstSeen;worldState.redFortress=fortressState;saveWorld();}
  const raidInterval=6*60*60*1000;
- const nextRaidAt=Number(fortressState.lastRaidAt||firstSeen)+raidInterval;
- if(Date.now()>=nextRaidAt){
+ let nextRaidAt=Number(fortressState.lastRaidAt||firstSeen)+raidInterval;
+ let resolvedRaids=0;
+ while(fortressState.captured&&Date.now()>=nextRaidAt&&resolvedRaids<8){
   const guard=fortressState.garrison||{infantry:0,spearman:0,archer:0,cavalry:0,knight:0};
   const guardCount=Object.values(guard).reduce((sum,n)=>sum+(Number(n)||0),0);
   if(guardCount>0){
    const raiders={infantry:35,spearman:20,archer:25,cavalry:15,knight:5};
    const raid=resolveBattle({attacker:raiders,defender:guard,direction:'south',tactic:'balanced',defenderTactic:(fortressState.defensePlan?.tactic||'balanced'),terrain:'fortress',seed:Math.floor(nextRaidAt/1000)%100000});
    fortressState.garrison=raid.remaining.defender;
-   fortressState.lastRaidAt=Date.now();
+   fortressState.lastRaidResult={winner:raid.winner,attackerLosses:raid.losses.attacker,defenderLosses:raid.losses.defender,at:nextRaidAt};
    if(raid.winner==='attacker')fortressState.captured=false;
-   fortressState.lastRaidResult={winner:raid.winner,attackerLosses:raid.losses.attacker,defenderLosses:raid.losses.defender,at:Date.now()};
   }else{
    fortressState.captured=false;
-   fortressState.lastRaidAt=Date.now();
-   fortressState.lastRaidResult={winner:'attacker',reason:'no-garrison',at:Date.now()};
+   fortressState.lastRaidResult={winner:'attacker',reason:'no-garrison',at:nextRaidAt};
   }
-  worldState.redFortress=fortressState;saveWorld();
+  fortressState.lastRaidAt=nextRaidAt;
+  nextRaidAt+=raidInterval;
+  resolvedRaids++;
  }
+ if(resolvedRaids){fortressState.resolvedRaidCount=(Number(fortressState.resolvedRaidCount)||0)+resolvedRaids;worldState.redFortress=fortressState;saveWorld();}
  const enemy=document.querySelector('[data-id="enemy"]');
  enemy.querySelector('span').textContent='🏰 Sənin qalən';
  enemy.querySelector('small').textContent='Fəth olunub';
