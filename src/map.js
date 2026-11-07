@@ -495,7 +495,37 @@ function mountDiplomacyContracts(){
   catch{card.querySelector('.relationStatus').textContent='Dəyişiklik yadda saxlanmadı.';return}
   render();
  }
+ function resolveScheduledBorderRaids(){
+  const now=Date.now();
+  const attackers={north:{infantry:35,spearman:18,archer:30,cavalry:12,knight:5},iron:{infantry:42,spearman:28,archer:22,cavalry:10,knight:12},sun:{infantry:28,spearman:12,archer:25,cavalry:28,knight:10}};
+  state.borderCampaigns=state.borderCampaigns||{};
+  let changed=false;
+  for(const kingdom of kingdoms){
+   const campaign=state.borderCampaigns[kingdom.id];
+   if(!campaign?.captured)continue;
+   const garrison=campaign.garrison||{infantry:0,spearman:0,archer:0,cavalry:0,knight:0};
+   const count=Object.values(garrison).reduce((n,v)=>n+(Number(v)||0),0);
+   if(!campaign.nextRaidAt)campaign.nextRaidAt=(Number(campaign.capturedAt)||now)+24*60*60*1000;
+   if(now<campaign.nextRaidAt||!count)continue;
+   const result=resolveBattle({attacker:attackers[kingdom.id]||attackers.north,defender:garrison,direction:'south',tactic:'balanced',defenderTactic:'balanced',terrain:kingdom.id==='iron'?'fortress':kingdom.id==='north'?'forest':'plains',seed:Math.floor(campaign.nextRaidAt/1000)});
+   campaign.garrison=result.remaining.defender;
+   campaign.lastRaidAt=now;
+   campaign.lastRaidWinner=result.winner;
+   campaign.lastRaidLosses=result.losses;
+   if(result.winner==='attacker'){
+    campaign.captured=false;
+    campaign.lostAt=now;
+    campaign.wins=Math.max(0,(Number(campaign.wins)||0)-1);
+   }else{
+    campaign.nextRaidAt=now+24*60*60*1000;
+   }
+   state.borderCampaigns[kingdom.id]=campaign;
+   changed=true;
+  }
+  if(changed){try{localStorage.setItem(key,JSON.stringify(state))}catch{}}
+ }
  function render(){
+  resolveScheduledBorderRaids();
   list.innerHTML='';
   for(const kingdom of kingdoms){
    const amount=kingdom.base+((seed*(kingdom.id==='north'?3:kingdom.id==='iron'?5:7))%5)*20;
@@ -559,7 +589,7 @@ function mountDiplomacyContracts(){
      const garrison=campaign.garrison||{infantry:0,spearman:0,archer:0,cavalry:0,knight:0};
      const garrisonPanel=document.createElement('div');
      garrisonPanel.style.cssText='margin-top:10px;padding:10px;border:1px solid #756448;border-radius:8px;background:#18241f';
-     garrisonPanel.innerHTML='<b>🏰 Sərhəd məntəqəsinin müdafiəsi</b><p style="font-size:12px">Qarnizon: '+Object.values(garrison).reduce((n,v)=>n+(Number(v)||0),0)+' əsgər. Qarnizon məntəqəni düşmən basqınından qoruyur.</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px"><label>Piyada <input id="bgInf" type="number" min="0" value="0" style="width:65px"></label><label>Nizəçi <input id="bgSp" type="number" min="0" value="0" style="width:65px"></label><label>Oxçu <input id="bgAr" type="number" min="0" value="0" style="width:65px"></label><label>Süvari <input id="bgCa" type="number" min="0" value="0" style="width:65px"></label><label>Cəngavər <input id="bgKn" type="number" min="0" value="0" style="width:65px"></label></div><button id="assignBorderGuard" type="button" style="width:100%;margin-top:8px">Qarnizona əsgər göndər</button><button id="recallBorderGuard" type="button" style="width:100%;margin-top:6px">Qarnizonu şəhərə qaytar</button><button id="testBorderRaid" type="button" style="width:100%;margin-top:6px">⚔ Düşmən basqınını sına</button><small id="borderGuardStatus" style="display:block;margin-top:6px"></small>';
+     garrisonPanel.innerHTML='<b>🏰 Sərhəd məntəqəsinin müdafiəsi</b><p style="font-size:12px">Qarnizon: '+Object.values(garrison).reduce((n,v)=>n+(Number(v)||0),0)+' əsgər. '+(campaign.lastRaidAt?'Son basqın: '+(campaign.lastRaidWinner==='defender'?'müdafiə uğurlu oldu':'məntəqə itirildi')+'. ':'')+(campaign.nextRaidAt&&Object.values(garrison).some(v=>Number(v)>0)?'Növbəti basqına qədər: '+Math.max(0,Math.ceil((campaign.nextRaidAt-Date.now())/3600000))+' saat. ':'Qarnizon boşdur, məntəqə müdafiəsizdir.')+'</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px"><label>Piyada <input id="bgInf" type="number" min="0" value="0" style="width:65px"></label><label>Nizəçi <input id="bgSp" type="number" min="0" value="0" style="width:65px"></label><label>Oxçu <input id="bgAr" type="number" min="0" value="0" style="width:65px"></label><label>Süvari <input id="bgCa" type="number" min="0" value="0" style="width:65px"></label><label>Cəngavər <input id="bgKn" type="number" min="0" value="0" style="width:65px"></label></div><button id="assignBorderGuard" type="button" style="width:100%;margin-top:8px">Qarnizona əsgər göndər</button><button id="recallBorderGuard" type="button" style="width:100%;margin-top:6px">Qarnizonu şəhərə qaytar</button><small id="borderGuardStatus" style="display:block;margin-top:6px"></small>';
      card.append(garrisonPanel);
      const guardKeys=['infantry','spearman','archer','cavalry','knight'];
      const guardIds=['bgInf','bgSp','bgAr','bgCa','bgKn'];
@@ -583,18 +613,7 @@ function mountDiplomacyContracts(){
       try{localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(city));localStorage.setItem(key,JSON.stringify(state))}catch{guardStatus.textContent='Qarnizon geri çağırıla bilmədi.';return}
       render();
      });
-     garrisonPanel.querySelector('#testBorderRaid').addEventListener('click',()=>{
-      const defenders={...garrison};const defenderTotal=Object.values(defenders).reduce((n,v)=>n+(Number(v)||0),0);
-      if(!defenderTotal){guardStatus.textContent='Qarnizon boşdur. Məntəqə düşmən basqınına açıqdır.';return}
-      const raiderFor={north:{infantry:35,spearman:18,archer:30,cavalry:12,knight:5},iron:{infantry:42,spearman:28,archer:22,cavalry:10,knight:12},sun:{infantry:28,spearman:12,archer:25,cavalry:28,knight:10}};
-      const raid=resolveBattle({attacker:raiderFor[kingdom.id]||raiderFor.north,defender:defenders,direction:'south',tactic:'balanced',defenderTactic:'balanced',terrain:kingdom.id==='iron'?'fortress':kingdom.id==='north'?'forest':'plains',seed:Date.now()%100000});
-      campaign.garrison=raid.remaining.defender;
-      if(raid.winner==='attacker'){campaign.captured=false;campaign.wins=Math.max(0,(Number(campaign.wins)||0)-1)}
-      state.borderCampaigns[kingdom.id]=campaign;
-      try{localStorage.setItem(key,JSON.stringify(state))}catch{guardStatus.textContent='Döyüş nəticəsi yadda saxlanmadı.';return}
-      guardStatus.textContent=(raid.winner==='defender'?'Müdafiə uğurlu oldu. ':'Düşmən məntəqəni geri aldı! ')+ 'Qalan qarnizon: '+Object.values(campaign.garrison).reduce((n,v)=>n+v,0)+'. Hücumçu itkisi: '+Object.values(raid.losses.attacker).reduce((n,v)=>n+v,0)+'.';
-      render();
-     });
+;
     }
    }
    const button=card.querySelector('.contractAction');
