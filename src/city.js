@@ -189,8 +189,38 @@ const army={infantry:0,spearman:0,archer:0,cavalry:0,knight:0,...(savedCity.army
 function saveCity(){
  try{
   let latest={};try{latest=JSON.parse(localStorage.getItem(SAVE_KEY)||'{}')}catch{}
-  savedCity={...savedCity,...latest};
-  const next={...savedCity,resources,army,levels,wounded,treatmentEndsAt};
+  const mergeCounters=(base,local,remote)=>{
+   const result={...(remote||{})};
+   for(const key of new Set([...Object.keys(base||{}),...Object.keys(local||{}),...Object.keys(remote||{})])){
+    const before=Number(base?.[key])||0;
+    const current=Number(local?.[key])||0;
+    const stored=Number(remote?.[key])||0;
+    result[key]=Math.max(0,Math.floor(stored+(current-before)));
+   }
+   return result;
+  };
+  const baseResources=savedCity.resources||{wood:1200,stone:1000,gold:500};
+  const mergedResources=mergeCounters(baseResources,resources,latest.resources||baseResources);
+  const mergedArmy=mergeCounters(savedCity.army||{},army,latest.army||savedCity.army||{});
+  const mergedWounded=mergeCounters(savedCity.wounded||{},wounded,latest.wounded||savedCity.wounded||{});
+  const mergedLevels={...(latest.levels||savedCity.levels||{})};
+  for(const key of new Set([...Object.keys(savedCity.levels||{}),...Object.keys(levels)])){
+   const before=Number(savedCity.levels?.[key])||1;
+   const current=Number(levels[key])||1;
+   const stored=Number(latest.levels?.[key]??before)||1;
+   if(current!==before)mergedLevels[key]=Math.max(1,Math.min(10,stored+(current-before)));
+   else if(latest.levels?.[key]!==undefined)mergedLevels[key]=stored;
+  }
+  const baseTreatment=Number(savedCity.treatmentEndsAt)||0;
+  const localTreatment=Number(treatmentEndsAt)||0;
+  const remoteTreatment=Number(latest.treatmentEndsAt??baseTreatment)||0;
+  const mergedTreatment=localTreatment!==baseTreatment?localTreatment:remoteTreatment;
+  for(const key of Object.keys(resources))resources[key]=mergedResources[key]??0;
+  for(const key of Object.keys(army))army[key]=mergedArmy[key]??0;
+  for(const key of Object.keys(wounded))wounded[key]=mergedWounded[key]??0;
+  for(const key of Object.keys(levels))levels[key]=mergedLevels[key]??levels[key];
+  treatmentEndsAt=mergedTreatment;
+  const next={...savedCity,...latest,resources:mergedResources,army:mergedArmy,levels:mergedLevels,wounded:mergedWounded,treatmentEndsAt};
   localStorage.setItem(SAVE_KEY,JSON.stringify(next));
   savedCity=next;
   return true;
