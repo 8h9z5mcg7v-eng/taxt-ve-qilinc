@@ -268,7 +268,6 @@ function collectOfflineTerritoryIncome(){
   state.lastCollectedAt=now;changed=true;
  }
  if(changed){
-  for(const key of Object.keys(resources))resources[key]+=collected[key];
   try{
    localStorage.setItem(territoryKey,JSON.stringify(outposts));
    localStorage.setItem(worldKey,JSON.stringify(world));
