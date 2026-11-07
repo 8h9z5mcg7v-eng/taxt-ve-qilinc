@@ -548,7 +548,9 @@ function mountDiplomacyContracts(){
      const missing=Object.keys(required).filter(type=>(Number(city.army[type])||0)<required[type]);
      if(missing.length){battleStatus.textContent='Qoşun çatmır. Lazım olan: 30 piyada, 20 oxçu, 10 süvari.';return}
      try{localStorage.setItem('tvq_border_battle_kingdom',kingdom.id)}catch{}
-     const params=new URLSearchParams({target:'border',kingdom:kingdom.id,infantry:String(city.army.infantry||0),spearman:String(city.army.spearman||0),archer:String(city.army.archer||0),cavalry:String(city.army.cavalry||0),knight:String(city.army.knight||0),garrison:'75'});
+     const enemyFor={north:{infantry:32,spearman:18,archer:38,cavalry:12,knight:5,terrain:'forest'},iron:{infantry:42,spearman:35,archer:25,cavalry:8,knight:15,terrain:'fortress'},sun:{infantry:25,spearman:10,archer:28,cavalry:32,knight:12,terrain:'plains'}};
+     const enemy=enemyFor[kingdom.id]||enemyFor.north;
+     const params=new URLSearchParams({target:'border',kingdom:kingdom.id,infantry:String(city.army.infantry||0),spearman:String(city.army.spearman||0),archer:String(city.army.archer||0),cavalry:String(city.army.cavalry||0),knight:String(city.army.knight||0),garrison:String(Object.entries(enemy).filter(([k])=>k!=='terrain').reduce((sum,[,v])=>sum+v,0)),terrain:enemy.terrain,...Object.fromEntries(Object.entries(enemy).filter(([k])=>k!=='terrain').map(([k,v])=>['def_'+k,String(v)]))});
      location.href='./battle.html?'+params.toString();
     });
     card.append(battleButton,battleStatus);
