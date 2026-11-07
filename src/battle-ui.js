@@ -81,13 +81,18 @@ document.querySelectorAll('input[type="number"], #direction').forEach(control =>
 document.getElementById('fight').addEventListener('click', () => {
   const attacker = readArmy('a');
   const defender = readArmy('d');
-  const direction = document.getElementById('direction').value;
-  const tactic = document.getElementById('tactic').value;
+  const dispatchedPlan={};try{Object.assign(dispatchedPlan,JSON.parse(localStorage.getItem('tvq_attack_plan_v1')||'{}'))}catch{}
+  const direction = isWorldMapAttack ? (dispatchedPlan.direction||dispatched.get('direction')||document.getElementById('direction').value) : document.getElementById('direction').value;
+  const tactic = isWorldMapAttack ? (dispatchedPlan.tactic||dispatched.get('tactic')||document.getElementById('tactic').value) : document.getElementById('tactic').value;
+  document.getElementById('direction').value=direction;
+  document.getElementById('tactic').value=tactic;
   const terrain = document.getElementById('terrain').value;
   const siege = {
-    ram: Math.max(0, Math.min(20, Math.floor(Number(document.getElementById('ram').value) || 0))),
-    catapult: Math.max(0, Math.min(20, Math.floor(Number(document.getElementById('catapult').value) || 0)))
+    ram: Math.max(0, Math.min(20, Math.floor(Number(isWorldMapAttack ? (dispatchedPlan.ram??dispatched.get('ram')??document.getElementById('ram').value) : document.getElementById('ram').value) || 0))),
+    catapult: Math.max(0, Math.min(20, Math.floor(Number(isWorldMapAttack ? (dispatchedPlan.catapult??dispatched.get('catapult')??document.getElementById('catapult').value) : document.getElementById('catapult').value) || 0)))
   };
+  document.getElementById('ram').value=String(siege.ram);
+  document.getElementById('catapult').value=String(siege.catapult);
   const result = resolveBattle({ attacker, defender, direction, tactic, terrain, siege, seed: Date.now() % 100000 });
   const survivingAttacker = result.remaining?.attacker ?? attacker;
   // Keep the surviving dispatched army in the same local save used by the city.
