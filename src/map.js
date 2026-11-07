@@ -506,7 +506,7 @@ function mountDiplomacyContracts(){
    card.style.cssText='margin-top:10px;padding:12px;border:1px solid #80633f;border-radius:10px;background:#202d29';
    const resourceName=kingdom.resource==='wood'?'odun':'daş';
    const relation=state.relations[kingdom.id]||'neutral';
-   card.innerHTML='<b>'+kingdom.icon+' '+kingdom.name+'</b><div style="font-size:12px;margin:5px 0 9px">Nüfuz: '+standing+' · Münasibət: '+relationNames[relation]+'</div><p style="margin:0 0 8px">'+amount+' '+resourceName+' təhvil ver · '+reward+' qızıl və '+kingdom.rep+' nüfuz qazan</p><button type="button" '+(completed?'disabled':'')+'>'+ (completed?'✓ Müqavilə tamamlandı':'Müqaviləni yerinə yetir')+'</button><small class="contractStatus" style="display:block;margin-top:7px">'+(completed?'Bu günün mükafatı artıq alınıb.':'Resurslar şəhər anbarından çıxılacaq.')+'</small><div style="margin-top:10px;padding-top:9px;border-top:1px solid #80633f"><button type="button" class="relationAction">'+relationActions[relation]+'</button><small class="relationStatus" style="display:block;margin-top:6px">'+(relation==='neutral'?'İttifaq ticarət güzəştlərini gücləndirəcək.':relation==='allied'?'İttifaq qüvvədədir. Müharibə elan etsən, münasibətlər pozulacaq.':'Müharibə vəziyyətindəsən. Sülh üçün ödəniş et.')+'</small></div>';
+   card.innerHTML='<b>'+kingdom.icon+' '+kingdom.name+'</b><div style="font-size:12px;margin:5px 0 9px">Nüfuz: '+standing+' · Münasibət: '+relationNames[relation]+'</div><p style="margin:0 0 8px">'+amount+' '+resourceName+' təhvil ver · '+reward+' qızıl və '+kingdom.rep+' nüfuz qazan</p><button type="button" class="contractAction" '+(completed?'disabled':'')+'>'+ (completed?'✓ Müqavilə tamamlandı':'Müqaviləni yerinə yetir')+'</button><small class="contractStatus" style="display:block;margin-top:7px">'+(completed?'Bu günün mükafatı artıq alınıb.':'Resurslar şəhər anbarından çıxılacaq.')+'</small><div style="margin-top:10px;padding-top:9px;border-top:1px solid #80633f"><button type="button" class="relationAction">'+relationActions[relation]+'</button><small class="relationStatus" style="display:block;margin-top:6px">'+(relation==='neutral'?'İttifaq ticarət güzəştlərini gücləndirəcək.':relation==='allied'?'İttifaq qüvvədədir. Müharibə elan etsən, münasibətlər pozulacaq.':'Müharibə vəziyyətindəsən. Sülh üçün ödəniş et.')+'</small></div>';
    card.querySelector('.relationAction').addEventListener('click',()=>changeRelation(kingdom,card));
    const aidButton=document.createElement('button');
    aidButton.type='button';
@@ -597,7 +597,7 @@ function mountDiplomacyContracts(){
      });
     }
    }
-   const button=card.querySelector('button');
+   const button=card.querySelector('.contractAction');
    button.addEventListener('click',()=>{
     let city={};try{city=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}')}catch{}
     city.resources=city.resources||{wood:1200,stone:1000,gold:500};
