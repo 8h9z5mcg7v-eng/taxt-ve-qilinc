@@ -74,7 +74,11 @@ document.getElementById('fight').addEventListener('click', () => {
   const direction = document.getElementById('direction').value;
   const tactic = document.getElementById('tactic').value;
   const terrain = document.getElementById('terrain').value;
-  const result = resolveBattle({ attacker, defender, direction, tactic, terrain, seed: Date.now() % 100000 });
+  const siege = {
+    ram: Math.max(0, Math.min(20, Math.floor(Number(document.getElementById('ram').value) || 0))),
+    catapult: Math.max(0, Math.min(20, Math.floor(Number(document.getElementById('catapult').value) || 0)))
+  };
+  const result = resolveBattle({ attacker, defender, direction, tactic, terrain, siege, seed: Date.now() % 100000 });
   const survivingAttacker = result.remaining?.attacker ?? attacker;
   const survivingDefender = result.remaining?.defender ?? defender;
   renderBattlefield(survivingAttacker, survivingDefender, direction);
@@ -90,6 +94,8 @@ document.getElementById('fight').addEventListener('click', () => {
   document.getElementById('dp').textContent = result.power?.defender ?? '—';
   document.getElementById('ar').textContent = total(result.remaining?.attacker ?? attacker);
   document.getElementById('dr').textContent = total(result.remaining?.defender ?? defender);
+  document.getElementById('wallDamage').textContent = result.siege?.wallMax ? `${result.siege.wallDamage}/100` : 'Tətbiq edilmir';
+  document.getElementById('wallState').textContent = result.siege?.wallMax ? (result.siege.wallBreached ? 'Yarılıb' : 'Möhkəm') : 'Açıq ərazi';
   const lossText = losses => troopIds.filter(id => (losses?.[id] || 0) > 0)
     .map(id => troopNames[id] + ': ' + losses[id]).join(' · ') || 'İtki yoxdur';
   document.getElementById('aLoss').textContent = lossText(result.losses?.attacker);
