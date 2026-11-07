@@ -605,19 +605,27 @@ function mountDiplomacyContracts(){
     battleButton.disabled=battleDone||!!campaign.captured;
     battleButton.textContent=campaign.captured?'🏳 Məntəqə fəth edilib':battleDone?'✓ Bu gün döyüş tamamlanıb':'⚔ Sərhəd basqınını dəf et';
     battleStatus.textContent=(battleDone?'Bu krallıqla bu gün döyüş artıq aparılıb. Növbəti cəhd sabah mümkündür. ':'Tələb: 30 piyada, 20 oxçu, 10 süvari. Qələbə mükafatı: 80 qızıl. ')+(campaign.captured?'🏴 Sərhəd məntəqəsi ələ keçirilib.':('Sərhəd kampaniyası: '+Math.min(3,Number(campaign.wins)||0)+'/3 qələbə'+((Number(campaign.wins)||0)>=2?' · Növbəti qələbə məntəqəni açacaq.':'.')));
-    battleButton.addEventListener('click',()=>{
+    battleButton.addEventListener('click',async()=>{
      if(state.borderBattles[kingdom.id]===day)return;
-     let city={};try{city=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}')}catch{}
-     city.army=city.army||{};
      const required={infantry:30,archer:20,cavalry:10};
-     const missing=Object.keys(required).filter(type=>(Number(city.army[type])||0)<required[type]);
-     if(missing.length){battleStatus.textContent='Qoşun çatmır. Lazım olan: 30 piyada, 20 oxçu, 10 süvari.';return}
-     try{localStorage.setItem('tvq_border_battle_kingdom',kingdom.id)}catch{}
-     const enemyFor={north:{infantry:32,spearman:18,archer:38,cavalry:12,knight:5,terrain:'forest'},iron:{infantry:42,spearman:35,archer:25,cavalry:8,knight:15,terrain:'fortress'},sun:{infantry:25,spearman:10,archer:28,cavalry:32,knight:12,terrain:'plains'}};
-     const enemy=enemyFor[kingdom.id]||enemyFor.north;
-     const params=new URLSearchParams({target:'border',battleId:'border-'+kingdom.id+'-'+day,kingdom:kingdom.id,infantry:String(city.army.infantry||0),spearman:String(city.army.spearman||0),archer:String(city.army.archer||0),cavalry:String(city.army.cavalry||0),knight:String(city.army.knight||0),garrison:String(Object.entries(enemy).filter(([k])=>k!=='terrain').reduce((sum,[,v])=>sum+v,0)),terrain:enemy.terrain,...Object.fromEntries(Object.entries(enemy).filter(([k])=>k!=='terrain').map(([k,v])=>['def_'+k,String(v)]))});
-     location.href='./battle.html?'+params.toString();
-    });
+     const launch=async()=>{
+      let city={};try{city=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}')}catch{throw new Error('Şəhər yaddaşı oxunmadı.')}
+      city.army=city.army||{};
+      const missing=Object.keys(required).filter(type=>(Number(city.army[type])||0)<required[type]);
+      if(missing.length)throw new Error('Qoşun çatmır. Lazım olan: 30 piyada, 20 oxçu, 10 süvari.');
+      const army=Object.fromEntries(['infantry','spearman','archer','cavalry','knight'].map(type=>[type,Math.max(0,Math.floor(Number(city.army[type])||0))]));
+      const enemyFor={north:{infantry:32,spearman:18,archer:38,cavalry:12,knight:5,terrain:'forest'},iron:{infantry:42,spearman:35,archer:25,cavalry:8,knight:15,terrain:'fortress'},sun:{infantry:25,spearman:10,archer:28,cavalry:32,knight:12,terrain:'plains'}};
+      const enemy=enemyFor[kingdom.id]||enemyFor.north;
+      const params=new URLSearchParams({target:'border',battleId:'border-'+kingdom.id+'-'+day,kingdom:kingdom.id,...Object.fromEntries(Object.entries(army).map(([k,v])=>[k,String(v)])),garrison:String(Object.entries(enemy).filter(([k])=>k!=='terrain').reduce((sum,[,v])=>sum+v,0)),terrain:enemy.terrain,...Object.fromEntries(Object.entries(enemy).filter(([k])=>k!=='terrain').map(([k,v])=>['def_'+k,String(v)]))});
+      for(const type of Object.keys(army))city.army[type]=Math.max(0,(Number(city.army[type])||0)-army[type]);
+      localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(city));
+      localStorage.setItem('tvq_border_battle_kingdom',kingdom.id);
+      location.href='./battle.html?'+params.toString();
+     };
+     try{
+      if(navigator.locks?.request)await navigator.locks.request('tvq-city-economy',launch);else await launch();
+     }catch(error){battleStatus.textContent=error?.message||'Hücum başlatmaq mümkün olmadı.';}
+    });;
     card.append(battleButton,battleStatus);
     if(campaign.captured){
      const garrison=campaign.garrison||{infantry:0,spearman:0,archer:0,cavalry:0,knight:0};
