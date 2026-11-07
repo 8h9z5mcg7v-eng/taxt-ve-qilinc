@@ -270,7 +270,8 @@ document.getElementById('fight').addEventListener('click', () => {
     tower: Math.max(0, Math.min(20, Math.floor(Number(isWorldMapAttack ? (dispatchedPlan.tower??dispatched.get('tower')??document.getElementById('tower').value) : document.getElementById('tower').value) || 0)))
   };
   document.getElementById('ram').value=String(siege.ram);
-  document.getElementById('catapult').value=String(siege.catapult);\n  document.getElementById('tower').value=String(siege.tower);
+  document.getElementById('catapult').value=String(siege.catapult);
+  document.getElementById('tower').value=String(siege.tower);
   const fightButton = document.getElementById('fight');
   if (isWorldMapAttack && fightButton.disabled) return;
   fightButton.disabled = true;
