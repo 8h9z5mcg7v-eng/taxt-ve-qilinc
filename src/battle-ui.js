@@ -64,8 +64,18 @@ function renderTerrain(terrain, wallDamage = 0, siege = {}) {
       svgNode('path', { d: 'M214 109 L247 109 L259 130 L235 130Z M340 109 L371 109 L386 130 L354 130Z', fill: '#4c4b43', stroke: '#282b27', 'stroke-width': 2 }, scene);
     }
     if (damage >= 100) {
+      // Open breach with broken masonry piled on both sides of the passage.
       svgNode('rect', { x: 264, y: 76, width: 68, height: 54, fill: '#a18a58' }, scene);
       svgNode('path', { d: 'M252 131 L266 114 L278 131 M322 131 L337 113 L350 131', fill: '#77786d', stroke: '#282b27', 'stroke-width': 3 }, scene);
+      for (let i = 0; i < 11; i++) {
+        const x = 246 + ((i * 23) % 112);
+        const y = 124 + ((i * 7) % 15);
+        svgNode('path', {
+          d: `M${x} ${y} l8 -5 l9 6 l-5 7 l-10 0Z`,
+          fill: ['#77786d', '#969184', '#5e625d'][i % 3],
+          stroke: '#393b35', 'stroke-width': 1
+        }, scene);
+      }
       svgNode('text', { x: 300, y: 148, 'text-anchor': 'middle', fill: '#ffe0a1', 'font-size': 11, 'font-weight': 700 }, scene, 'DİVAR YARILIB');
     }
   }
@@ -269,18 +279,21 @@ function playCombatAnimation(attacker = {}, defender = {}, siege = {}, result = 
   // Animate complete troop groups so the movement remains visible after
   // the post-battle formation has been rendered.
   [...attackLayer.querySelectorAll('g')].forEach((group, index) => {
+    const formation = group.getAttribute('transform');
+    const breached = !!result.siege?.wallBreached;
     group.animate(
-      [{ transform: group.getAttribute('transform') },
-       { transform: group.getAttribute('transform') + ' translate(0,-18)' },
-       { transform: group.getAttribute('transform') }],
-      { duration: 760, delay: index * 130, easing: 'ease-in-out' }
+      breached
+        ? [{ transform: formation }, { transform: formation + ' translate(0,-36)' }, { transform: formation + ' translate(0,-58)' }]
+        : [{ transform: formation }, { transform: formation + ' translate(0,-18)' }, { transform: formation }],
+      { duration: breached ? 1450 : 760, delay: index * 130, fill: breached ? 'forwards' : 'none', easing: 'ease-in-out' }
     );
   });
   [...defendLayer.querySelectorAll('g')].forEach((group, index) => {
+    const formation = group.getAttribute('transform');
     group.animate(
-      [{ transform: group.getAttribute('transform') },
-       { transform: group.getAttribute('transform') + ' translate(0,5)' },
-       { transform: group.getAttribute('transform') }],
+      [{ transform: formation },
+       { transform: formation + (result.siege?.wallBreached ? ' translate(0,12)' : ' translate(0,5)') },
+       { transform: formation }],
       { duration: 680, delay: index * 100, easing: 'ease-out' }
     );
   });
