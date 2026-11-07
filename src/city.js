@@ -245,6 +245,7 @@ async function withCityEconomyLock(action){
  else run();
 }
 function collectOfflineTerritoryIncome(){
+ return withCityEconomyLock(()=>{
  let outposts={},world={};
  try{outposts=JSON.parse(localStorage.getItem(territoryKey)||'{}')}catch{}
  try{world=JSON.parse(localStorage.getItem(worldKey)||'{}')}catch{}
@@ -268,14 +269,21 @@ function collectOfflineTerritoryIncome(){
  }
  if(changed){
   for(const key of Object.keys(resources))resources[key]+=collected[key];
-  try{localStorage.setItem(territoryKey,JSON.stringify(outposts));localStorage.setItem(worldKey,JSON.stringify(world));localStorage.setItem('tvq_diplomacy_v1',JSON.stringify(diplomacy))}catch{}
-  refreshResources();saveCity();
+  try{
+   localStorage.setItem(territoryKey,JSON.stringify(outposts));
+   localStorage.setItem(worldKey,JSON.stringify(world));
+   localStorage.setItem('tvq_diplomacy_v1',JSON.stringify(diplomacy));
+  }catch{return {wood:0,stone:0,gold:0}}
+  for(const key of Object.keys(resources))resources[key]+=collected[key];
+  refreshResources();
+  if(!saveCity())return {wood:0,stone:0,gold:0};
   const panel=document.querySelector('#territorySummary');
   if(panel&&Object.values(collected).some(v=>v>0)){
    const note=document.createElement('div');note.textContent='Şəhərə qayıdış gəliri: '+collected.wood+' odun · '+collected.stone+' daş · '+collected.gold+' qızıl';note.style.cssText='margin-top:6px;color:#f0d18e';panel.append(note);
   }
  }
  return collected;
+ });
 }
 for(const key of Object.keys(army))army[key]=Math.max(0,Math.floor(Number(army[key])||0));
 refreshDefenseTowerModels();
