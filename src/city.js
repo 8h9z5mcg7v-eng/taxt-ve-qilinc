@@ -107,6 +107,28 @@ function showBuilding(label){selectedBuilding=label;const level=levels[label]||1
 renderer.domElement.addEventListener('pointerup',e=>{const rect=renderer.domElement.getBoundingClientRect();pointer.x=((e.clientX-rect.left)/rect.width)*2-1;pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;raycaster.setFromCamera(pointer,camera);const hits=raycaster.intersectObjects(pickables,false);if(hits.length){const label=hits[0].object.userData.label||'Şəhər obyekti';showBuilding(label)}});
 document.querySelector('#upgrade').addEventListener('click',()=>{if(!selectedBuilding){info.innerHTML='<b>Tikili seçilməyib</b>İnkişaf etdirmək üçün əvvəlcə şəhərdə binaya toxun.';return}const current=levels[selectedBuilding]||1;if(current>=10){info.innerHTML='<b>Maksimum səviyyə</b>'+selectedBuilding+' artıq 10-cu səviyyədədir.';return}const cost={wood:current*150,stone:current*100,gold:current*50};if(resources.wood<cost.wood||resources.stone<cost.stone||resources.gold<cost.gold){info.innerHTML='<b>Resurs çatışmır</b>Bu inkişaf üçün daha çox odun, daş və qızıl lazımdır.';return}resources.wood-=cost.wood;resources.stone-=cost.stone;resources.gold-=cost.gold;levels[selectedBuilding]=current+1;refreshResources();saveCity();info.innerHTML='<b>'+selectedBuilding+' · Səviyyə '+(current+1)+'</b>İnkişaf tamamlandı və yadda saxlanıldı. Xərc: '+cost.wood+' odun, '+cost.stone+' daş, '+cost.gold+' qızıl.'});
 refreshResources();
+const territoryKey='tvq_territory_v1';
+const worldKey='tvq_world_state_v1';
+function getTerritoryIncome(){
+ let outposts={},world={};
+ try{outposts=JSON.parse(localStorage.getItem(territoryKey)||'{}')}catch{}
+ try{world=JSON.parse(localStorage.getItem(worldKey)||'{}')}catch{}
+ const rates={wood:0,stone:0,gold:0},owned=[];
+ const sources=[
+  {id:'village',name:'Sərhəd kəndi',wood:18,stone:4,gold:2},
+  {id:'mine',name:'Dəmir mədəni',wood:4,stone:18,gold:5}
+ ];
+ for(const item of sources){if(outposts[item.id]?.captured){owned.push(item.name);for(const key of Object.keys(rates))rates[key]+=item[key]}}
+ if(world.redFortress?.captured){owned.push('Qırmızı Qala');rates.wood+=20;rates.stone+=15;rates.gold+=5}
+ return {rates,owned};
+}
+function renderTerritorySummary(){
+ let panel=document.querySelector('#territorySummary');
+ if(!panel){panel=document.createElement('section');panel.id='territorySummary';panel.style.cssText='position:absolute;left:12px;top:112px;z-index:4;max-width:min(340px,calc(100vw - 24px));padding:10px 12px;border:1px solid #a87942;border-radius:10px;background:#1d2b25eF;color:#f4e6c8;font:12px/1.5 system-ui;pointer-events:auto';document.body.append(panel)}
+ const data=getTerritoryIncome();
+ panel.innerHTML='<b>🏴 Krallığın əraziləri</b><div>Nəzarətdə: '+(data.owned.length?data.owned.join(', '):'Hələ fəth edilmiş ərazi yoxdur')+'</div><div>Saatlıq gəlir: 🪵 '+data.rates.wood+' · 🪨 '+data.rates.stone+' · 🪙 '+data.rates.gold+'</div><small>Gəliri toplamaq üçün dünya xəritəsində fəth edilmiş məntəqəni seç.</small>';
+}
+renderTerritorySummary();
 const army={infantry:0,spearman:0,archer:0,cavalry:0,knight:0,...(savedCity.army||{})};
 function saveCity(){try{localStorage.setItem(SAVE_KEY,JSON.stringify({resources,army,levels}))}catch{}}
 for(const key of Object.keys(army))army[key]=Math.max(0,Math.floor(Number(army[key])||0));
