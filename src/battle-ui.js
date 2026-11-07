@@ -156,10 +156,41 @@ function playCombatAnimation(attacker = {}, siege = {}) {
     shot.setAttribute('stroke', color); shot.setAttribute('stroke-width', width);
     shot.setAttribute('stroke-linecap', 'round');
     projectileLayer.appendChild(shot);
-    shot.animate(
+    const flight = shot.animate(
       [{ x2: x1, y2: y1, opacity: 0.2 }, { x2, y2, opacity: 1 }],
       { duration: 520, delay, easing: 'ease-in' }
     );
+    flight.onfinish = () => {
+      const impact = document.createElementNS(svgNS, 'circle');
+      impact.setAttribute('cx', x2);
+      impact.setAttribute('cy', y2);
+      impact.setAttribute('r', width >= 5 ? 5 : 2);
+      impact.setAttribute('fill', color);
+      impact.setAttribute('stroke', '#fff0c5');
+      impact.setAttribute('stroke-width', '1.5');
+      projectileLayer.appendChild(impact);
+      impact.animate(
+        [{ r: 2, opacity: 1 }, { r: width >= 5 ? 18 : 9, opacity: 0 }],
+        { duration: width >= 5 ? 520 : 300, easing: 'ease-out' }
+      ).onfinish = () => impact.remove();
+      if (width >= 5) {
+        for (let piece = 0; piece < 5; piece++) {
+          const debris = document.createElementNS(svgNS, 'circle');
+          debris.setAttribute('cx', x2);
+          debris.setAttribute('cy', y2);
+          debris.setAttribute('r', 2 + (piece % 2));
+          debris.setAttribute('fill', '#a99b7b');
+          projectileLayer.appendChild(debris);
+          const dx = (piece - 2) * 9;
+          const dy = -8 - (piece % 3) * 6;
+          debris.animate(
+            [{ transform: 'translate(0px,0px)', opacity: 1 },
+             { transform: `translate(${dx}px,${dy}px)`, opacity: 0 }],
+            { duration: 560, easing: 'ease-out' }
+          ).onfinish = () => debris.remove();
+        }
+      }
+    };
   };
   const archerShots = Math.min(8, Math.ceil((attacker.archer || 0) / 20));
   for (let i = 0; i < archerShots; i++) {
