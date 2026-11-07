@@ -18,6 +18,23 @@ const worldKey='tvq_world_state_v1';
 let worldState={};
 try{worldState=JSON.parse(localStorage.getItem(worldKey)||'{}');fortressState=worldState.redFortress||{}}catch{worldState={};fortressState={}}
 function saveWorld(){try{localStorage.setItem(worldKey,JSON.stringify(worldState))}catch{}}
+function showTerritoryEconomy(){
+ const panel=document.querySelector('.panel');
+ let section=document.querySelector('#territoryEconomy');
+ if(!section){section=document.createElement('div');section.id='territoryEconomy';section.style.cssText='margin-top:12px;padding:12px;border:1px solid #756448;border-radius:9px;background:#1d2b25';panel.append(section)}
+ const now=Date.now();const last=Number(fortressState.lastCollectedAt||now);const hours=Math.min(24,Math.max(0,(now-last)/3600000));
+ const gain={wood:Math.floor(hours*20),stone:Math.floor(hours*15),gold:Math.floor(hours*5)};
+ section.innerHTML='<b>🏰 İdarə olunan ərazi</b><p>Qırmızı Qala hər saat +20 odun, +15 daş və +5 qızıl istehsal edir. Toplanmamış gəlir maksimum 24 saat saxlanılır.</p><div class="stats"><span>🪵 '+gain.wood+' odun</span><span>🪨 '+gain.stone+' daş</span><span>🪙 '+gain.gold+' qızıl</span></div><button id="collectIncome" style="margin-top:10px">Gəliri topla</button>';
+ section.querySelector('#collectIncome').addEventListener('click',()=>{
+  if(!fortressState.captured)return;
+  let city={};try{city=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}')}catch{}
+  city.resources=city.resources||{wood:1200,stone:1000,gold:500};
+  for(const key of ['wood','stone','gold'])city.resources[key]=Math.max(0,Number(city.resources[key])||0)+gain[key];
+  try{localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(city))}catch{}
+  fortressState.lastCollectedAt=now;worldState.redFortress=fortressState;saveWorld();
+  section.innerHTML='<b>Gəlir toplandı!</b><p>'+gain.wood+' odun, '+gain.stone+' daş və '+gain.gold+' qızıl şəhərin yaddaşına əlavə edildi. Şəhərə qayıdıb resurs panelini yenilə.</p>';
+ });
+}
 function showGarrisonControls(){
  const panel=document.querySelector('.panel');
  let section=document.querySelector('#garrisonControls');
@@ -60,7 +77,7 @@ document.querySelectorAll('.place').forEach(el=>el.addEventListener('click',()=>
  document.querySelector('#description').textContent=selected.description;
  marchButton.disabled=!selected.enemy||total===0;
  document.querySelector('#path').style.display='block';
- if(el.dataset.id==='enemy'&&fortressState.captured)showGarrisonControls();
+ if(el.dataset.id==='enemy'&&fortressState.captured){showGarrisonControls();showTerritoryEconomy();}
  else document.querySelector('#garrisonControls')?.remove();
 }));
 marchButton.addEventListener('click',()=>{
