@@ -25,3 +25,13 @@ Bu mexanika ilk balans sınağı üçündür; multiplayer, server təsdiqi, anim
 - **Möhkəmləndirilmiş qala:** müdafiəçiyə 32% müdafiə bonusu; süvarinin manevr effektivliyi azalır.
 
 Bunlar ilkin balans parametrləridir; oyun testləri ilə dəyişdiriləcək.
+
+## Qala mühasirəsi — ilkin mexanika
+- Qoçbaşı və katapult sayı döyüş başlamazdan əvvəl seçilir (0–20).
+- Qala ərazisində divarların ilkin davamlılığı 100 vahiddir.
+- Hər qoçbaşı 18, hər katapult 30 divar zədəsi verir.
+- Divar tam dağıldıqda müdafiəçinin divar müdafiə bonusu aradan qalxır.
+- Katapult hücum gücünə hər qurğu üçün 14 vahid əlavə edir; divar yarıldıqdan sonra qoçbaşı hər qurğu üçün 6 əlavə hücum gücü verir.
+- Açıq ərazidə divar zədəsi hesablanmır.
+
+Bu mərhələdə qurğuların vizual modeli, mərmi trayektoriyası və animasiyası yoxdur. Rəqəmlər balans prototipidir.
