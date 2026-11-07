@@ -580,7 +580,8 @@ document.getElementById('fight').addEventListener('click', () => {
       wallLevel = Math.max(1, Math.min(10, Math.round(names.reduce((sum, name) => sum + (Number(levels[name]) || 1), 0) / names.length)));
     } catch {}
   }
-  const result = resolveBattle({ attacker, defender, direction, tactic, terrain, siege, defenseCatapult, wallLevel, priorWallDamage, seed: Date.now() % 100000 });
+  const commander=(()=>{try{return JSON.parse(localStorage.getItem('tvq_general_v1')||'{}')}catch{return {}}})();
+  const result = resolveBattle({ attacker, defender, direction, tactic, terrain, siege, defenseCatapult, wallLevel, priorWallDamage, commander, seed: Date.now() % 100000 });
   fightButton.textContent = isWorldMapAttack ? 'DÖYÜŞ TAMAMLANDI' : 'YENİ DÖYÜŞÜ HESABLA';
   if (!isWorldMapAttack) fightButton.disabled = false;
   const survivingAttacker = result.remaining?.attacker ?? attacker;
