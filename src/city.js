@@ -186,7 +186,16 @@ function renderTerritorySummary(){
 }
 renderTerritorySummary();
 const army={infantry:0,spearman:0,archer:0,cavalry:0,knight:0,...(savedCity.army||{})};
-function saveCity(){try{localStorage.setItem(SAVE_KEY,JSON.stringify({resources,army,levels,wounded,treatmentEndsAt}))}catch{}}
+function saveCity(){
+ try{
+  let latest={};try{latest=JSON.parse(localStorage.getItem(SAVE_KEY)||'{}')}catch{}
+  savedCity={...savedCity,...latest};
+  const next={...savedCity,resources,army,levels,wounded,treatmentEndsAt};
+  localStorage.setItem(SAVE_KEY,JSON.stringify(next));
+  savedCity=next;
+  return true;
+ }catch{return false}
+}
 function collectOfflineTerritoryIncome(){
  let outposts={},world={};
  try{outposts=JSON.parse(localStorage.getItem(territoryKey)||'{}')}catch{}
@@ -357,9 +366,29 @@ function processReturningArmy(){
  if(!trip){panel?.remove();return}
  const left=Math.max(0,Number(trip.arrivesAt)-Date.now());
  if(left<=0){
-  for(const type of Object.keys(army)){army[type]=(army[type]||0)+Math.max(0,Math.floor(Number(trip.army?.[type])||0))}
-  localStorage.removeItem('tvq_return_journey_v1');
-  saveCity();updateArmyStatus();renderArmyInCity();panel?.remove();
+  const journeyId=String(trip.id||((Number(trip.startedAt)||0)+':'+Number(trip.arrivesAt)+':'+Object.values(trip.army||{}).join(',')));
+  try{
+   let latest=JSON.parse(localStorage.getItem(SAVE_KEY)||'{}');
+   latest.processedReturnJourneys=latest.processedReturnJourneys||{};
+   if(!latest.processedReturnJourneys[journeyId]){
+    latest.army=latest.army||{};
+    for(const type of Object.keys(army)){
+     const count=Math.max(0,Math.floor(Number(trip.army?.[type])||0));
+     latest.army[type]=Math.max(0,Math.floor(Number(latest.army[type])||0))+count;
+    }
+    latest.processedReturnJourneys[journeyId]={processedAt:Date.now()};
+    const ids=Object.keys(latest.processedReturnJourneys);
+    if(ids.length>30)for(const oldId of ids.slice(0,ids.length-30))delete latest.processedReturnJourneys[oldId];
+    localStorage.setItem(SAVE_KEY,JSON.stringify(latest));
+   }
+   for(const type of Object.keys(army))army[type]=Math.max(0,Math.floor(Number(latest.army?.[type])||0));
+   savedCity={...savedCity,...latest};
+   localStorage.removeItem('tvq_return_journey_v1');
+  }catch{
+   if(panel)panel.textContent='⚠️ Qayıdan qoşunların nəticəsi yadda saxlanmadı. Şəhər yaddaşı yoxlanıldıqdan sonra yenidən cəhd ediləcək.';
+   return;
+  }
+  updateArmyStatus();renderArmyInCity();panel?.remove();
   const note=document.createElement('div');note.id=panelId;note.textContent='🏰 Sağ qalan qoşunlar şəhərə qayıtdı və orduya qoşuldu.';note.style.cssText='position:absolute;left:12px;bottom:90px;z-index:8;padding:10px 13px;border:1px solid #b58a55;border-radius:9px;background:#1d2b25ed;color:#f4e6c8';document.body.append(note);
   return;
  }
