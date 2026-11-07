@@ -581,7 +581,13 @@ document.getElementById('fight').addEventListener('click', () => {
     } catch {}
   }
   const commander=(()=>{try{return JSON.parse(localStorage.getItem('tvq_general_v1')||'{}')}catch{return {}}})();
+  const commanderId=['alp','tomris','babek'].includes(dispatched.get('commander'))?dispatched.get('commander'):(commander.id||'alp');
+  commander.id=commanderId;
   const result = resolveBattle({ attacker, defender, direction, tactic, terrain, siege, defenseCatapult, wallLevel, priorWallDamage, commander, seed: Date.now() % 100000 });
+  if(isWorldMapAttack){
+   try{const key='tvq_general_v1';const current=JSON.parse(localStorage.getItem(key)||'{}');current.id=commanderId;current.xp=Math.max(0,Number(current.xp)||0)+25+(result.winner==='attacker'?25:0);localStorage.setItem(key,JSON.stringify(current));}
+   catch(error){console.warn('Sərkərdə təcrübəsi saxlanmadı',error)}
+  }
   fightButton.textContent = isWorldMapAttack ? 'DÖYÜŞ TAMAMLANDI' : 'YENİ DÖYÜŞÜ HESABLA';
   if (!isWorldMapAttack) fightButton.disabled = false;
   const survivingAttacker = result.remaining?.attacker ?? attacker;
