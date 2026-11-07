@@ -48,6 +48,24 @@ const territories=[
  {id:'mine',name:'Dəmir mədəni',kind:'mine',wood:4,stone:18,gold:5}
 ];
 for(const id of ['village','mine'])settleCaravan(id);
+const caravanStyle=document.createElement('style');
+caravanStyle.textContent='@keyframes caravanVillage{from{left:22%;top:64%}to{left:70%;top:25%}}@keyframes caravanMine{from{left:22%;top:64%}to{left:50%;top:39%}}.caravan-marker{position:absolute;z-index:4;transform:translate(-50%,-50%);font-size:22px;filter:drop-shadow(0 2px 5px #000);pointer-events:none;animation-timing-function:linear;animation-fill-mode:forwards}';
+document.head.append(caravanStyle);
+function renderCaravanMarkers(){
+ document.querySelectorAll('.caravan-marker').forEach(node=>node.remove());
+ for(const id of ['village','mine']){
+  const trip=caravans[id];if(!trip||trip.status!=='traveling')continue;
+  const remaining=Math.max(0,trip.arrivesAt-Date.now());if(!remaining)continue;
+  const marker=document.createElement('div');marker.className='caravan-marker';marker.textContent='🚚';marker.title='Ticarət karvanı yoldadır';
+  marker.style.left='22%';marker.style.top='64%';
+  marker.style.animationName=id==='village'?'caravanVillage':'caravanMine';
+  marker.style.animationDuration=remaining+'ms';
+  const elapsed=Math.max(0,Date.now()-trip.sentAt);
+  marker.style.animationDelay='-'+elapsed+'ms';
+  document.querySelector('#map').append(marker);
+ }
+}
+renderCaravanMarkers();
 function showOutpostControls(id){
  const target=territories.find(x=>x.id===id);if(!target)return;
  let panel=document.querySelector('#outpostControls');
@@ -115,6 +133,7 @@ function showOutpostControls(id){
   try{localStorage.setItem(caravanKey,JSON.stringify(caravans))}catch{}
   caravanButton.disabled=true;
   caravanStatus.textContent='🚚 Karvan yola düşdü. Təxmini qayıdış: 60 saniyə.';
+  renderCaravanMarkers();
   const timer=setInterval(()=>{
    if(settleCaravan(id)){
     clearInterval(timer);
