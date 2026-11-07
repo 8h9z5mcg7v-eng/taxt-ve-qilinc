@@ -309,7 +309,13 @@ function renderBattleHistory(){
  if(!panel){panel=document.createElement('section');panel.id='battleHistoryPanel';panel.style.cssText='position:absolute;right:12px;top:calc(112px + min(42vh,330px) + 12px);z-index:8;width:min(330px,calc(100vw - 24px));max-height:30vh;overflow:auto;padding:12px;border:1px solid #806d4a;border-radius:10px;background:#17251fee;color:#f4e6c8;font:12px/1.5 system-ui;box-shadow:0 8px 24px #0008';document.body.append(panel)}
  if(!history.length){panel.innerHTML='<b>📚 Döyüş tarixçəsi</b><p>Hələ qeydə alınmış döyüş yoxdur.</p>';return}
  const totalLoss=(items)=>Object.values(items||{}).reduce((sum,n)=>sum+Math.max(0,Number(n)||0),0);
- panel.innerHTML='<b>📚 Döyüş tarixçəsi · '+history.length+'/20</b>'+history.map((r,index)=>{
+ const wins=history.filter(r=>r.winner==='attacker').length,losses=history.length-wins;
+ const ownLosses=history.reduce((sum,r)=>sum+totalLoss(r.attackerLosses),0);
+ const enemyLosses=history.reduce((sum,r)=>sum+totalLoss(r.defenderLosses),0);
+ const captures=history.filter(r=>r.captured).length;
+ const rate=Math.round(wins/Math.max(1,history.length)*100);
+ const stats='<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:9px 0"><div style="padding:7px;border-radius:7px;background:#263b30">🏆 Qələbə <b>'+wins+'</b></div><div style="padding:7px;border-radius:7px;background:#3b2b27">⚔ Məğlubiyyət <b>'+losses+'</b></div><div style="padding:7px;border-radius:7px;background:#263b30">📈 Uğur faizi <b>'+rate+'%</b></div><div style="padding:7px;border-radius:7px;background:#3b3426">🏰 Fəth edilən qala <b>'+captures+'</b></div></div><div style="font-size:11px;color:#d7c8a9;margin-bottom:8px">Ümumi itkilərimiz: <b>'+ownLosses+'</b> · Düşmən itkiləri: <b>'+enemyLosses+'</b></div>';
+ panel.innerHTML='<b>📚 Döyüş tarixçəsi · '+history.length+'/20</b>'+stats+history.map((r,index)=>{
   const won=r.winner==='attacker',date=new Date(Number(r.at)||Date.now()).toLocaleString('az-AZ');
   return '<details style="margin-top:8px;padding:8px;border:1px solid #66583e;border-radius:7px;background:#202d29"><summary style="cursor:pointer;color:'+(won?'#a9df9b':'#f0a18c')+'">'+(index+1)+'. '+(won?'Qələbə':'Məğlubiyyət')+(r.captured?' · Qala alındı':'')+'<br><small style="color:#d7c8a9">'+date+'</small></summary><div style="margin-top:7px">Öz itkilərimiz: <b>'+totalLoss(r.attackerLosses)+'</b><br>Düşmən itkiləri: <b>'+totalLoss(r.defenderLosses)+'</b><br>Sağ qalan əsgərlər: <b>'+totalLoss(r.survivingAttackers)+'</b><br>Divar zədəsi: <b>'+Math.max(0,Math.floor(Number(r.wallDamage)||0))+'%</b></div></details>';
  }).join('')+'<button id="clearBattleHistory" style="margin-top:10px;width:100%">Tarixçəni təmizlə</button>';
