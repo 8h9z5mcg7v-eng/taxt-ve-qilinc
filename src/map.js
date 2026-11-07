@@ -21,7 +21,6 @@ function settleCaravan(id){
  try{localStorage.setItem(caravanKey,JSON.stringify(caravans))}catch{}
  return true;
 }
-for(const id of ['village','mine'])settleCaravan(id);
 const territoryKey='tvq_territory_v1';
 let territory={};
 try{territory=JSON.parse(localStorage.getItem(territoryKey)||'{}')}catch{}
@@ -29,6 +28,7 @@ const territories=[
  {id:'village',name:'Sərhəd kəndi',kind:'village',wood:18,stone:4,gold:2},
  {id:'mine',name:'Dəmir mədəni',kind:'mine',wood:4,stone:18,gold:5}
 ];
+for(const id of ['village','mine'])settleCaravan(id);
 function showOutpostControls(id){
  const target=territories.find(x=>x.id===id);if(!target)return;
  let panel=document.querySelector('#outpostControls');
