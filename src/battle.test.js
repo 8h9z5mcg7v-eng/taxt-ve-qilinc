@@ -105,3 +105,19 @@ test('losses never exceed the number of units in each troop class', () => {
     assert.ok(result.remaining.defender[type] >= 0);
   }
 });
+
+
+test('siege engines give no artificial attack bonus outside fortress terrain', () => {
+  const base = { attacker: { infantry: 10 }, defender: { infantry: 10 }, terrain: 'plains', seed: 12 };
+  const plain = resolveBattle({ ...base, siege: {} });
+  const withSiege = resolveBattle({ ...base, siege: { ram: 20, catapult: 20 } });
+  assert.equal(withSiege.power.attacker, plain.power.attacker);
+  assert.equal(withSiege.siege.attackBonus, 0);
+});
+
+test('intact fortress wall gives exactly the intended 32 percent defence bonus', () => {
+  const base = { attacker: { infantry: 10 }, defender: { infantry: 10 }, seed: 15 };
+  const open = resolveBattle({ ...base, terrain: 'plains' });
+  const fortress = resolveBattle({ ...base, terrain: 'fortress' });
+  assert.equal(fortress.power.defender, Math.round(open.power.defender * 1.32));
+});
