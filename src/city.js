@@ -30,7 +30,31 @@ function roofHouse(name,x,z,w,d,h,wall=plaster,top=roof){
  const r=new THREE.Mesh(new THREE.ConeGeometry(Math.max(w,d)*.72,h*.82,4),top);r.position.set(x,h+h*.36,z);r.rotation.y=Math.PI/4;r.castShadow=true;r.userData.label=name;pickables.push(r);scene.add(r);
  box(name,x,1.2,z+d/2+.04,w*.2,2.4,.12,dark);
 }
-function tower(x,z){cylinder('Müdafiə qülləsi',x,0,z,7,7,17,stone,12);const cap=new THREE.Mesh(new THREE.ConeGeometry(8,8,12),roof);cap.position.set(x,21,z);cap.castShadow=true;cap.userData.label='Müdafiə qülləsi';pickables.push(cap);scene.add(cap)}
+const defenseTowerGroups=[];
+function tower(x,z){
+ const group=new THREE.Group();group.position.set(x,0,z);group.userData.baseHeight=17;
+ const shaft=new THREE.Mesh(new THREE.CylinderGeometry(7,7,17,12),stone);shaft.position.y=8.5;shaft.castShadow=true;shaft.receiveShadow=true;shaft.userData.label='Müdafiə qülləsi';group.add(shaft);pickables.push(shaft);
+ const crown=new THREE.Mesh(new THREE.CylinderGeometry(8,8,2.2,12),stoneDark);crown.position.y=17.2;crown.castShadow=true;crown.userData.label='Müdafiə qülləsi';group.add(crown);pickables.push(crown);
+ const cap=new THREE.Mesh(new THREE.ConeGeometry(8,8,12),roof);cap.position.y=22.3;cap.castShadow=true;cap.userData.label='Müdafiə qülləsi';group.add(cap);pickables.push(cap);
+ const merlons=[];
+ for(let i=0;i<12;i++){const a=i*Math.PI/6;const block=new THREE.Mesh(new THREE.BoxGeometry(2.1,2.8,2.1),stone);block.position.set(Math.cos(a)*7.2,19.7,Math.sin(a)*7.2);block.castShadow=true;block.userData.label='Müdafiə qülləsi';group.add(block);pickables.push(block);merlons.push(block)}
+ const slits=[];
+ for(let i=0;i<4;i++){const a=i*Math.PI/2;const slit=new THREE.Mesh(new THREE.BoxGeometry(.45,3.2,.5),dark);slit.position.set(Math.cos(a)*7.04,10,Math.sin(a)*7.04);slit.lookAt(Math.cos(a)*20,10,Math.sin(a)*20);group.add(slit);slits.push(slit)}
+ const emplacements=[];
+ for(let i=0;i<3;i++){const weapon=new THREE.Group();const x=-4+i*4;const base=new THREE.Mesh(new THREE.BoxGeometry(2.4,.8,2.1),wood);base.position.y=21.2;weapon.add(base);const arm=new THREE.Mesh(new THREE.BoxGeometry(.35,3.2,.45),metal);arm.position.set(0,22.7,0);weapon.add(arm);const stoneShot=new THREE.Mesh(new THREE.SphereGeometry(.75,8,7),stoneDark);stoneShot.position.set(0,24.2,0);weapon.add(stoneShot);weapon.position.x=x;weapon.visible=false;group.add(weapon);emplacements.push(weapon)}
+ group.userData.merlons=merlons;group.userData.emplacements=emplacements;group.userData.cap=cap;
+ scene.add(group);defenseTowerGroups.push(group);return group;
+}
+function refreshDefenseTowerModels(){
+ for(const group of defenseTowerGroups){
+  const level=Math.max(1,Math.min(10,Math.floor(Number(levels['Müdafiə qülləsi'])||1)));
+  const height=1+(level-1)*.075;
+  group.scale.set(1,height,1);
+  group.userData.cap.scale.set(1,1+(level-1)*.045,1);
+  group.userData.merlons.forEach((block,i)=>{block.visible=i<Math.min(12,6+level);});
+  group.userData.emplacements.forEach((weapon,i)=>{weapon.visible=level>=4+i*2;});
+ }
+}
 // Textured-looking terrain patches, paths and crop plots.
 for(let i=0;i<36;i++){const x=((i*47)%260)-130,z=((i*83)%260)-130;if(Math.abs(x)<62&&Math.abs(z)<62)continue;const patch=new THREE.Mesh(new THREE.CircleGeometry(3+(i%4),7),i%2?grass2:grass);patch.rotation.x=-Math.PI/2;patch.position.set(x,.015,z);scene.add(patch)}
 const roadmat=mat(0x9a8968);const road=new THREE.Mesh(new THREE.PlaneGeometry(13,120),roadmat);road.rotation.x=-Math.PI/2;road.position.set(0,.03,93);scene.add(road);
@@ -105,7 +129,7 @@ const resourceNodes={wood:document.querySelector('#wood'),stone:document.querySe
 function refreshResources(){for(const key of Object.keys(resources))resourceNodes[key].textContent=resources[key].toLocaleString('en-US')}
 function showBuilding(label){selectedBuilding=label;const level=levels[label]||1;const defenseNote=label==='Müdafiə qülləsi'?'<br>Hər səviyyə yüksəlişi qala müdafiəsinə 1 katapult əlavə edir. Hazırda: '+Math.max(0,level-1)+' katapult.':' ';info.innerHTML='<b>'+label+' · Səviyyə '+level+'</b>İnkişaf üçün düyməyə toxun. Növbəti səviyyə resurs tələb edir.'+defenseNote;}
 renderer.domElement.addEventListener('pointerup',e=>{const rect=renderer.domElement.getBoundingClientRect();pointer.x=((e.clientX-rect.left)/rect.width)*2-1;pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;raycaster.setFromCamera(pointer,camera);const hits=raycaster.intersectObjects(pickables,false);if(hits.length){const label=hits[0].object.userData.label||'Şəhər obyekti';showBuilding(label)}});
-document.querySelector('#upgrade').addEventListener('click',()=>{if(!selectedBuilding){info.innerHTML='<b>Tikili seçilməyib</b>İnkişaf etdirmək üçün əvvəlcə şəhərdə binaya toxun.';return}const current=levels[selectedBuilding]||1;if(current>=10){info.innerHTML='<b>Maksimum səviyyə</b>'+selectedBuilding+' artıq 10-cu səviyyədədir.';return}const cost={wood:current*150,stone:current*100,gold:current*50};if(resources.wood<cost.wood||resources.stone<cost.stone||resources.gold<cost.gold){info.innerHTML='<b>Resurs çatışmır</b>Bu inkişaf üçün daha çox odun, daş və qızıl lazımdır.';return}resources.wood-=cost.wood;resources.stone-=cost.stone;resources.gold-=cost.gold;levels[selectedBuilding]=current+1;refreshResources();saveCity();info.innerHTML='<b>'+selectedBuilding+' · Səviyyə '+(current+1)+'</b>İnkişaf tamamlandı və yadda saxlanıldı. Xərc: '+cost.wood+' odun, '+cost.stone+' daş, '+cost.gold+' qızıl.'+(selectedBuilding==='Müdafiə qülləsi'?'<br>Qala müdafiəsi: '+current+' katapult hazırdır. Döyüş meydanında avtomatik tətbiq olunacaq.':'')});
+document.querySelector('#upgrade').addEventListener('click',()=>{if(!selectedBuilding){info.innerHTML='<b>Tikili seçilməyib</b>İnkişaf etdirmək üçün əvvəlcə şəhərdə binaya toxun.';return}const current=levels[selectedBuilding]||1;if(current>=10){info.innerHTML='<b>Maksimum səviyyə</b>'+selectedBuilding+' artıq 10-cu səviyyədədir.';return}const cost={wood:current*150,stone:current*100,gold:current*50};if(resources.wood<cost.wood||resources.stone<cost.stone||resources.gold<cost.gold){info.innerHTML='<b>Resurs çatışmır</b>Bu inkişaf üçün daha çox odun, daş və qızıl lazımdır.';return}resources.wood-=cost.wood;resources.stone-=cost.stone;resources.gold-=cost.gold;levels[selectedBuilding]=current+1;if(selectedBuilding==='Müdafiə qülləsi')refreshDefenseTowerModels();refreshResources();saveCity();info.innerHTML='<b>'+selectedBuilding+' · Səviyyə '+(current+1)+'</b>İnkişaf tamamlandı və yadda saxlanıldı. Xərc: '+cost.wood+' odun, '+cost.stone+' daş, '+cost.gold+' qızıl.'+(selectedBuilding==='Müdafiə qülləsi'?'<br>Qala müdafiəsi: '+current+' katapult hazırdır. Döyüş meydanında avtomatik tətbiq olunacaq.':'')});
 refreshResources();
 const territoryKey='tvq_territory_v1';
 const worldKey='tvq_world_state_v1';
@@ -170,6 +194,7 @@ function collectOfflineTerritoryIncome(){
 }
 for(const key of Object.keys(army))army[key]=Math.max(0,Math.floor(Number(army[key])||0));
 Object.assign(levels,savedCity.levels||{});
+refreshDefenseTowerModels();
 const troopCosts={infantry:{wood:10,gold:5},spearman:{wood:15,stone:5},archer:{wood:10,stone:10},cavalry:{wood:20,gold:10},knight:{stone:20,gold:20}};
 const troopTitles={infantry:'Piyada',spearman:'Nizəçi',archer:'Oxçu',cavalry:'Süvari',knight:'Cəngavər'};
 const recruit=document.querySelector('#recruit');
