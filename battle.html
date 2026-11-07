@@ -19,6 +19,8 @@ input[type=number]{width:58px;background:#10191e;border:1px solid #64716e;border
 .controls{display:grid;grid-template-columns:1fr 1fr;gap:10px}.field label{display:block;font-size:12px;color:#c5c0b5;margin-bottom:6px}
 select{width:100%;padding:11px;background:#121c21;border:1px solid #76664a;color:#f5ead5;border-radius:9px;font:inherit}
 button{width:100%;padding:14px;border:1px solid #c5a46a;border-radius:10px;background:linear-gradient(#a17a3e,#76542c);color:white;font-weight:750;font-size:14px}
+#battlefield{width:100%;height:auto;display:block;border-radius:12px;background:#17251f;border:1px solid #52634d;touch-action:pan-y}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:#c8c9bd;margin-top:9px}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}
 #result{display:none}.winner{font-size:18px;font-weight:800;margin-bottom:8px;color:#edcf94}.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}.stat{background:#121c21;border-radius:9px;padding:10px}.stat small{display:block;color:#aeb8b4;font-size:11px}.stat strong{font-size:18px}
 #log{font-size:12px;line-height:1.6;color:#d0d0c8;margin:10px 0 0;padding-left:18px}
 footer{text-align:center;color:#85918e;font-size:11px;padding:0 10px 22px}
@@ -40,6 +42,14 @@ footer{text-align:center;color:#85918e;font-size:11px;padding:0 10px 22px}
 <div class="field"><label for="direction">Hücum istiqaməti</label><select id="direction"><option value="south">Cənub</option><option value="north">Şimal</option><option value="east">Şərq — cinah</option><option value="west">Qərb — cinah</option></select></div>
 <div class="field"><label for="tactic">Döyüş taktikası</label><select id="tactic"><option value="balanced">Balanslı</option><option value="wedge">Paz — süvari</option><option value="line">Xətt — piyada</option><option value="volley">Yaylım — oxçu</option></select></div>
 </div><div style="margin-top:12px"><button id="fight">DÖYÜŞÜ HESABLA</button></div></section>
+<section class="card"><h2>Döyüş meydanı</h2><p class="sub">Qoşun düzülüşünün sxematik görünüşü · canlı 3D animasiya deyil.</p>
+<svg id="battlefield" viewBox="0 0 600 330" role="img" aria-label="Hücum və müdafiə qoşunlarının döyüş meydanında yerləşməsi">
+<defs><pattern id="grass" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M3 8l4 -2m13 18l5 -3m-1 -16l4 2" stroke="#6b8059" stroke-width="1" opacity=".35"/></pattern></defs>
+<rect width="600" height="330" fill="#263b2d"/><rect width="600" height="330" fill="url(#grass)"/>
+<path d="M0 165H600" stroke="#8a8066" stroke-width="17" opacity=".65"/><path d="M0 165H600" stroke="#c3ad7a" stroke-width="2" stroke-dasharray="10 8"/>
+<g id="defenderUnits"></g><g id="attackerUnits"></g><g id="attackArrow"></g>
+<text x="16" y="24" fill="#f2c3a8" font-size="14" font-weight="bold">MÜDAFİƏ</text><text x="16" y="316" fill="#c8e0b7" font-size="14" font-weight="bold">HÜCUM</text>
+</svg><div class="legend"><span><i class="dot" style="background:#c8e0b7"></i>Hücum ordusu</span><span><i class="dot" style="background:#e5a18b"></i>Müdafiə ordusu</span><span>━━ Döyüş xətti</span></div></section>
 <section class="card" id="result" aria-live="polite"><div class="winner" id="winner"></div><div class="stats"><div class="stat"><small>Hücum gücü</small><strong id="ap">—</strong></div><div class="stat"><small>Müdafiə gücü</small><strong id="dp">—</strong></div><div class="stat"><small>Hücumda qalan</small><strong id="ar">—</strong></div><div class="stat"><small>Müdafiədə qalan</small><strong id="dr">—</strong></div></div><ul id="log"></ul></section>
 </main><footer>İlkin balans sınağıdır. Animasiya, real vaxt hərəkəti və multiplayer hələ əlavə edilməyib.</footer>
 <script type="module" src="./src/battle-ui.js"></script>
