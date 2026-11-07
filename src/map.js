@@ -724,24 +724,40 @@ function mountDiplomacyContracts(){
      const guardIds=['bgInf','bgSp','bgAr','bgCa','bgKn'];
      const guardStatus=garrisonPanel.querySelector('#borderGuardStatus');
      garrisonPanel.querySelector('#assignBorderGuard').addEventListener('click',()=>{
-      let city={};try{city=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}')}catch{}
-      city.army=city.army||{};
+      let city={};try{city=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}')}catch{guardStatus.textContent='Şəhər yaddaşı oxunmadı.';return}
+      city.army=city.army||{};city.borderGarrisonTransfers=city.borderGarrisonTransfers||{};
       const additions=Object.fromEntries(guardKeys.map((k,i)=>[k,Math.max(0,Math.floor(Number(garrisonPanel.querySelector('#'+guardIds[i]).value)||0))]));
-      const invalid=guardKeys.some(k=>additions[k]>(Number(city.army[k])||0));
-      if(invalid){guardStatus.textContent='Seçilən qoşun şəhərdəki mövcud saydan çoxdur.';return}
       if(!Object.values(additions).some(Boolean)){guardStatus.textContent='Əvvəlcə göndəriləcək əsgər sayını daxil et.';return}
-      const next={...garrison};for(const k of guardKeys){city.army[k]=(Number(city.army[k])||0)-additions[k];next[k]=(Number(next[k])||0)+additions[k]}
+      const before={...garrison},transferId=kingdom.id+':assign:'+guardKeys.map(k=>Number(before[k])||0).join('-')+':'+guardKeys.map(k=>additions[k]).join('-');
+      const prior=city.borderGarrisonTransfers[transferId];let next;
+      if(prior)next={...prior.after};
+      else{
+       const invalid=guardKeys.some(k=>additions[k]>(Number(city.army[k])||0));
+       if(invalid){guardStatus.textContent='Seçilən qoşun şəhərdəki mövcud saydan çoxdur.';return}
+       next={...before};for(const k of guardKeys){city.army[k]=(Number(city.army[k])||0)-additions[k];next[k]=(Number(next[k])||0)+additions[k]}
+       city.borderGarrisonTransfers[transferId]={type:'assign',kingdom:kingdom.id,counts:additions,before,after:next,at:Date.now()};
+       const ids=Object.keys(city.borderGarrisonTransfers);if(ids.length>100)for(const oldId of ids.slice(0,ids.length-100))delete city.borderGarrisonTransfers[oldId];
+       try{localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(city))}catch{guardStatus.textContent='Qoşun göndərilməsi yadda saxlanmadı.';return}
+      }
       campaign.garrison=next;state.borderCampaigns=state.borderCampaigns||{};state.borderCampaigns[kingdom.id]=campaign;
-      try{localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(city));localStorage.setItem(key,JSON.stringify(state))}catch{guardStatus.textContent='Qarnizon yadda saxlanmadı.';return}
+      try{localStorage.setItem(key,JSON.stringify(state))}catch{guardStatus.textContent='Qoşun çıxışı şəhərdə qorunur; qarnizon qeydi yenilənmədi. Eyni sayla yenidən cəhd et.';return}
       guardStatus.textContent='Qarnizon gücləndirildi: '+Object.values(next).reduce((n,v)=>n+v,0)+' əsgər.';render();
-     });
+     });;
      garrisonPanel.querySelector('#recallBorderGuard').addEventListener('click',()=>{
-      let city={};try{city=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}')}catch{}
-      city.army=city.army||{};for(const k of guardKeys)city.army[k]=(Number(city.army[k])||0)+(Number(garrison[k])||0);
+      let city={};try{city=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}')}catch{guardStatus.textContent='Şəhər yaddaşı oxunmadı; qarnizon dəyişdirilmədi.';return}
+      city.army=city.army||{};city.borderGarrisonReturns=city.borderGarrisonReturns||{};
+      const returning={...garrison};if(!guardKeys.some(k=>(Number(returning[k])||0)>0)){guardStatus.textContent='Qaytarılacaq qarnizon boşdur.';return}
+      const transferId=kingdom.id+':recall:'+guardKeys.map(k=>Number(returning[k])||0).join('-');
+      if(!city.borderGarrisonReturns[transferId]){
+       for(const k of guardKeys)city.army[k]=(Number(city.army[k])||0)+(Number(returning[k])||0);
+       city.borderGarrisonReturns[transferId]={kingdom:kingdom.id,counts:returning,at:Date.now()};
+       const ids=Object.keys(city.borderGarrisonReturns);if(ids.length>100)for(const oldId of ids.slice(0,ids.length-100))delete city.borderGarrisonReturns[oldId];
+       try{localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(city))}catch{guardStatus.textContent='Qarnizon geri çağırıla bilmədi: şəhər yaddaşı yazılmadı.';return}
+      }
       campaign.garrison={infantry:0,spearman:0,archer:0,cavalry:0,knight:0};state.borderCampaigns[kingdom.id]=campaign;
-      try{localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(city));localStorage.setItem(key,JSON.stringify(state))}catch{guardStatus.textContent='Qarnizon geri çağırıla bilmədi.';return}
+      try{localStorage.setItem(key,JSON.stringify(state))}catch{guardStatus.textContent='Qoşunlar şəhərə bir dəfə qaytarıldı; sərhəd qeydi yenilənmədi. Təkrar qoşun əlavə olunmayacaq.';return}
       render();
-     });
+     });;
 ;
     }
    }
