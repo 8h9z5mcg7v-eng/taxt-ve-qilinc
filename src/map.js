@@ -242,7 +242,6 @@ function showOutpostControls(id){
   try{localStorage.setItem(territoryKey,JSON.stringify(territory))}
   catch{territory[id]=JSON.parse(previousTerritory);panel.querySelector('p').textContent='Qoşun çıxışı şəhərdə qorunur; məntəqə qeydi yenilənmədi. Eyni sayla yenidən cəhd et.';return}
   for(const k of keys)army[k]=Number(city.army[k])||0;
-  guard=next;
   stats.innerHTML=keys.filter(k=>army[k]>0).map(k=>'<span>'+names[k]+': '+army[k]+'</span>').join('')||'<span>Səyyar ordu qalmayıb</span>';
   showOutpostControls(id);
  });
