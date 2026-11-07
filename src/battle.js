@@ -29,7 +29,7 @@ function calculatePower(army, defending, formation, opponents) {
  * direction: north | east | south | west
  * tactic: balanced | wedge | line | volley
  */
-export function resolveBattle({ attacker, defender, direction = 'south', tactic = 'balanced', defenderTactic = 'balanced', terrain = 'plains', siege = {}, seed = 1 }) {
+export function resolveBattle({ attacker, defender, direction = 'south', tactic = 'balanced', defenderTactic = 'balanced', terrain = 'plains', siege = {}, priorWallDamage = 0, seed = 1 }) {
   const attackArmy = createArmy(attacker);
   const defendArmy = createArmy(defender);
   const attackCount = armySize(attackArmy);
@@ -53,7 +53,7 @@ export function resolveBattle({ attacker, defender, direction = 'south', tactic 
   const cavalryShare = attackArmy.cavalry / totalAttackers;
   const cavalryTerrainFactor = 1 - (1 - cavalryPenalty) * cavalryShare;
   const wallMax = safeTerrain === 'fortress' ? 100 : 0;
-  const wallDamage = Math.min(wallMax, siegeEngines.ram * 18 + siegeEngines.catapult * 30);
+  const wallDamage = Math.min(wallMax, clamp(Number(priorWallDamage) || 0, 0, wallMax) + siegeEngines.ram * 18 + siegeEngines.catapult * 30);
   const wallRemaining = Math.max(0, wallMax - wallDamage);
   const wallBreached = wallMax > 0 && wallRemaining === 0;
   const wallProtection = wallMax > 0 ? (1 + (wallRemaining / wallMax) * 0.32) / 1.32 : 1;
