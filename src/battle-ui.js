@@ -19,7 +19,7 @@ function svgNode(tag, attrs, parent, value) {
   return node;
 }
 
-function renderTerrain(terrain, wallDamage = 0) {
+function renderTerrain(terrain, wallDamage = 0, siege = {}) {
   const field = document.getElementById('battlefield');
   field.querySelector('#terrainBackdrop')?.remove();
   const scene = document.createElementNS(svgNS, 'g');
@@ -49,6 +49,26 @@ function renderTerrain(terrain, wallDamage = 0) {
       svgNode('path', { d: 'M252 131 L266 114 L278 131 M322 131 L337 113 L350 131', fill: '#77786d', stroke: '#282b27', 'stroke-width': 3 }, scene);
       svgNode('text', { x: 300, y: 148, 'text-anchor': 'middle', fill: '#ffe0a1', 'font-size': 11, 'font-weight': 700 }, scene, 'DİVAR YARILIB');
     }
+  }
+  if ((siege.catapult || 0) > 0 || (siege.ram || 0) > 0) {
+    const machines = document.createElementNS(svgNS, 'g');
+    machines.setAttribute('id', 'siegeMachines');
+    const catapults = Math.min(4, Math.max(0, Number(siege.catapult) || 0));
+    for (let i = 0; i < catapults; i++) {
+      const x = 52 + i * 48;
+      const y = 255 + (i % 2) * 13;
+      const machine = svgNode('g', { transform: `translate(${x} ${y})` }, machines);
+      svgNode('path', { d: 'M-17 12 L0 -17 L18 12 M-12 5 L12 5 M0 -17 L0 -28', fill: 'none', stroke: '#4a3020', 'stroke-width': 5, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, machine);
+      svgNode('path', { d: 'M-4 -28 L4 -28 L3 -22 L-3 -22Z', fill: '#9a7544', stroke: '#30251e', 'stroke-width': 2 }, machine);
+      svgNode('circle', { cx: 0, cy: -30, r: 4, fill: '#292722' }, machine);
+    }
+    const rams = Math.min(2, Math.max(0, Number(siege.ram) || 0));
+    for (let i = 0; i < rams; i++) {
+      const x = 185 + i * 42;
+      svgNode('path', { d: `M${x-17} 282 L${x+17} 282 L${x+12} 292 L${x-12} 292Z M${x} 282 L${x} 253`, fill: '#80552e', stroke: '#30251e', 'stroke-width': 4, 'stroke-linejoin': 'round' }, machines);
+      svgNode('path', { d: `M${x-10} 252 L${x+10} 252 L${x+6} 260 L${x-6} 260Z`, fill: '#777d86', stroke: '#292722', 'stroke-width': 2 }, machines);
+    }
+    scene.appendChild(machines);
   }
   field.insertBefore(scene, field.firstChild);
 }
@@ -183,7 +203,7 @@ function playCombatAnimation(attacker = {}, siege = {}) {
 }
 
 function refreshPreview() {
-  renderBattlefield(readArmy('a'), readArmy('d'), document.getElementById('direction').value, document.getElementById('terrain').value);
+  renderBattlefield(readArmy('a'), readArmy('d'), document.getElementById('direction').value, document.getElementById('terrain').value, 0, { ram: Number(document.getElementById('ram').value) || 0, catapult: Number(document.getElementById('catapult').value) || 0 });
 }
 
 refreshPreview();
@@ -226,7 +246,7 @@ document.getElementById('fight').addEventListener('click', () => {
     console.warn('Ordunun nəticəsini yadda saxlamaq mümkün olmadı.', error);
   }
   const survivingDefender = result.remaining?.defender ?? defender;
-  renderBattlefield(survivingAttacker, survivingDefender, direction, terrain, result.siege?.wallDamage || 0);
+  renderBattlefield(survivingAttacker, survivingDefender, direction, terrain, result.siege?.wallDamage || 0, siege);
   playCombatAnimation(attacker, siege);
   const panel = document.getElementById('result');
   panel.style.display = 'block';
