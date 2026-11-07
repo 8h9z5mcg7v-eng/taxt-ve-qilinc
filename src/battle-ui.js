@@ -61,6 +61,8 @@ function renderBattlefield(attacker, defender, direction) {
 
 // Accept the army dispatched from the city training panel.
 const dispatched=new URLSearchParams(location.search);
+const isWorldMapAttack=dispatched.get('target')==='red-fortress';
+if(isWorldMapAttack){const garrison=Math.max(1,Math.min(9999,Number(dispatched.get('garrison'))||300));const defense={infantry:Math.round(garrison*.3),spearman:Math.round(garrison*.2),archer:Math.round(garrison*.3),cavalry:Math.round(garrison*.1),knight:0};defense.knight=Math.max(0,garrison-Object.values(defense).reduce((a,n)=>a+n,0));for(const [type,count] of Object.entries(defense)){document.getElementById('d-'+type).value=String(count);}}
 for(const type of troopIds){
  if(dispatched.has(type)){
   const field=document.getElementById('a-'+type);
@@ -100,6 +102,7 @@ document.getElementById('fight').addEventListener('click', () => {
     console.warn('Ordunun nəticəsini yadda saxlamaq mümkün olmadı.', error);
   }
   const survivingDefender = result.remaining?.defender ?? defender;
+  if(isWorldMapAttack){try{const worldKey='tvq_world_state_v1';const world=JSON.parse(localStorage.getItem(worldKey)||'{}');const captured=result.winner==='attacker';world.redFortress={captured:captured,updatedAt:Date.now(),remainingDefenders:total(survivingDefender)};localStorage.setItem(worldKey,JSON.stringify(world));localStorage.removeItem('tvq_active_journey_v1');const outcome=document.createElement('p');outcome.style.cssText='margin-top:12px;color:#f0d69d;font-weight:700';outcome.textContent=captured?'Qırmızı Qala fəth edildi! Şəhərə qayıdaraq nəticəni gör.':'Hücum uğursuz oldu. Sağ qalan ordu şəhərə qaytarıldı.';panel.appendChild(outcome);const back=document.createElement('a');back.href='./city.html';back.textContent='Şəhərə qayıt';back.style.cssText='display:block;text-align:center;margin-top:10px;padding:12px;background:#76542c;border-radius:9px;color:white;text-decoration:none';panel.appendChild(back);}catch(error){console.warn('Döyüş nəticəsi saxlanmadı',error)}}
   renderBattlefield(survivingAttacker, survivingDefender, direction);
   const panel = document.getElementById('result');
   panel.style.display = 'block';
