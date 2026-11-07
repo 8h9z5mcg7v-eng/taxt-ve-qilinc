@@ -61,8 +61,28 @@ function renderBattlefield(attacker, defender, direction, terrain = 'plains') {
       const [x, defenderY] = lanes[type];
       const y = isAttack ? 245 + (type === 'archer' ? 34 : type === 'cavalry' ? -15 : 0) : defenderY;
       const g = svgNode('g', { transform: `translate(${x} ${y})` }, layer);
-      svgNode('circle', { r: 23, fill: color, stroke: '#18231e', 'stroke-width': 3 }, g);
-      svgNode('text', { 'text-anchor': 'middle', y: 5, fill: '#18231e', 'font-size': 16, 'font-weight': 800 }, g, troopLabels[type]);
+      // Distinct miniature medieval unit silhouettes instead of generic dots.
+      if (type === 'cavalry' || type === 'knight') {
+        svgNode('ellipse', { cx: 0, cy: 5, rx: 24, ry: 11, fill: type === 'knight' ? '#777d86' : '#76523a', stroke: '#18231e', 'stroke-width': 2 }, g);
+        svgNode('path', { d: 'M14 1 Q22 -13 29 -8 L32 -2 L24 4Z', fill: '#76523a', stroke: '#18231e', 'stroke-width': 2 }, g);
+        svgNode('path', { d: 'M-14 12 L-18 25 M-3 13 L-2 25 M12 12 L17 24', stroke: '#30251e', 'stroke-width': 3, 'stroke-linecap': 'round' }, g);
+        svgNode('circle', { cx: 3, cy: -15, r: 7, fill: '#d9b58a', stroke: '#18231e', 'stroke-width': 2 }, g);
+        svgNode('path', { d: 'M-5 -8 L13 -8 L17 9 L-8 9Z', fill: color, stroke: '#18231e', 'stroke-width': 2 }, g);
+        if (type === 'knight') svgNode('path', { d: 'M-3 -22 L4 -34 L11 -22Z', fill: '#b9c3cc', stroke: '#18231e', 'stroke-width': 2 }, g);
+        else svgNode('path', { d: 'M10 -8 L29 -31', stroke: '#e8d7ad', 'stroke-width': 3, 'stroke-linecap': 'round' }, g);
+      } else {
+        svgNode('circle', { cx: 0, cy: -14, r: 7, fill: '#d9b58a', stroke: '#18231e', 'stroke-width': 2 }, g);
+        svgNode('path', { d: 'M-10 -6 L10 -6 L13 17 L-13 17Z', fill: color, stroke: '#18231e', 'stroke-width': 2 }, g);
+        svgNode('path', { d: 'M-9 16 L-13 28 M8 16 L13 28', stroke: '#30251e', 'stroke-width': 3, 'stroke-linecap': 'round' }, g);
+        if (type === 'spearman') svgNode('path', { d: 'M14 17 L17 -35 L20 -28', stroke: '#d7c49b', 'stroke-width': 3, 'stroke-linecap': 'round' }, g);
+        if (type === 'archer') {
+          svgNode('path', { d: 'M-16 -7 Q-30 5 -16 20 M-16 -7 L-16 20', stroke: '#a87943', 'stroke-width': 3, fill: 'none' }, g);
+          svgNode('path', { d: 'M-16 6 L8 -5', stroke: '#e8d7ad', 'stroke-width': 2 }, g);
+        }
+        if (type === 'infantry') svgNode('path', { d: 'M-17 -8 L-17 13 L-5 17 L-5 -5Z', fill: '#9caa9d', stroke: '#18231e', 'stroke-width': 2 }, g);
+      }
+      svgNode('text', { 'text-anchor': 'middle', y: 43, fill: '#fff4dc', 'font-size': 12, 'font-weight': 700, stroke: '#17251f', 'stroke-width': 2, 'paint-order': 'stroke' }, g, String(count));
+      svgNode('text', { 'text-anchor': 'middle', y: 57, fill: '#e7e2d4', 'font-size': 9, stroke: '#17251f', 'stroke-width': 1, 'paint-order': 'stroke' }, g, troopNames[type]);
       svgNode('text', { 'text-anchor': 'middle', y: 39, fill: '#fff4dc', 'font-size': 12, 'font-weight': 700, stroke: '#17251f', 'stroke-width': 2, 'paint-order': 'stroke' }, g, String(count));
       svgNode('text', { 'text-anchor': 'middle', y: 54, fill: '#e7e2d4', 'font-size': 9 }, g, troopNames[type]);
     }
