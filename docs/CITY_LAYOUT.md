@@ -46,3 +46,42 @@ Bir ekranda tam görünən, sıx, canlı və oxunaqlı orta əsr qala-şəhəri.
 - Kompozisiya spesifikasiyası yazılıb.
 - Heç bir 3D qala və ya şəhər modeli hələ repozitoriyaya idxal edilməyib.
 - Heç bir FPS və yaddaş nəticəsi ölçülməyib.
+
+
+## Ölçülü yerləşdirmə planı — ilk oynanıla bilən şəhər
+
+### Koordinat sistemi
+- Səhnə mərkəzi: (0, 0); X şərq-qərb, Z şimal-cənub.
+- Əsas qala namizədi təxminən 49.3 × 49.7 m olduğuna görə ilkin miqyas istinadı 1 model vahidi = 1 metrdir.
+- Qala modelinin öz divarları və darvazası olduğundan ilk bloklamada ayrıca perimetr divarı əlavə edilmir.
+- Həyət üçün ilkin sahə 150 × 150 m; bu, yekun ölçü deyil, kamera və yol sınağı üçün bloklama ölçüsüdür.
+
+### Obyekt cədvəli
+| Obyekt | Mərkəz (X,Z) | İlkin sahə | Qeyd |
+|---|---:|---:|---|
+| Əsas qala | (0, 0) | 49 × 50 m | Əsas vizual fokus; öz divarı/darvazası saxlanır |
+| Kazarma | (-43, -25) | 18 × 14 m | Qalanın şimal-qərb həyəti |
+| Tövlə | (42, -25) | 20 × 16 m | At meydançası ilə |
+| Dəmirçi | (-43, 24) | 14 × 12 m | Tüstü bacası və açıq emalatxana |
+| Oxçu meydançası | (42, 25) | 22 × 18 m | Hədəf dirəkləri qalanın siluetini kəsmir |
+| Anbar | (-25, 53) | 16 × 12 m | Resurs binası |
+| Bazar | (25, 53) | 20 × 12 m | 3–4 kiçik köşk |
+| Quyu | (0, 48) | 5 × 5 m | Əsas yoldan kənarda |
+| Cənub giriş yolu | (0, 58) | 8 m en | Darvazadan mərkəzə vizual ox |
+
+### Kamera və idarəetmə
+- Başlanğıc kamera: (115, 145, 115), hədəf (0, 0, 0); sonra cihaz ekranına görə tənzimlənir.
+- Ortoqrafik kamera üçün ilkin görünüş eni 190 m; portret telefonda şaquli kadrda 160–190 m hədəflənir.
+- İki barmaqla zoom, bir barmaqla orbit/pan; UI düymələri təhlükəsiz ekran kənarlarından aralı saxlanır.
+- Kamera sərhədi həyətin kənarından 15 m artıq keçməməlidir.
+
+### İnteqrasiya ardıcıllığı
+1. Əsas qala GLB-ni ayrıca yoxlayıcıda aç; ölçü, tris, material, tekstura və animasiya göstəricilərini qeydə al.
+2. Qalanın öz divar/darvaza hissələrini vizual təsdiqlə; ayrıca gatehouse-u yalnız müqayisə üçün yoxla.
+3. Qalanın real ölçüsünə görə bütün əlavə binaları miqyasla; heç birini kor-koranə 1:1 qəbul etmə.
+4. Hər bina üçün sadə collider/selection bounds ayrıca saxla.
+5. Əvvəl 5 əsas obyektlə (qala, kazarma, tövlə, dəmirçi, oxçu meydançası) səhnə sınağı et.
+6. Sonra anbar, bazar, quyu, yol və təbiət obyektlərini əlavə et.
+7. Son mərhələdə mobil LOD, kölgə məsafəsi və instancing yoxlanılsın.
+
+Bu koordinatlar real asset ölçüləri deyil; yalnız qala modelinin elan olunmuş ölçüsünə əsaslanan ilkin səhnə bloklama təklifidir. Hər binanın faktiki GLB ölçüsü import zamanı yenidən ölçülməlidir.
