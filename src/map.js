@@ -244,6 +244,37 @@ function showOutpostControls(id){
   stats.innerHTML=keys.filter(k=>army[k]>0).map(k=>'<span>'+names[k]+': '+army[k]+'</span>').join('')||'<span>Səyyar ordu qalmayıb</span>';
   showOutpostControls(id);
  });
+
+ panel.querySelector('#recallOutpostGuard')?.addEventListener('click',()=>{
+  const keys=['infantry','spearman','archer','cavalry','knight'];
+  let latestTerritory={};
+  try{latestTerritory=JSON.parse(localStorage.getItem(territoryKey)||'{}')}catch{
+   panel.querySelector('p').textContent='Məntəqə yaddaşı oxunmadı; qarnizon dəyişdirilmədi.';return;
+  }
+  const current=latestTerritory[id];
+  if(!current?.captured){panel.querySelector('p').textContent='Məntəqə artıq sənin nəzarətində deyil.';return}
+  const returning=Object.fromEntries(keys.map(k=>[k,Math.max(0,Math.floor(Number(current.garrison?.[k])||0))]));
+  if(Object.values(returning).every(n=>n===0)){panel.querySelector('p').textContent='Məntəqədə geri çağırılacaq qoşun yoxdur.';return}
+  let city={};
+  try{city=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}')}catch{
+   panel.querySelector('p').textContent='Şəhər yaddaşı oxunmadı; qoşun məntəqədə saxlanıldı.';return;
+  }
+  city.army=city.army||{};city.outpostGarrisonTransfers=city.outpostGarrisonTransfers||{};
+  const transferId=id+':recall:'+keys.map(k=>returning[k]).join('-');
+  if(!city.outpostGarrisonTransfers[transferId]){
+   for(const k of keys)city.army[k]=Math.max(0,Math.floor(Number(city.army[k])||0))+returning[k];
+   city.outpostGarrisonTransfers[transferId]={outpost:id,direction:'recall',counts:returning,at:Date.now()};
+  }
+  try{localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(city))}
+  catch{panel.querySelector('p').textContent='Qoşun şəhərə qaytarılmadı; məntəqədə qalır.';return}
+  current.garrison={infantry:0,spearman:0,archer:0,cavalry:0,knight:0};
+  try{localStorage.setItem(territoryKey,JSON.stringify(latestTerritory))}
+  catch{panel.querySelector('p').textContent='Qoşun şəhər yaddaşına qorunaraq yazıldı; məntəqənin boşaldılması növbəti cəhddə tamamlanacaq.';return}
+  for(const k of keys)army[k]=Math.max(0,Math.floor(Number(city.army[k])||0));
+  stats.innerHTML=keys.filter(k=>army[k]>0).map(k=>'<span>'+names[k]+': '+army[k]+'</span>').join('')||'<span>Səyyar ordu qalmayıb</span>';
+  showOutpostControls(id);
+ });
+
  controls.querySelector('#defenseTactic').value=plan.tactic||'balanced';
  const scout=document.createElement('div');scout.style.cssText='margin-top:12px;padding-top:10px;border-top:1px solid #80633f';
  const report=fortressState.scoutReport;
