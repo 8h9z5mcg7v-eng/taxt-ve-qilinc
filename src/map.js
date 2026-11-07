@@ -404,12 +404,24 @@ function mountKingdomMarket(){
  const market=document.createElement('section');market.id='kingdomMarket';market.className='panel';
  market.innerHTML='<h2>🏛 Krallıqlar bazarı</h2><p>Qonşu krallıqların tacirləri ilə odun və daş mübadiləsi et. Qiymətlər hər gün dəyişir; alış və satış arasında bazar fərqi var.</p><div id="marketRates" class="stats"></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px"><label style="font-size:12px">Resurs<select id="marketResource" style="display:block;width:100%;padding:10px;margin-top:5px;border-radius:7px;background:#172127;color:#fff;border:1px solid #756448"><option value="wood">Odun</option><option value="stone">Daş</option></select></label><label style="font-size:12px">Əməliyyat<select id="marketSide" style="display:block;width:100%;padding:10px;margin-top:5px;border-radius:7px;background:#172127;color:#fff;border:1px solid #756448"><option value="buy">Al</option><option value="sell">Sat</option></select></label></div><label style="display:block;font-size:12px;margin-top:9px">Miqdar <input id="marketAmount" type="number" min="1" max="5000" value="100" style="display:block;width:100%;padding:10px;margin-top:5px;border-radius:7px;background:#172127;color:#fff;border:1px solid #756448"></label><div class="actions"><button id="marketTrade">Mübadilə et</button></div><p id="marketStatus" aria-live="polite">Ticarət qiymətləri gündəlik yenilənir.</p>';
  wrap.append(market);
- const day=new Date().toISOString().slice(0,10);
+ const now=new Date();
+ const day=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
  const daySeed=Number(day.replaceAll('-',''));
  const rates={wood:2+(daySeed%5),stone:4+((daySeed*7)%5)};
- const buyPrice={wood:Math.ceil(rates.wood*1.12),stone:Math.ceil(rates.stone*1.12)};
- const sellPrice={wood:Math.max(1,Math.floor(rates.wood*.88)),stone:Math.max(1,Math.floor(rates.stone*.88))};
- const renderRates=()=>{market.querySelector('#marketRates').innerHTML='<span>🪵 Odun: alış '+buyPrice.wood+' 🪙 · satış '+sellPrice.wood+' 🪙</span><span>🪨 Daş: alış '+buyPrice.stone+' 🪙 · satış '+sellPrice.stone+' 🪙</span>'};
+ function getMarketTerms(){
+  let diplomacy={};try{diplomacy=JSON.parse(localStorage.getItem('tvq_diplomacy_v1')||'{}')}catch{}
+  const standings=diplomacy.standings||{};
+  const reputation=Object.values(standings).reduce((sum,value)=>sum+Math.max(0,Number(value)||0),0);
+  const discount=reputation>=25?0.10:reputation>=10?0.05:0;
+  const premium=reputation>=25?0.05:0;
+  const buyPrice={wood:Math.max(1,Math.ceil(rates.wood*1.12*(1-discount))),stone:Math.max(1,Math.ceil(rates.stone*1.12*(1-discount)))};
+  const sellPrice={wood:Math.max(1,Math.floor(rates.wood*.88*(1+premium))),stone:Math.max(1,Math.floor(rates.stone*.88*(1+premium)))};
+  return {buyPrice,sellPrice,reputation,discount,premium};
+ }
+ const renderRates=()=>{
+  const terms=getMarketTerms();
+  market.querySelector('#marketRates').innerHTML='<span>🪵 Odun: alış '+terms.buyPrice.wood+' 🪙 · satış '+terms.sellPrice.wood+' 🪙</span><span>🪨 Daş: alış '+terms.buyPrice.stone+' 🪙 · satış '+terms.sellPrice.stone+' 🪙</span><small style="grid-column:1/-1">Diplomatik nüfuz: '+terms.reputation+' · '+(terms.discount?'Alışda '+Math.round(terms.discount*100)+'% güzəşt':terms.premium?'Satışda '+Math.round(terms.premium*100)+'% bonus':'Hələ güzəşt yoxdur')+'</small>';
+ };
  renderRates();
  market.querySelector('#marketTrade').addEventListener('click',()=>{
   const resource=market.querySelector('#marketResource').value;
@@ -418,7 +430,8 @@ function mountKingdomMarket(){
   if(!amount){market.querySelector('#marketStatus').textContent='Miqdarı düzgün daxil et.';return}
   let city={};try{city=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}')}catch{}
   city.resources=city.resources||{wood:1200,stone:1000,gold:500};
-  const price=side==='buy'?buyPrice[resource]:sellPrice[resource];
+  const terms=getMarketTerms();
+  const price=side==='buy'?terms.buyPrice[resource]:terms.sellPrice[resource];
   const totalGold=price*amount;
   if(side==='buy'){
    if((Number(city.resources.gold)||0)<totalGold){market.querySelector('#marketStatus').textContent='Qızıl çatmır. Lazımdır: '+totalGold+' · Mövcud: '+(Number(city.resources.gold)||0)+'.';return}
