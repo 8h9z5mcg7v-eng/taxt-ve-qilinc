@@ -108,6 +108,7 @@ function showGarrisonControls(){
    fortressState.garrison={infantry:0,spearman:0,archer:0,cavalry:0,knight:0};
    worldState.redFortress=fortressState;saveWorld();
    const enemy=document.querySelector('[data-id="enemy"]');
+   enemy.classList.remove('owned');
    enemy.querySelector('span').textContent='🛡 Düşmən qalası';
    enemy.querySelector('small').textContent='Düşmən nəzarətində';
    targets.enemy.title='Qırmızı Qala — Düşmən';
@@ -124,6 +125,7 @@ function showGarrisonControls(){
   worldState.redFortress=fortressState;saveWorld();
   const enemy=document.querySelector('[data-id="enemy"]');
   if(!fortressState.captured){
+   enemy.classList.remove('owned');
    enemy.querySelector('span').textContent='🛡 Düşmən qalası';
    enemy.querySelector('small').textContent='Düşmən nəzarətində';
    targets.enemy.title='Qırmızı Qala — Düşmən';
@@ -170,13 +172,15 @@ if(fortressState.captured){
  }
  if(resolvedRaids){fortressState.resolvedRaidCount=(Number(fortressState.resolvedRaidCount)||0)+resolvedRaids;worldState.redFortress=fortressState;saveWorld();}
  const enemy=document.querySelector('[data-id="enemy"]');
- enemy.querySelector('span').textContent='🏰 Sənin qalən';
- enemy.querySelector('small').textContent='Fəth olunub';
+ enemy.classList.add('owned');
+ enemy.querySelector('span').textContent='🏳 Sənin qalən';
+ enemy.querySelector('small').textContent='Fəth olunub · Sənin krallığın';
  targets.enemy.title='Qırmızı Qala — Sənin mülkün';
  targets.enemy.description='Qala sənin krallığına məxsusdur. Qarnizon yerləşdirərək onu müdafiə et.';
  targets.enemy.enemy=false;
 }else{
  const enemy=document.querySelector('[data-id="enemy"]');
+ enemy?.classList.remove('owned');
  if(enemy&&fortressState.lastRaidResult?.at){
   enemy.querySelector('small').textContent='Düşmən nəzarətində — son basqın nəticələndi';
  }
@@ -245,6 +249,7 @@ setInterval(renderEnemyApproach,60000);
 for(const id of ['village','mine']){if(territory[id]?.captured){const el=document.querySelector('[data-id="'+id+'"]');if(el){el.querySelector('span').textContent='🏳 '+territories.find(t=>t.id===id).name;el.querySelector('small').textContent='Sənin nəzarətində';}}}
 const journeyKey='tvq_active_journey_v1';
 const marchButton=document.querySelector('#march');
+if(fortressState.captured){marchButton.disabled=true;marchButton.textContent='🏳 Qala fəth olunub';}
 let journey=null;
 try{journey=JSON.parse(localStorage.getItem(journeyKey)||'null')}catch{journey=null}
 const dot=document.createElement('div');dot.className='march-dot';dot.textContent='⚔';document.querySelector('#map').append(dot);
