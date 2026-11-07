@@ -334,7 +334,7 @@ function mountGeneralPanel(){
  const generals={
   alp:{name:'Alp Arslan',title:'Süvari sərkərdəsi',desc:'Süvari hücumuna +18%, bütün qoşunlara +3%.',bonus:'cavalry'},
   tomris:{name:'Tomris',title:'Oxçu sərkərdəsi',desc:'Oxçu hücumuna +18%, bütün qoşunlara +3%.',bonus:'archer'},
-  babek:{name:'Babək',title:'Piyada sərkərdəsi',desc:'Piyada və nizəçi hücumuna +15%, bütün qoşunlara +3%.',bonus:'infantry'}
+  babek:{name:'Babək',title:'Piyada sərkərdəsi',desc:'Piyada və nizəçi hücumuna +18%, bütün qoşunlara +3%.',bonus:'infantry'}
  };
  if(!generals[state.id])state.id='alp';
  const level=Math.min(10,1+Math.floor(Math.max(0,Number(state.xp)||0)/100));
