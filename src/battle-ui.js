@@ -140,7 +140,11 @@ function renderBattlefield(attacker, defender, direction, terrain = 'plains', wa
       if (!count) continue;
       const [x, defenderY] = lanes[type];
       const y = isAttack ? 245 + (type === 'archer' ? 34 : type === 'cavalry' ? -15 : 0) : defenderY;
-      const g = svgNode('g', { transform: `translate(${x} ${y})` }, layer);
+      const g = svgNode('g', {
+        transform: `translate(${x} ${y})`,
+        'data-unit-type': type,
+        'data-side': isAttack ? 'attacker' : 'defender'
+      }, layer);
       // Distinct miniature medieval unit silhouettes instead of generic dots.
       if (type === 'cavalry' || type === 'knight') {
         svgNode('ellipse', { cx: 0, cy: 5, rx: 24, ry: 11, fill: type === 'knight' ? '#777d86' : '#76523a', stroke: '#18231e', 'stroke-width': 2 }, g);
@@ -280,25 +284,38 @@ function playCombatAnimation(attacker = {}, defender = {}, siege = {}, result = 
   // the post-battle formation has been rendered.
   [...attackLayer.querySelectorAll('g')].forEach((group, index) => {
     const formation = group.getAttribute('transform');
+    const type = group.getAttribute('data-unit-type');
     const breached = !!result.siege?.wallBreached;
     const attackerWon = result.winner === 'attacker';
-    const movement = breached && attackerWon
-      ? [{ transform: formation }, { transform: formation + ' translate(0,-36)' }, { transform: formation + ' translate(0,-58)' }]
-      : breached
-        ? [{ transform: formation }, { transform: formation + ' translate(0,-22)' }, { transform: formation + ' translate(0,10)' }]
-        : [{ transform: formation }, { transform: formation + ' translate(0,-18)' }, { transform: formation }];
-    group.animate(movement, {
-      duration: breached ? 1450 : 760, delay: index * 130,
-      fill: breached ? 'forwards' : 'none', easing: 'ease-in-out'
+    const advance = breached && attackerWon ? -58 : breached ? -12 : -18;
+    const motions = {
+      infantry: [{ transform: formation }, { transform: formation + ` translate(0,${advance - 8})` }, { transform: formation + ` translate(0,${advance})` }],
+      spearman: [{ transform: formation }, { transform: formation + ` translate(0,${advance - 12}) rotate(-3deg)` }, { transform: formation + ` translate(0,${advance})` }],
+      archer: [{ transform: formation }, { transform: formation + ' translate(0,-5) rotate(-5deg)' }, { transform: formation + ' translate(0,-2)' }],
+      cavalry: [{ transform: formation }, { transform: formation + ` translate(0,${advance - 22}) scale(1.08)` }, { transform: formation + ` translate(0,${advance})` }],
+      knight: [{ transform: formation }, { transform: formation + ` translate(0,${advance - 15}) scale(1.12)` }, { transform: formation + ` translate(0,${advance})` }]
+    };
+    const motion = motions[type] || motions.infantry;
+    group.animate(motion, {
+      duration: breached ? 1450 : type === 'cavalry' || type === 'knight' ? 980 : 760,
+      delay: index * 130, fill: breached ? 'forwards' : 'none', easing: 'ease-in-out'
     });
+    if (type === 'spearman' || type === 'infantry' || type === 'knight') {
+      group.animate(
+        [{ opacity: 1 }, { opacity: 0.86 }, { opacity: 1 }],
+        { duration: 430, delay: 420 + index * 110, iterations: 2 }
+      );
+    }
   });
   [...defendLayer.querySelectorAll('g')].forEach((group, index) => {
     const formation = group.getAttribute('transform');
+    const type = group.getAttribute('data-unit-type');
+    const shieldHold = type === 'infantry' || type === 'knight';
     group.animate(
       [{ transform: formation },
-       { transform: formation + (result.siege?.wallBreached ? ' translate(0,12)' : ' translate(0,5)') },
+       { transform: formation + (result.siege?.wallBreached ? ' translate(0,12)' : shieldHold ? ' translate(0,3) scale(1.03)' : ' translate(0,5)') },
        { transform: formation }],
-      { duration: 680, delay: index * 100, easing: 'ease-out' }
+      { duration: type === 'cavalry' ? 920 : 680, delay: index * 100, easing: 'ease-out' }
     );
   });
   // A breached gate triggers a visible melee only after the attackers reach
