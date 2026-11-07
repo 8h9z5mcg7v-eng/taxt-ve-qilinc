@@ -5,6 +5,25 @@ let storedArmy={};try{storedArmy=JSON.parse(localStorage.getItem('taxt-ve-qilinc
 const total=Object.values(army).reduce((a,b)=>a+b,0);
 const stats=document.querySelector('#armyStats');
 stats.innerHTML=troopIds.filter(k=>army[k]>0).map(k=>'<span>'+names[k]+': '+army[k]+'</span>').join('')||'<span>Ordu məlumatı yoxdur</span>';
+const territoryKey='tvq_territory_v1';
+let territory={};
+try{territory=JSON.parse(localStorage.getItem(territoryKey)||'{}')}catch{}
+const territories=[
+ {id:'village',name:'Sərhəd kəndi',kind:'village',wood:18,stone:4,gold:2},
+ {id:'mine',name:'Dəmir mədəni',kind:'mine',wood:4,stone:18,gold:5}
+];
+function showOutpostControls(id){
+ const target=territories.find(x=>x.id===id);if(!target)return;
+ let panel=document.querySelector('#outpostControls');
+ if(!panel){panel=document.createElement('div');panel.id='outpostControls';panel.style.cssText='margin-top:12px;padding:12px;border:1px solid #756448;border-radius:9px;background:#1d2b25';document.querySelector('.panel').append(panel)}
+ const owned=!!territory[id]?.captured;
+ panel.innerHTML='<b>'+target.name+'</b><p>'+(owned?'Bu məntəqə sənin nəzarətindədir. Hər saat resurs istehsal edir.':'Məntəqəni ələ keçirmək üçün kəşfiyyat və qoşun göndərmək lazımdır. Bu prototipdə sınaq fəthi açıqdır.')+'</p><div class="stats"><span>🪵 '+target.wood+'/saat</span><span>🪨 '+target.stone+'/saat</span><span>🪙 '+target.gold+'/saat</span></div><button id="captureOutpost" style="margin-top:10px" '+(owned?'disabled':'')+'>'+(owned?'Ərazi sənin nəzarətindədir':'Məntəqəni ələ keçir')+'</button>';
+ panel.querySelector('#captureOutpost').addEventListener('click',()=>{
+  territory[id]={captured:true,lastCollectedAt:Date.now()};try{localStorage.setItem(territoryKey,JSON.stringify(territory))}catch{}
+  const el=document.querySelector('[data-id="'+id+'"]');el.querySelector('span').textContent='🏳 '+target.name;el.querySelector('small').textContent='Sənin nəzarətində';
+  showOutpostControls(id);
+ });
+}
 const targets={
 capital:{title:'Paytaxt',description:'Bu sənin əsas qaləndir. Buradan ordunu və resurslarını idarə et.',enemy:false},
 village:{title:'Sərhəd kəndi',description:'Kənddə kəşfiyyat və gələcək resurs tapşırıqları üçün məntəqə seçildi.',enemy:false},
@@ -79,6 +98,7 @@ document.querySelectorAll('.place').forEach(el=>el.addEventListener('click',()=>
  document.querySelector('#path').style.display='block';
  if(el.dataset.id==='enemy'&&fortressState.captured){showGarrisonControls();showTerritoryEconomy();}
  else document.querySelector('#garrisonControls')?.remove();
+ if(el.dataset.id==='village'||el.dataset.id==='mine')showOutpostControls(el.dataset.id);else document.querySelector('#outpostControls')?.remove();
 }));
 marchButton.addEventListener('click',()=>{
  if(journey&&journey.target==='red-fortress'&&Date.now()>=journey.arrivesAt){const next=new URLSearchParams(params);next.set('target','red-fortress');next.set('garrison','300');location.href='./battle.html?'+next.toString();return;}
