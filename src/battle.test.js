@@ -72,3 +72,36 @@ test('siege engines do not apply wall damage on open terrain', () => {
   assert.equal(result.siege.wallMax, 0);
   assert.equal(result.siege.wallDamage, 0);
 });
+
+
+test('siege engine counts are clamped to the supported 0–20 range', () => {
+  const base = { attacker: { infantry: 20 }, defender: { infantry: 10 }, terrain: 'fortress', seed: 4 };
+  const result = resolveBattle({ ...base, siege: { ram: 999, catapult: -5 } });
+  assert.equal(result.siege.ram, 20);
+  assert.equal(result.siege.catapult, 0);
+  assert.equal(result.siege.wallDamage, 100);
+});
+
+test('fortress wall damage is capped and cannot become negative', () => {
+  const base = { attacker: { infantry: 10 }, defender: { infantry: 10 }, terrain: 'fortress', seed: 4 };
+  const result = resolveBattle({ ...base, siege: { ram: 20, catapult: 20 } });
+  assert.equal(result.siege.wallDamage, 100);
+  assert.equal(result.siege.wallRemaining, 0);
+  assert.equal(result.siege.wallBreached, true);
+});
+
+test('losses never exceed the number of units in each troop class', () => {
+  const result = resolveBattle({
+    attacker: { infantry: 1, archer: 2, cavalry: 1 },
+    defender: { infantry: 1, spearman: 1, knight: 1 },
+    seed: 999
+  });
+  for (const [type, count] of Object.entries(result.attacker)) {
+    assert.ok(result.losses.attacker[type] <= count);
+    assert.ok(result.remaining.attacker[type] >= 0);
+  }
+  for (const [type, count] of Object.entries(result.defender)) {
+    assert.ok(result.losses.defender[type] <= count);
+    assert.ok(result.remaining.defender[type] >= 0);
+  }
+});
