@@ -150,7 +150,7 @@ function showOutpostControls(id){
  panel.querySelector('#enemyRaid').addEventListener('click',()=>{
   if(Date.now()-Number(territory[id]?.lastRaidAt||0)<raidCooldown){panel.querySelector('p').textContent='Bu məntəqəyə düşmən basqını edilib. Yeni sınaq üçün 6 saat gözləməlisən.';return;}
   const raider={infantry:35,spearman:20,archer:25,cavalry:15,knight:5};
-  if(guardTotal===0){territory[id].captured=false;try{localStorage.setItem(territoryKey,JSON.stringify(territory))}catch{};panel.querySelector('p').textContent='Qarnizon olmadığı üçün düşmən məntəqəni ələ keçirdi!';return}
+  if(guardTotal===0){territory[id].captured=false;territory[id].lastRaidAt=Date.now();try{localStorage.setItem(territoryKey,JSON.stringify(territory))}catch{};panel.querySelector('p').textContent='Qarnizon olmadığı üçün düşmən məntəqəni ələ keçirdi!';return}
   const battle=resolveBattle({attacker:raider,defender:guard,direction:'south',tactic:'balanced',terrain:'forest',seed:Date.now()%100000});
   territory[id].garrison=battle.remaining.defender;
   territory[id].lastRaidAt=Date.now();
