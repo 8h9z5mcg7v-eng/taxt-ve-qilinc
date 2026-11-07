@@ -304,6 +304,7 @@ function renderLastBattleReport(){
 function renderBattleHistory(){
  let history=[];
  try{history=JSON.parse(localStorage.getItem('tvq_battle_history_v1')||'[]')}catch{}
+ if(!Array.isArray(history))history=[];
  let panel=document.getElementById('battleHistoryPanel');
  if(!panel){panel=document.createElement('section');panel.id='battleHistoryPanel';panel.style.cssText='position:absolute;right:12px;top:calc(112px + min(42vh,330px) + 12px);z-index:8;width:min(330px,calc(100vw - 24px));max-height:30vh;overflow:auto;padding:12px;border:1px solid #806d4a;border-radius:10px;background:#17251fee;color:#f4e6c8;font:12px/1.5 system-ui;box-shadow:0 8px 24px #0008';document.body.append(panel)}
  if(!history.length){panel.innerHTML='<b>📚 Döyüş tarixçəsi</b><p>Hələ qeydə alınmış döyüş yoxdur.</p>';return}
