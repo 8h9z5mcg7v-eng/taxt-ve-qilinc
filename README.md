@@ -11,7 +11,7 @@ Mobil strategiya oyunu üçün ayrıca layihə.
 ## Cari mərhələ
 Hazırda 3D aktiv yoxlayıcısı hazırlanıb. Bu, oyunun özü deyil; GLB modellərini mobil cihazda texniki və vizual qiymətləndirmək üçündür. Repozitoriyada hələ tam oyun, real qala modeli və ya yayımlanmış oyun build-i yoxdur.
 
-## 3D model yoxlayıcısı
+## İlk döyüş sınağı\n\n`battle.html` səhifəsini açaraq iPhone-da qoşun sayını, hücum istiqamətini və taktikanı seçib döyüş hesablamasını sınaqdan keçir. Bu, balans mexanikasını yoxlayan mobil prototipdir; animasiyalı 3D döyüş deyil.\n\n## 3D model yoxlayıcısı
 1. `index.html` səhifəsini GitHub Pages vasitəsilə aç.
 2. **GLB seç** düyməsinə toxun.
 3. Cihazından tək fayllı `.glb` modeli seç.
