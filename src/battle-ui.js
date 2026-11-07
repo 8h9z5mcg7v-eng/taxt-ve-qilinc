@@ -229,6 +229,34 @@ function renderBattlefield(attacker, defender, direction, terrain = 'plains', wa
 const dispatched=new URLSearchParams(location.search);
 const isWorldMapAttack=dispatched.get('target')==='red-fortress';
 const isBorderBattle=dispatched.get('target')==='border';
+let strategicBattleLockReason='';
+const todayKey=(()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')})();
+if(isWorldMapAttack){
+ let journey=null;try{journey=JSON.parse(localStorage.getItem('tvq_active_journey_v1')||'null')}catch{}
+ if(!journey||journey.target!=='red-fortress')strategicBattleLockReason='Bu yürüş artıq tamamlanıb və ya ləğv edilib.';
+ else if(Number(journey.arrivesAt)>Date.now())strategicBattleLockReason='Ordu hələ düşmən qalasına çatmayıb.';
+}
+if(isBorderBattle){
+ let diplomacy={};try{diplomacy=JSON.parse(localStorage.getItem('tvq_diplomacy_v1')||'{}')}catch{}
+ const kingdom=dispatched.get('kingdom')||localStorage.getItem('tvq_border_battle_kingdom');
+ if(kingdom&&diplomacy.borderBattles?.[kingdom]===todayKey)strategicBattleLockReason='Bu sərhəd döyüşü bu gün artıq tamamlanıb.';
+}
+if(isWorldMapAttack||isBorderBattle){
+ let city={};try{city=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}')}catch{}
+ const available=city.army||{};
+ for(const type of troopIds){
+  const field=document.getElementById('a-'+type);
+  const requested=Math.max(0,Math.floor(Number(dispatched.get(type))||0));
+  const owned=Math.max(0,Math.floor(Number(available[type])||0));
+  if(field)field.value=String(Math.min(requested,owned));
+ }
+}
+if(strategicBattleLockReason){
+ const control=document.getElementById('fight');
+ if(control){control.disabled=true;control.textContent='DÖYÜŞ BAĞLANIB';}
+ const winner=document.getElementById('winner');
+ if(winner)winner.textContent=strategicBattleLockReason;
+}
 if(isWorldMapAttack||isBorderBattle){const garrison=Math.max(1,Math.min(9999,Number(dispatched.get('garrison'))||(isBorderBattle?75:300)));const defense=isBorderBattle?{infantry:Number(dispatched.get('def_infantry'))||45,spearman:Number(dispatched.get('def_spearman'))||10,archer:Number(dispatched.get('def_archer'))||15,cavalry:Number(dispatched.get('def_cavalry'))||5,knight:Number(dispatched.get('def_knight'))||0}:{infantry:Math.round(garrison*.3),spearman:Math.round(garrison*.2),archer:Math.round(garrison*.3),cavalry:Math.round(garrison*.1),knight:0};defense.knight=Math.max(0,defense.knight||garrison-Object.values(defense).reduce((a,n)=>a+n,0));for(const [type,count] of Object.entries(defense)){document.getElementById('d-'+type).value=String(count);}if(isBorderBattle){const terrainField=document.getElementById('terrain');const requestedTerrain=dispatched.get('terrain')||'fortress';if([...terrainField.options].some(option=>option.value===requestedTerrain))terrainField.value=requestedTerrain;}}
 // In the local battle simulator, defensive catapults come from the city's upgraded towers.
 if(!dispatched.has('target')){
