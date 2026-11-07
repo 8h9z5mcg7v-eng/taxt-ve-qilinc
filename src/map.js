@@ -384,30 +384,42 @@ marchButton.addEventListener('click',async()=>{
  if(!selected?.enemy||!total||journey)return;
  marchDispatchInProgress=true;
  const marchArmy=Object.fromEntries(['infantry','spearman','archer','cavalry','knight'].map(type=>[type,Math.max(0,Math.floor(Number(army[type])||0))]));
+ const marchTotal=Object.values(marchArmy).reduce((sum,count)=>sum+count,0);
+ const speed={infantry:1,spearman:0.96,archer:1.04,cavalry:1.48,knight:1.22};
+ const weighted=Object.entries(marchArmy).reduce((sum,[type,count])=>sum+count*speed[type],0)/Math.max(1,marchTotal);
+ const siegeCount=Math.max(0,Math.floor(Number(document.querySelector('#attackRam')?.value)||0))+Math.max(0,Math.floor(Number(document.querySelector('#attackCatapult')?.value)||0));
+ const duration=Math.max(45000,Math.min(12*60*1000,Math.round((150000+Math.sqrt(marchTotal)*9000+siegeCount*18000)/Math.max(.7,weighted))));
+ const startedAt=Date.now();
+ const nextJourney={target:'red-fortress',startedAt,arrivesAt:startedAt+duration,duration,army:marchArmy,siege:siegeCount};
  const dispatch=()=>{
-  let latest={};try{latest=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}')}catch{document.querySelector('#description').textContent='Şəhər ordusu oxunmadı; yürüş başladılmadı.';return false}
+  let latest={};
+  try{latest=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}')}catch{document.querySelector('#description').textContent='Şəhər ordusu oxunmadı; yürüş başladılmadı.';return false}
+  let active=null;
+  try{active=JSON.parse(localStorage.getItem(journeyKey)||'null')}catch{}
+  if(active){journey=active;document.querySelector('#description').textContent='Artıq başqa pəncərədə aktiv yürüş var. Mövcud yürüşə qoşul.';return false}
   latest.army=latest.army||{};
   if(Object.keys(marchArmy).some(type=>marchArmy[type]>(Number(latest.army[type])||0))){document.querySelector('#description').textContent='Ordu sayı dəyişib. Şəhəri yenilə və hücumu yenidən hazırla.';return false}
-  for(const type of Object.keys(marchArmy)){latest.army[type]=(Number(latest.army[type])||0)-marchArmy[type];army[type]=latest.army[type]}
-  try{localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(latest));return true}catch{document.querySelector('#description').textContent='Qoşun çıxışı yadda saxlanmadı; yürüş başlamadı.';return false}
- };
- const dispatchedOk=navigator.locks?.request?await navigator.locks.request('tvq-city-economy',dispatch):dispatch();
- if(!dispatchedOk){marchDispatchInProgress=false;return}
- const speed={infantry:1,spearman:0.96,archer:1.04,cavalry:1.48,knight:1.22};
- const weighted=Object.entries(marchArmy).reduce((sum,[type,count])=>sum+count*speed[type],0)/Math.max(1,total);
- const siegeCount=Math.max(0,Math.floor(Number(document.querySelector('#attackRam')?.value)||0))+Math.max(0,Math.floor(Number(document.querySelector('#attackCatapult')?.value)||0));
- const duration=Math.max(45000,Math.min(12*60*1000,Math.round((150000+Math.sqrt(total)*9000+siegeCount*18000)/Math.max(.7,weighted))));
-
- journey={target:'red-fortress',startedAt:Date.now(),arrivesAt:Date.now()+duration,duration,army:marchArmy,siege:siegeCount};
- try{localStorage.setItem(journeyKey,JSON.stringify(journey));}catch{
-  const restore=()=>{let latest={};try{latest=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}')}catch{return}
-   latest.army=latest.army||{};for(const type of Object.keys(marchArmy))latest.army[type]=(Number(latest.army[type])||0)+marchArmy[type];
+  const previous={...latest.army};
+  for(const type of Object.keys(marchArmy))latest.army[type]=(Number(latest.army[type])||0)-marchArmy[type];
+  try{
+   localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(latest));
+   localStorage.setItem(journeyKey,JSON.stringify(nextJourney));
+   for(const type of Object.keys(marchArmy))army[type]=latest.army[type];
+   journey=nextJourney;
+   return true;
+  }catch(error){
+   latest.army=previous;
    try{localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(latest))}catch{}
-  };
-  if(navigator.locks?.request)await navigator.locks.request('tvq-city-economy',restore);else restore();
-  marchDispatchInProgress=false;document.querySelector('#description').textContent='Yürüş qeydi saxlanmadı; qoşun şəhər ehtiyatına qaytarıldı.';return
- }
+   try{localStorage.removeItem(journeyKey)}catch{}
+   document.querySelector('#description').textContent='Yürüş təhlükəsiz yadda saxlanmadı; qoşun şəhərdə saxlanıldı.';
+   return false;
+  }
+ };
+ let dispatchedOk=false;
+ try{dispatchedOk=navigator.locks?.request?await navigator.locks.request('tvq-city-economy',dispatch):dispatch()}
+ catch(error){document.querySelector('#description').textContent='Yürüş başlatmaq mümkün olmadı; yenidən cəhd et.'}
  marchDispatchInProgress=false;
+ if(!dispatchedOk)return;
  renderJourney();
 });
 if(journey){setInterval(renderJourney,1000);}
