@@ -77,7 +77,7 @@ function torch(x,z){
 }
 torch(-9,44);torch(9,44);torch(-8,-45);torch(8,-45);
 function makePatrol(x,z,armorColor){
- const group=new THREE.Group();group.position.set(x,0,z);
+ const group=new THREE.Group();group.position.set(x,0,z);group.userData.baseX=x;
  const armor=mat(armorColor,.55),skin=mat(0xb98b68),cloak=mat(0x6b302b);
  const body=new THREE.Mesh(new THREE.CylinderGeometry(.75,.95,2.7,8),armor);body.position.y=3.1;body.castShadow=true;group.add(body);
  const head=new THREE.Mesh(new THREE.SphereGeometry(.72,10,8),skin);head.position.y=5.1;head.castShadow=true;group.add(head);
@@ -107,4 +107,4 @@ refreshResources();
 document.querySelector('#home').addEventListener('click',()=>{camera.position.set(150,165,175);controls.target.set(0,10,12);controls.update()});
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.5))});
 const patrolClock=new THREE.Clock();
-renderer.setAnimationLoop(()=>{const t=patrolClock.getElapsedTime();patrols.forEach((p,i)=>{p.position.x+=Math.sin(t*.7+i)*.012;p.rotation.y=Math.sin(t*.55+i)*.22});controls.update();renderer.render(scene,camera)});
+renderer.setAnimationLoop(()=>{const t=patrolClock.getElapsedTime();patrols.forEach((p,i)=>{p.position.x=p.userData.baseX+Math.sin(t*.7+i)*1.4;p.rotation.y=Math.sin(t*.55+i)*.22});controls.update();renderer.render(scene,camera)});
