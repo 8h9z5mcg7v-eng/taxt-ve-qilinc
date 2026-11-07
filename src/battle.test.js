@@ -119,3 +119,20 @@ test('intact fortress wall gives exactly the intended 32 percent defence bonus',
   const fortress = resolveBattle({ ...base, terrain: 'fortress' });
   assert.ok(Math.abs(fortress.power.defender - open.power.defender * 1.32) <= 1);
 });
+
+
+test('general bonuses improve only the selected troop speciality', () => {
+  const base = resolveBattle({ attacker: { cavalry: 10 }, defender: { infantry: 10 }, seed: 17 });
+  const alp = resolveBattle({ attacker: { cavalry: 10 }, defender: { infantry: 10 }, commander: { id: 'alp', xp: 0 }, seed: 17 });
+  const tomris = resolveBattle({ attacker: { cavalry: 10 }, defender: { infantry: 10 }, commander: { id: 'tomris', xp: 0 }, seed: 17 });
+  assert.ok(alp.power.attacker > base.power.attacker);
+  assert.equal(tomris.power.attacker, base.power.attacker);
+});
+
+test('general experience increases the specialist bonus without changing defence', () => {
+  const input = { attacker: { archer: 20 }, defender: { infantry: 10 }, commander: { id: 'tomris', xp: 0 }, seed: 21 };
+  const novice = resolveBattle(input);
+  const veteran = resolveBattle({ ...input, commander: { id: 'tomris', xp: 500 } });
+  assert.ok(veteran.power.attacker > novice.power.attacker);
+  assert.equal(veteran.power.defender, novice.power.defender);
+});
