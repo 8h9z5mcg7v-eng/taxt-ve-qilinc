@@ -100,7 +100,39 @@ function showGarrisonControls(){
  if(!section){section=document.createElement('div');section.id='garrisonControls';section.style.cssText='margin-top:12px;padding:10px;border:1px solid #756448;border-radius:9px;background:#1d2b25';panel.append(section)}
  const garrison=fortressState.garrison||{infantry:0,spearman:0,archer:0,cavalry:0,knight:0};
  const totalGarrison=Object.values(garrison).reduce((a,n)=>a+n,0);
- section.innerHTML='<b>Qala qarnizonu: '+totalGarrison+' əsgər</b><p>Qalanı müdafiə etmək üçün ordudan əsgər ayır.</p><label style="display:block;font-size:12px;margin:7px 0">Piyada <input id="gInf" type="number" min="0" max="'+army.infantry+'" value="0"></label><label style="display:block;font-size:12px;margin:7px 0">Nizəçi <input id="gSp" type="number" min="0" max="'+army.spearman+'" value="0"></label><label style="display:block;font-size:12px;margin:7px 0">Oxçu <input id="gAr" type="number" min="0" max="'+army.archer+'" value="0"></label><label style="display:block;font-size:12px;margin:7px 0">Süvari <input id="gCa" type="number" min="0" max="'+army.cavalry+'" value="0"></label><label style="display:block;font-size:12px;margin:7px 0">Cəngavər <input id="gKn" type="number" min="0" max="'+army.knight+'" value="0"></label><button id="assignGarrison">Qarnizonu yerləşdir</button>';
+ section.innerHTML='<b>Qala qarnizonu: '+totalGarrison+' əsgər</b><p>Qalanı müdafiə etmək üçün ordudan əsgər ayır.</p><label style="display:block;font-size:12px;margin:7px 0">Piyada <input id="gInf" type="number" min="0" max="'+army.infantry+'" value="0"></label><label style="display:block;font-size:12px;margin:7px 0">Nizəçi <input id="gSp" type="number" min="0" max="'+army.spearman+'" value="0"></label><label style="display:block;font-size:12px;margin:7px 0">Oxçu <input id="gAr" type="number" min="0" max="'+army.archer+'" value="0"></label><label style="display:block;font-size:12px;margin:7px 0">Süvari <input id="gCa" type="number" min="0" max="'+army.cavalry+'" value="0"></label><label style="display:block;font-size:12px;margin:7px 0">Cəngavər <input id="gKn" type="number" min="0" max="'+army.knight+'" value="0"></label><button id="assignGarrison">Qarnizonu yerləşdir</button><button id="raidFortress" style="margin:8px 0">⚔ Düşmən basqınını sına</button>';
+ section.querySelector('#raidFortress').addEventListener('click',()=>{
+  const raider={infantry:35,spearman:20,archer:25,cavalry:15,knight:5};
+  if(totalGarrison===0){
+   fortressState.captured=false;
+   fortressState.garrison={infantry:0,spearman:0,archer:0,cavalry:0,knight:0};
+   worldState.redFortress=fortressState;saveWorld();
+   const enemy=document.querySelector('[data-id="enemy"]');
+   enemy.querySelector('span').textContent='🛡 Düşmən qalası';
+   enemy.querySelector('small').textContent='Düşmən nəzarətində';
+   targets.enemy.title='Qırmızı Qala — Düşmən';
+   targets.enemy.description='Düşmən qarnizonu: 300 əsgər. Qalanı yenidən fəth etmək üçün ordu göndər.';
+   targets.enemy.enemy=true;
+   section.querySelector('p').textContent='Qarnizon olmadığı üçün düşmən qalanı ələ keçirdi.';
+   marchButton.disabled=true;
+   return;
+  }
+  const battle=resolveBattle({attacker:raider,defender:garrison,direction:'south',tactic:'balanced',terrain:'fortress',seed:Date.now()%100000});
+  fortressState.garrison=battle.remaining.defender;
+  fortressState.lastRaidAt=Date.now();
+  if(battle.winner==='attacker')fortressState.captured=false;
+  worldState.redFortress=fortressState;saveWorld();
+  const enemy=document.querySelector('[data-id="enemy"]');
+  if(!fortressState.captured){
+   enemy.querySelector('span').textContent='🛡 Düşmən qalası';
+   enemy.querySelector('small').textContent='Düşmən nəzarətində';
+   targets.enemy.title='Qırmızı Qala — Düşmən';
+   targets.enemy.description='Düşmən qarnizonu: 300 əsgər. Qalanı yenidən fəth etmək üçün ordu göndər.';
+   targets.enemy.enemy=true;
+  }
+  section.querySelector('p').textContent=(battle.winner==='defender'?'Müdafiə uğurludur! ':'Düşmən qalanı ələ keçirdi. ')+'Qarnizonda sağ qalan: '+Object.values(battle.remaining.defender).reduce((a,n)=>a+n,0)+' · Hücumçu itkisi: '+Object.values(battle.losses.attacker).reduce((a,n)=>a+n,0);
+  if(!fortressState.captured)marchButton.disabled=true;
+ });
  section.querySelector('#assignGarrison').addEventListener('click',()=>{
   const keys=['infantry','spearman','archer','cavalry','knight'],ids=['gInf','gSp','gAr','gCa','gKn'];
   const additions=Object.fromEntries(keys.map((k,i)=>[k,Math.max(0,Math.min(army[k],Math.floor(Number(section.querySelector('#'+ids[i]).value)||0)))]));
