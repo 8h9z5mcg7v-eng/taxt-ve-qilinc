@@ -449,6 +449,7 @@ document.getElementById('fight').addEventListener('click', () => {
     catapult: Math.max(0, Math.min(20, Math.floor(Number(isWorldMapAttack ? (dispatchedPlan.catapult??dispatched.get('catapult')??document.getElementById('catapult').value) : document.getElementById('catapult').value) || 0))),
     tower: Math.max(0, Math.min(20, Math.floor(Number(isWorldMapAttack ? (dispatchedPlan.tower??dispatched.get('tower')??document.getElementById('tower').value) : document.getElementById('tower').value) || 0)))
   };
+  const defenseCatapult = Math.max(0, Math.min(20, Math.floor(Number(document.getElementById('defenseCatapult')?.value) || 0)));
   document.getElementById('ram').value=String(siege.ram);
   document.getElementById('catapult').value=String(siege.catapult);
   document.getElementById('tower').value=String(siege.tower);
@@ -462,7 +463,7 @@ document.getElementById('fight').addEventListener('click', () => {
   } else if (isBorderBattle) {
     try { const diplomacy=JSON.parse(localStorage.getItem('tvq_diplomacy_v1')||'{}'); const kingdom=dispatched.get('kingdom')||localStorage.getItem('tvq_border_battle_kingdom'); priorWallDamage=Number(diplomacy.borderCampaigns?.[kingdom]?.wallDamage)||0; } catch {}
   }
-  const result = resolveBattle({ attacker, defender, direction, tactic, terrain, siege, priorWallDamage, seed: Date.now() % 100000 });
+  const result = resolveBattle({ attacker, defender, direction, tactic, terrain, siege, defenseCatapult, priorWallDamage, seed: Date.now() % 100000 });
   fightButton.textContent = isWorldMapAttack ? 'DÖYÜŞ TAMAMLANDI' : 'YENİ DÖYÜŞÜ HESABLA';
   if (!isWorldMapAttack) fightButton.disabled = false;
   const survivingAttacker = result.remaining?.attacker ?? attacker;
