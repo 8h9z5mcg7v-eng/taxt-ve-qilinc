@@ -117,7 +117,7 @@ function showGarrisonControls(){
    marchButton.disabled=true;
    return;
   }
-  const battle=resolveBattle({attacker:raider,defender:garrison,direction:'south',tactic:'balanced',terrain:'fortress',seed:Date.now()%100000});
+  const battle=resolveBattle({attacker:raider,defender:garrison,direction:'south',tactic:'balanced',defenderTactic:(fortressState.defensePlan?.tactic||'balanced'),terrain:'fortress',seed:Date.now()%100000});
   fortressState.garrison=battle.remaining.defender;
   fortressState.lastRaidAt=Date.now();
   if(battle.winner==='attacker')fortressState.captured=false;
@@ -187,6 +187,20 @@ function renderRaidAlert(){
  const next=base+6*60*60*1000;
  const left=Math.max(0,next-Date.now());
  const hours=Math.floor(left/3600000),minutes=Math.floor((left%3600000)/60000);
+ const plan=fortressState.defensePlan||{tactic:'balanced'};
+ const tacticNames={balanced:'Balanslı müdafiə',line:'Sıx müdafiə xətti',volley:'Oxçu yaylımı',wedge:'Süvari pazı'};
+ let controls=alert.querySelector('#defensePlan');
+ if(!controls){
+  controls=document.createElement('div');controls.id='defensePlan';controls.style.cssText='margin-top:10px';
+  controls.innerHTML='<label for="defenseTactic">Müdafiə taktikası</label><select id="defenseTactic" style="display:block;width:100%;margin:6px 0;padding:10px;border-radius:8px;background:#26342b;color:#fff;border:1px solid #a87942"><option value="balanced">Balanslı müdafiə</option><option value="line">Sıx müdafiə xətti</option><option value="volley">Oxçu yaylımı</option><option value="wedge">Süvari pazı</option></select><small id="planSaved">Müdafiə əmri seçilməyib.</small>';
+  alert.append(controls);
+  controls.querySelector('#defenseTactic').addEventListener('change',e=>{
+   fortressState.defensePlan={...(fortressState.defensePlan||{}),tactic:e.target.value};
+   worldState.redFortress=fortressState;saveWorld();
+   controls.querySelector('#planSaved').textContent='Müdafiə əmri yadda saxlanıldı: '+tacticNames[e.target.value]+'.';
+  });
+ }
+ controls.querySelector('#defenseTactic').value=plan.tactic||'balanced';
  alert.innerHTML='<b>⚠ Qala müdafiəsi</b><p>'+(left===0?'Basqın vaxtı çatıb. Xəritəni yenilədikdə müdafiə döyüşü hesablanacaq.':left<=60*60*1000?'DİQQƏT: düşmən basqını yaxınlaşır!':'Növbəti mümkün basqına qalan vaxt: '+hours+' saat '+minutes+' dəqiqə.')+'</p><small>Qarnizonunu gücləndir. Basqın yalnız xəritə yenidən yüklənəndə hesablanır.</small>';
 }
 renderRaidAlert();
