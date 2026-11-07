@@ -38,7 +38,7 @@ export function resolveBattle({ attacker, defender, direction = 'south', tactic 
   const safeTactic = TACTICS.has(tactic) ? tactic : 'balanced';
   const safeDefenderTactic = TACTICS.has(defenderTactic) ? defenderTactic : 'balanced';
   const safeTerrain = TERRAIN.has(terrain) ? terrain : 'plains';
-  const siegeEngines = { ram: siegeCount(siege.ram), catapult: siegeCount(siege.catapult) };
+  const siegeEngines = { ram: siegeCount(siege.ram), catapult: siegeCount(siege.catapult), tower: siegeCount(siege.tower) };
 
   if (!attackCount || !defendCount) {
     return { winner: attackCount ? 'attacker' : 'defender', direction: safeDirection, tactic: safeTactic, attacker: attackArmy, defender: defendArmy, log: ['Döyüş üçün hər iki tərəfdə qoşun olmalıdır.'] };
@@ -56,8 +56,8 @@ export function resolveBattle({ attacker, defender, direction = 'south', tactic 
   const wallDamage = Math.min(wallMax, clamp(Number(priorWallDamage) || 0, 0, wallMax) + siegeEngines.ram * 18 + siegeEngines.catapult * 30);
   const wallRemaining = Math.max(0, wallMax - wallDamage);
   const wallBreached = wallMax > 0 && wallRemaining === 0;
-  const wallProtection = wallMax > 0 ? (1 + (wallRemaining / wallMax) * 0.32) / 1.32 : 1;
-  const siegeAttackBonus = wallMax > 0 ? siegeEngines.catapult * 14 + (wallBreached ? siegeEngines.ram * 6 : 0) : 0;
+  const wallProtection = wallMax > 0 ? ((1 + (wallRemaining / wallMax) * 0.32) / 1.32) / (1 + siegeEngines.tower * 0.16) : 1;
+  const siegeAttackBonus = wallMax > 0 ? siegeEngines.catapult * 14 + siegeEngines.tower * 10 + (wallBreached ? siegeEngines.ram * 6 : 0) : 0;
   const attackPower = rawAttackPower * directionBonus * terrainAttackBonus * cavalryTerrainFactor + siegeAttackBonus;
   const defendPower = calculatePower(defendArmy, true, safeDefenderTactic, attackArmy) * (wallBreached ? 1 : terrainDefenseBonus * wallProtection);
   const ratio = attackPower / Math.max(1, defendPower);
@@ -89,7 +89,7 @@ export function resolveBattle({ attacker, defender, direction = 'south', tactic 
       `Hücum taktikası: ${safeTactic}`,
       `Müdafiə taktikası: ${safeDefenderTactic}`,
       `Ərazi: ${safeTerrain}`,
-      `Mühasirə: qoçbaşı ${siegeEngines.ram}, katapult ${siegeEngines.catapult}`,
+      `Mühasirə: qoçbaşı ${siegeEngines.ram}, katapult ${siegeEngines.catapult}, mühasirə qülləsi ${siegeEngines.tower}`,
       ...(wallMax ? [`Divar zədəsi: ${wallDamage}/100 · ${wallBreached ? 'divar yarıldı' : 'divar hələ dayanır'}`] : []),
       `Hücum gücü: ${Math.round(attackPower)} · Müdafiə gücü: ${Math.round(defendPower)}`,
       winner === 'attacker' ? 'Hücum edən tərəf üstün gəldi.' : 'Müdafiə tərəfi qalib gəldi.'
