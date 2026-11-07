@@ -6,18 +6,15 @@ const host = document.querySelector('#stage');
 const hint = document.querySelector('#hint');
 const status = document.querySelector('#status');
 const fileInput = document.querySelector('#file');
+const VIEWPORT_FOOTER = 92;
 
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(42, innerWidth / (innerHeight - 82), 0.05, 5000);
+const camera = new THREE.PerspectiveCamera(42, innerWidth / (innerHeight - VIEWPORT_FOOTER), 0.05, 5000);
 camera.position.set(8, 7, 10);
 
-const renderer = new THREE.WebGLRenderer({
-  antialias: true,
-  alpha: true,
-  powerPreference: 'high-performance'
-});
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
-renderer.setSize(innerWidth, innerHeight - 82);
+renderer.setSize(innerWidth, innerHeight - VIEWPORT_FOOTER);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.15;
@@ -53,9 +50,9 @@ controls.maxDistance = 600;
 let current = null;
 let activeUrl = null;
 let mixer = null;
-let clock = new THREE.Clock();
+const clock = new THREE.Clock();
 let initialCamera = null;
-let initialTarget = new THREE.Vector3();
+const initialTarget = new THREE.Vector3();
 
 function frameObject(object) {
   const box = new THREE.Box3().setFromObject(object);
@@ -74,17 +71,16 @@ function frameObject(object) {
   controls.minDistance = maxDim * 0.15;
   controls.maxDistance = maxDim * 15;
   controls.update();
-
   initialCamera = camera.position.clone();
   initialTarget.copy(controls.target);
-  return { size, maxDim };
+  return { size };
 }
 
 function inspectModel(root) {
   let meshes = 0;
   let triangles = 0;
-  let materials = new Set();
-  let textures = new Set();
+  const materials = new Set();
+  const textures = new Set();
 
   root.traverse(node => {
     if (!node.isMesh) return;
@@ -110,14 +106,23 @@ function disposeObject(object) {
   object.traverse(node => {
     if (!node.isMesh) return;
     node.geometry?.dispose();
-    for (const material of (Array.isArray(node.material) ? node.material : [node.material])) {
-      material?.dispose();
-    }
+    for (const material of (Array.isArray(node.material) ? node.material : [node.material])) material?.dispose();
   });
   scene.remove(object);
 }
 
+function resetView() {
+  if (!initialCamera) {
+    status.textContent = 'Əvvəlcə GLB modeli seç.';
+    return;
+  }
+  camera.position.copy(initialCamera);
+  controls.target.copy(initialTarget);
+  controls.update();
+}
+
 document.querySelector('#pick').addEventListener('click', () => fileInput.click());
+document.querySelector('#reset').addEventListener('click', resetView);
 
 fileInput.addEventListener('change', () => {
   const file = fileInput.files?.[0];
@@ -137,9 +142,7 @@ fileInput.addEventListener('change', () => {
       const { size } = frameObject(current);
       const stats = inspectModel(current);
       mixer = gltf.animations.length ? new THREE.AnimationMixer(current) : null;
-      if (mixer) {
-        gltf.animations.forEach(clip => mixer.clipAction(clip).play());
-      }
+      if (mixer) gltf.animations.forEach(clip => mixer.clipAction(clip).play());
 
       const mb = (file.size / 1048576).toFixed(1);
       status.textContent =
@@ -160,15 +163,8 @@ fileInput.addEventListener('change', () => {
   );
 });
 
-function resetView() {
-  if (!initialCamera) return;
-  camera.position.copy(initialCamera);
-  controls.target.copy(initialTarget);
-  controls.update();
-}
-
 function resize() {
-  const height = innerHeight - 82;
+  const height = innerHeight - VIEWPORT_FOOTER;
   camera.aspect = innerWidth / height;
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth, height);
@@ -177,13 +173,11 @@ function resize() {
 
 addEventListener('resize', resize);
 renderer.setAnimationLoop(() => {
-  const delta = clock.getDelta();
-  mixer?.update(delta);
+  mixer?.update(clock.getDelta());
   controls.update();
   renderer.render(scene, camera);
 });
 
-// Double-tap the model area to restore the original inspection angle.
 let lastTap = 0;
 renderer.domElement.addEventListener('pointerup', () => {
   const now = performance.now();
