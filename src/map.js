@@ -507,7 +507,7 @@ document.querySelectorAll('.place').forEach(el=>el.addEventListener('click',()=>
 }));
 marchButton.addEventListener('click',()=>{
  if(returnJourney)return;
- if(journey&&journey.target==='red-fortress'&&Date.now()>=journey.arrivesAt){const next=new URLSearchParams(params);let plan={};try{plan=JSON.parse(localStorage.getItem('tvq_attack_plan_v1')||'{}')}catch{};next.set('target','red-fortress');next.set('garrison','300');next.set('direction',plan.direction||'south');next.set('tactic',plan.tactic||'balanced');next.set('ram',String(plan.ram??1));next.set('catapult',String(plan.catapult??1));let commander={};try{commander=JSON.parse(localStorage.getItem('tvq_general_v1')||'{}')}catch{};next.set('commander',commander.id||'alp');location.href='./battle.html?'+next.toString();return;}
+ if(journey&&journey.target==='red-fortress'&&Date.now()>=journey.arrivesAt){const next=new URLSearchParams(params);let plan={};try{plan=JSON.parse(localStorage.getItem('tvq_attack_plan_v1')||'{}')}catch{};next.set('target','red-fortress');next.set('battleId','red-'+String(journey.startedAt||0));next.set('garrison','300');next.set('direction',plan.direction||'south');next.set('tactic',plan.tactic||'balanced');next.set('ram',String(plan.ram??1));next.set('catapult',String(plan.catapult??1));let commander={};try{commander=JSON.parse(localStorage.getItem('tvq_general_v1')||'{}')}catch{};next.set('commander',commander.id||'alp');location.href='./battle.html?'+next.toString();return;}
  if(!selected?.enemy||!total||journey)return;
  const marchArmy=Object.fromEntries(['infantry','spearman','archer','cavalry','knight'].map(type=>[type,Math.max(0,Math.floor(Number(army[type])||0))]));
  const speed={infantry:1,spearman:0.96,archer:1.04,cavalry:1.48,knight:1.22};
@@ -705,7 +705,7 @@ function mountDiplomacyContracts(){
      try{localStorage.setItem('tvq_border_battle_kingdom',kingdom.id)}catch{}
      const enemyFor={north:{infantry:32,spearman:18,archer:38,cavalry:12,knight:5,terrain:'forest'},iron:{infantry:42,spearman:35,archer:25,cavalry:8,knight:15,terrain:'fortress'},sun:{infantry:25,spearman:10,archer:28,cavalry:32,knight:12,terrain:'plains'}};
      const enemy=enemyFor[kingdom.id]||enemyFor.north;
-     const params=new URLSearchParams({target:'border',kingdom:kingdom.id,infantry:String(city.army.infantry||0),spearman:String(city.army.spearman||0),archer:String(city.army.archer||0),cavalry:String(city.army.cavalry||0),knight:String(city.army.knight||0),garrison:String(Object.entries(enemy).filter(([k])=>k!=='terrain').reduce((sum,[,v])=>sum+v,0)),terrain:enemy.terrain,...Object.fromEntries(Object.entries(enemy).filter(([k])=>k!=='terrain').map(([k,v])=>['def_'+k,String(v)]))});
+     const params=new URLSearchParams({target:'border',battleId:'border-'+kingdom.id+'-'+day,kingdom:kingdom.id,infantry:String(city.army.infantry||0),spearman:String(city.army.spearman||0),archer:String(city.army.archer||0),cavalry:String(city.army.cavalry||0),knight:String(city.army.knight||0),garrison:String(Object.entries(enemy).filter(([k])=>k!=='terrain').reduce((sum,[,v])=>sum+v,0)),terrain:enemy.terrain,...Object.fromEntries(Object.entries(enemy).filter(([k])=>k!=='terrain').map(([k,v])=>['def_'+k,String(v)]))});
      location.href='./battle.html?'+params.toString();
     });
     card.append(battleButton,battleStatus);
