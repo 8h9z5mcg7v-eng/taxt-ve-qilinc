@@ -11,6 +11,20 @@ const troopLabels = { infantry: 'P', spearman: 'N', archer: 'O', cavalry: 'S', k
 const troopNames = { infantry: 'Piyada', spearman: 'Nizəçi', archer: 'Oxçu', cavalry: 'Süvari', knight: 'Cəngavər' };
 const svgNS = 'http://www.w3.org/2000/svg';
 
+async function updateCitySave(mutator) {
+  const update = () => {
+    let saved;
+    try { saved = JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1') || '{}'); }
+    catch { throw new Error('Şəhər yaddaşı oxunmadı.'); }
+    mutator(saved);
+    try { localStorage.setItem('taxt-ve-qilinc-city-v1', JSON.stringify(saved)); }
+    catch { throw new Error('Şəhər yaddaşı yazılmadı.'); }
+  };
+  if (navigator.locks?.request) await navigator.locks.request('tvq-city-economy', update);
+  else update();
+}
+
+
 function svgNode(tag, attrs, parent, value) {
   const node = document.createElementNS(svgNS, tag);
   Object.entries(attrs).forEach(([key, val]) => node.setAttribute(key, String(val)));
@@ -580,7 +594,7 @@ document.querySelectorAll('input[type="number"], #direction').forEach(control =>
   control.addEventListener('input', refreshPreview);
   control.addEventListener('change', refreshPreview);
 });
-document.getElementById('fight').addEventListener('click', () => {
+document.getElementById('fight').addEventListener('click', async () => {
   const attacker = readArmy('a');
   if(isWorldMapAttack){
     let active=null;
@@ -664,16 +678,17 @@ document.getElementById('fight').addEventListener('click', () => {
   // Only dispatched world-map battles consume and update the city army.
   if (isWorldMapAttack || isBorderBattle) {
     try {
-      const saveKey = 'taxt-ve-qilinc-city-v1';
-      const saved = JSON.parse(localStorage.getItem(saveKey) || '{}');
-      const wounded = { infantry: 0, spearman: 0, archer: 0, cavalry: 0, knight: 0, ...(saved.wounded || {}) };
-      for (const type of troopIds) {
-        const battleLoss = Math.max(0, Number(result.losses?.attacker?.[type]) || 0);
-        wounded[type] = (Number(wounded[type]) || 0) + Math.floor(battleLoss * 0.3);
-      }
-      // The marching army was already removed from the city when the journey began.
-      // Preserve any troops recruited while it was away; returning survivors are settled by the return-journey queue.
-      localStorage.setItem(saveKey, JSON.stringify({ ...saved, army: saved.army || {}, wounded }));
+      await updateCitySave(saved => {
+        const wounded = { infantry: 0, spearman: 0, archer: 0, cavalry: 0, knight: 0, ...(saved.wounded || {}) };
+        for (const type of troopIds) {
+          const battleLoss = Math.max(0, Number(result.losses?.attacker?.[type]) || 0);
+          wounded[type] = (Number(wounded[type]) || 0) + Math.floor(battleLoss * 0.3);
+        }
+        // The marching army was already removed from the city when the journey began.
+        // Preserve any troops recruited while it was away; returning survivors are settled by the return-journey queue.
+        saved.army = saved.army || {};
+        saved.wounded = wounded;
+      });
     } catch (error) {
       console.warn('Ordunun nəticəsini yadda saxlamaq mümkün olmadı.', error);
     }
@@ -702,7 +717,7 @@ try{
 }catch(error){console.warn('Döyüş tarixçəsini saxlamaq mümkün olmadı',error)}
 if(returnTotal){const trip={id:'battle-'+now,startedAt:now,arrivesAt:now+returnDuration,duration:returnDuration,army:returnArmy,result:captured?'victory':'defeat'};const queueKey='tvq_return_journeys_v1';const queue=(()=>{try{const value=JSON.parse(localStorage.getItem(queueKey)||'[]');return Array.isArray(value)?value:[]}catch{return []}})();queue.push(trip);localStorage.setItem(queueKey,JSON.stringify(queue));}
 localStorage.removeItem('tvq_active_journey_v1');const outcome=document.createElement('p');outcome.style.cssText='margin-top:12px;color:#f0d69d;font-weight:700';outcome.textContent=captured?'Qırmızı Qala fəth edildi! Şəhərə qayıdaraq nəticəni gör.':'Hücum uğursuz oldu. Sağ qalan ordu şəhərə qaytarıldı.';panel.appendChild(outcome);const back=document.createElement('a');back.href='./city.html';back.textContent='Şəhərə qayıt';back.style.cssText='display:block;text-align:center;margin-top:10px;padding:12px;background:#76542c;border-radius:9px;color:white;text-decoration:none';panel.appendChild(back);}catch(error){console.warn('Döyüş nəticəsi saxlanmadı',error)}}
-  if(isBorderBattle){try{const diplomacyKey='tvq_diplomacy_v1';const diplomacy=JSON.parse(localStorage.getItem(diplomacyKey)||'{}');const kingdom=dispatched.get('kingdom')||localStorage.getItem('tvq_border_battle_kingdom');const dayNow=new Date();const dayKey=dayNow.getFullYear()+'-'+String(dayNow.getMonth()+1).padStart(2,'0')+'-'+String(dayNow.getDate()).padStart(2,'0');diplomacy.borderBattles=diplomacy.borderBattles||{};diplomacy.borderCampaigns=diplomacy.borderCampaigns||{};diplomacy.borderBattles[kingdom]=dayKey;const won=result.winner==='attacker';let campaign=diplomacy.borderCampaigns[kingdom]||{wins:0,captured:false};campaign.wallDamage=result.siege?.wallDamage??campaign.wallDamage??0;campaign.wallBreached=!!result.siege?.wallBreached;let captureBonus=0;campaign.lastBattleAt=Date.now();diplomacy.borderCampaigns[kingdom]=campaign;if(won){diplomacy.standings=diplomacy.standings||{};diplomacy.standings[kingdom]=(Number(diplomacy.standings[kingdom])||0)+1;if(!campaign.captured){campaign.wins=(Number(campaign.wins)||0)+1;if(campaign.wins>=3){campaign.captured=true;campaign.capturedAt=Date.now();campaign.lastCollectedAt=campaign.capturedAt;captureBonus=300;}}campaign.lastBattleAt=Date.now();diplomacy.borderCampaigns[kingdom]=campaign;const saved=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}');saved.resources=saved.resources||{wood:1200,stone:1000,gold:500};saved.resources.gold=(Number(saved.resources.gold)||0)+80+captureBonus;localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(saved));}localStorage.setItem(diplomacyKey,JSON.stringify(diplomacy));localStorage.removeItem('tvq_border_battle_kingdom');const outcome=document.createElement('p');outcome.style.cssText='margin-top:12px;color:#f0d69d;font-weight:700';outcome.textContent=won?(campaign.captured&&!captureBonus?'Sərhəd basqını dəf edildi! 80 qızıl və 1 nüfuz qazandın. Sərhəd məntəqəsi artıq sənin nəzarətindədir.':captureBonus?'Sərhəd basqını dəf edildi! 80 qızıl, 1 nüfuz və məntəqənin fəthi üçün əlavə 300 qızıl qazandın.':'Sərhəd basqını dəf edildi! 80 qızıl və 1 nüfuz qazandın. Kampaniya: '+campaign.wins+'/3 qələbə.'):'Sərhəd döyüşü məğlubiyyətlə bitdi. Sağ qalan qoşunların şəhərə qayıtdı.';panel.appendChild(outcome);const back=document.createElement('a');back.href='./world-map.html';back.textContent='Dünya xəritəsinə qayıt';back.style.cssText='display:block;text-align:center;margin-top:10px;padding:12px;background:#76542c;border-radius:9px;color:white;text-decoration:none';panel.appendChild(back);}catch(error){console.warn('Sərhəd döyüşü saxlanmadı',error)}}
+  if(isBorderBattle){try{const diplomacyKey='tvq_diplomacy_v1';const diplomacy=JSON.parse(localStorage.getItem(diplomacyKey)||'{}');const kingdom=dispatched.get('kingdom')||localStorage.getItem('tvq_border_battle_kingdom');const dayNow=new Date();const dayKey=dayNow.getFullYear()+'-'+String(dayNow.getMonth()+1).padStart(2,'0')+'-'+String(dayNow.getDate()).padStart(2,'0');diplomacy.borderBattles=diplomacy.borderBattles||{};diplomacy.borderCampaigns=diplomacy.borderCampaigns||{};diplomacy.borderBattles[kingdom]=dayKey;const won=result.winner==='attacker';let campaign=diplomacy.borderCampaigns[kingdom]||{wins:0,captured:false};campaign.wallDamage=result.siege?.wallDamage??campaign.wallDamage??0;campaign.wallBreached=!!result.siege?.wallBreached;let captureBonus=0;campaign.lastBattleAt=Date.now();diplomacy.borderCampaigns[kingdom]=campaign;if(won){diplomacy.standings=diplomacy.standings||{};diplomacy.standings[kingdom]=(Number(diplomacy.standings[kingdom])||0)+1;if(!campaign.captured){campaign.wins=(Number(campaign.wins)||0)+1;if(campaign.wins>=3){campaign.captured=true;campaign.capturedAt=Date.now();campaign.lastCollectedAt=campaign.capturedAt;captureBonus=300;}}campaign.lastBattleAt=Date.now();diplomacy.borderCampaigns[kingdom]=campaign;await updateCitySave(saved=>{saved.resources=saved.resources||{wood:1200,stone:1000,gold:500};saved.resources.gold=(Number(saved.resources.gold)||0)+80+captureBonus;});}localStorage.setItem(diplomacyKey,JSON.stringify(diplomacy));localStorage.removeItem('tvq_border_battle_kingdom');const outcome=document.createElement('p');outcome.style.cssText='margin-top:12px;color:#f0d69d;font-weight:700';outcome.textContent=won?(campaign.captured&&!captureBonus?'Sərhəd basqını dəf edildi! 80 qızıl və 1 nüfuz qazandın. Sərhəd məntəqəsi artıq sənin nəzarətindədir.':captureBonus?'Sərhəd basqını dəf edildi! 80 qızıl, 1 nüfuz və məntəqənin fəthi üçün əlavə 300 qızıl qazandın.':'Sərhəd basqını dəf edildi! 80 qızıl və 1 nüfuz qazandın. Kampaniya: '+campaign.wins+'/3 qələbə.'):'Sərhəd döyüşü məğlubiyyətlə bitdi. Sağ qalan qoşunların şəhərə qayıtdı.';panel.appendChild(outcome);const back=document.createElement('a');back.href='./world-map.html';back.textContent='Dünya xəritəsinə qayıt';back.style.cssText='display:block;text-align:center;margin-top:10px;padding:12px;background:#76542c;border-radius:9px;color:white;text-decoration:none';panel.appendChild(back);}catch(error){console.warn('Sərhəd döyüşü saxlanmadı',error)}}
 
   document.getElementById('winner').textContent =
     total(attacker) && total(defender)
