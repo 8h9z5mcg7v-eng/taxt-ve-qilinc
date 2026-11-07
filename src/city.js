@@ -296,19 +296,20 @@ function renderHospital(){
  panel.append(button);
 }
 function processHospital(){
- if(!treatmentEndsAt)return;
- const now=Date.now();
- while(treatmentEndsAt>0&&now>=treatmentEndsAt){
-  const type=Object.keys(wounded).find(key=>(Number(wounded[key])||0)>0);
-  if(!type){treatmentEndsAt=0;break;}
-  wounded[type]--;army[type]=(army[type]||0)+1;
-  const remaining=Object.values(wounded).reduce((sum,n)=>sum+Math.max(0,Number(n)||0),0);
-  treatmentEndsAt=remaining? treatmentEndsAt+30000:0;
- }
- renderArmyInCity?.();
- updateArmyStatus?.();
- saveCity();
- renderHospital();
+ withCityEconomyLock(()=>{
+  if(!treatmentEndsAt){renderHospital();return}
+  const now=Date.now();
+  let changed=false;
+  while(treatmentEndsAt>0&&now>=treatmentEndsAt){
+   const type=Object.keys(wounded).find(key=>(Number(wounded[key])||0)>0);
+   if(!type){treatmentEndsAt=0;changed=true;break}
+   wounded[type]--;army[type]=(army[type]||0)+1;changed=true;
+   const remaining=Object.values(wounded).reduce((sum,n)=>sum+Math.max(0,Number(n)||0),0);
+   treatmentEndsAt=remaining?treatmentEndsAt+30000:0;
+  }
+  if(changed){renderArmyInCity();updateArmyStatus();saveCity()}
+  renderHospital();
+ });
 }
 const troopGroups=[];
 const troopColors={infantry:0x9b493b,spearman:0x71808b,archer:0x527b4d,cavalry:0x987044,knight:0xb7b8bd};
