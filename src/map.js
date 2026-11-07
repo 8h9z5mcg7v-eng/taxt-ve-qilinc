@@ -155,7 +155,7 @@ if(fortressState.captured){
   const guardCount=Object.values(guard).reduce((sum,n)=>sum+(Number(n)||0),0);
   if(guardCount>0){
    const raiders={infantry:35,spearman:20,archer:25,cavalry:15,knight:5};
-   const raid=resolveBattle({attacker:raiders,defender:guard,direction:'south',tactic:'balanced',terrain:'fortress',seed:Math.floor(nextRaidAt/1000)%100000});
+   const raid=resolveBattle({attacker:raiders,defender:guard,direction:'south',tactic:'balanced',defenderTactic:(fortressState.defensePlan?.tactic||'balanced'),terrain:'fortress',seed:Math.floor(nextRaidAt/1000)%100000});
    fortressState.garrison=raid.remaining.defender;
    fortressState.lastRaidAt=Date.now();
    if(raid.winner==='attacker')fortressState.captured=false;
@@ -189,10 +189,11 @@ function renderRaidAlert(){
  const hours=Math.floor(left/3600000),minutes=Math.floor((left%3600000)/60000);
  const plan=fortressState.defensePlan||{tactic:'balanced'};
  const tacticNames={balanced:'Balanslı müdafiə',line:'Sıx müdafiə xətti',volley:'Oxçu yaylımı',wedge:'Süvari pazı'};
+ alert.innerHTML='<b>⚠ Qala müdafiəsi</b><p>'+(left===0?'Basqın vaxtı çatıb. Xəritəni yenilədikdə müdafiə döyüşü hesablanacaq.':left<=60*60*1000?'DİQQƏT: düşmən basqını yaxınlaşır!':'Növbəti mümkün basqına qalan vaxt: '+hours+' saat '+minutes+' dəqiqə.')+'</p><small>Qarnizonunu gücləndir. Basqın yalnız xəritə yenidən yüklənəndə hesablanır.</small>';
  let controls=alert.querySelector('#defensePlan');
  if(!controls){
   controls=document.createElement('div');controls.id='defensePlan';controls.style.cssText='margin-top:10px';
-  controls.innerHTML='<label for="defenseTactic">Müdafiə taktikası</label><select id="defenseTactic" style="display:block;width:100%;margin:6px 0;padding:10px;border-radius:8px;background:#26342b;color:#fff;border:1px solid #a87942"><option value="balanced">Balanslı müdafiə</option><option value="line">Sıx müdafiə xətti</option><option value="volley">Oxçu yaylımı</option><option value="wedge">Süvari pazı</option></select><small id="planSaved">Müdafiə əmri seçilməyib.</small>';
+  controls.innerHTML='<label for="defenseTactic">Müdafiə taktikası</label><select id="defenseTactic" style="display:block;width:100%;margin:6px 0;padding:10px;border-radius:8px;background:#26342b;color:#fff;border:1px solid #a87942"><option value="balanced">Balanslı müdafiə</option><option value="line">Sıx müdafiə xətti</option><option value="volley">Oxçu yaylımı</option><option value="wedge">Süvari pazı</option></select><small id="planSaved">Müdafiə əmri yadda saxlanılır.</small>';
   alert.append(controls);
   controls.querySelector('#defenseTactic').addEventListener('change',e=>{
    fortressState.defensePlan={...(fortressState.defensePlan||{}),tactic:e.target.value};
@@ -201,7 +202,6 @@ function renderRaidAlert(){
   });
  }
  controls.querySelector('#defenseTactic').value=plan.tactic||'balanced';
- alert.innerHTML='<b>⚠ Qala müdafiəsi</b><p>'+(left===0?'Basqın vaxtı çatıb. Xəritəni yenilədikdə müdafiə döyüşü hesablanacaq.':left<=60*60*1000?'DİQQƏT: düşmən basqını yaxınlaşır!':'Növbəti mümkün basqına qalan vaxt: '+hours+' saat '+minutes+' dəqiqə.')+'</p><small>Qarnizonunu gücləndir. Basqın yalnız xəritə yenidən yüklənəndə hesablanır.</small>';
 }
 renderRaidAlert();
 setInterval(renderRaidAlert,60000);
