@@ -582,6 +582,19 @@ document.querySelectorAll('input[type="number"], #direction').forEach(control =>
 });
 document.getElementById('fight').addEventListener('click', () => {
   const attacker = readArmy('a');
+  if(isWorldMapAttack){
+    let active=null;
+    try{active=JSON.parse(localStorage.getItem('tvq_active_journey_v1')||'null')}catch{}
+    if(!active||active.target!=='red-fortress'||Number(active.arrivesAt)>Date.now()){
+      const message='Aktiv yürüş tapılmadı və ya ordu hələ qalaya çatmayıb.';
+      strategicBattleLockReason=message;
+      const button=document.getElementById('fight');
+      button.disabled=true;button.textContent='DÖYÜŞ BAĞLANIB';
+      document.getElementById('winner').textContent=message;
+      return;
+    }
+    for(const type of troopIds)attacker[type]=Math.min(attacker[type],Math.max(0,Math.floor(Number(active.army?.[type])||0)));
+  }
   const defender = readArmy('d');
   const dispatchedPlan={};try{Object.assign(dispatchedPlan,JSON.parse(localStorage.getItem('tvq_attack_plan_v1')||'{}'))}catch{}
   const direction = isWorldMapAttack ? (dispatchedPlan.direction||dispatched.get('direction')||document.getElementById('direction').value) : document.getElementById('direction').value;
