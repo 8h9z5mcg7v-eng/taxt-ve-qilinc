@@ -69,6 +69,29 @@ for(const type of troopIds){
   field.value=String(Math.max(0,Math.min(9999,Math.floor(Number(dispatched.get(type))||0))));
  }
 }
+function playCombatAnimation() {
+  const field = document.getElementById('battlefield');
+  const attackLayer = document.getElementById('attackerUnits');
+  const defendLayer = document.getElementById('defenderUnits');
+  field.classList.remove('combat-active');
+  void field.getBoundingClientRect();
+  field.classList.add('combat-active');
+  for (const [layer, direction] of [[attackLayer, -1], [defendLayer, 1]]) {
+    [...layer.querySelectorAll('circle')].forEach((circle, index) => {
+      circle.animate(
+        [
+          { transform: 'scale(1)', filter: 'brightness(1)' },
+          { transform: 'scale(1.22)', filter: 'brightness(1.8)' },
+          { transform: 'scale(1)', filter: 'brightness(1)' }
+        ],
+        { duration: 620, delay: index * 110, easing: 'ease-out' }
+      );
+    });
+  }
+  const arrow = document.querySelector('#attackArrow line');
+  if (arrow) arrow.animate([{ opacity: 0.25 }, { opacity: 1 }, { opacity: 0.25 }], { duration: 900, iterations: 2 });
+}
+
 function refreshPreview() {
   renderBattlefield(readArmy('a'), readArmy('d'), document.getElementById('direction').value);
 }
@@ -93,7 +116,14 @@ document.getElementById('fight').addEventListener('click', () => {
   };
   document.getElementById('ram').value=String(siege.ram);
   document.getElementById('catapult').value=String(siege.catapult);
+  const fightButton = document.getElementById('fight');
+  if (isWorldMapAttack && fightButton.disabled) return;
+  fightButton.disabled = true;
+  fightButton.textContent = 'DÖYÜŞ HESABLANIR...';
   const result = resolveBattle({ attacker, defender, direction, tactic, terrain, siege, seed: Date.now() % 100000 });
+  playCombatAnimation();
+  fightButton.textContent = isWorldMapAttack ? 'DÖYÜŞ TAMAMLANDI' : 'YENİ DÖYÜŞÜ HESABLA';
+  if (!isWorldMapAttack) fightButton.disabled = false;
   const survivingAttacker = result.remaining?.attacker ?? attacker;
   // Keep the surviving dispatched army in the same local save used by the city.
   try {
