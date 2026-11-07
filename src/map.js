@@ -547,14 +547,9 @@ function mountDiplomacyContracts(){
      const required={infantry:30,archer:20,cavalry:10};
      const missing=Object.keys(required).filter(type=>(Number(city.army[type])||0)<required[type]);
      if(missing.length){battleStatus.textContent='Qoşun çatmır. Lazım olan: 30 piyada, 20 oxçu, 10 süvari.';return}
-     city.army.infantry-=8;city.army.archer-=5;city.army.cavalry-=2;
-     city.resources=city.resources||{wood:1200,stone:1000,gold:500};
-     city.resources.gold=(Number(city.resources.gold)||0)+80;
-     state.borderBattles[kingdom.id]=day;
-     state.standings[kingdom.id]=(Number(state.standings[kingdom.id])||0)+1;
-     try{localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(city));localStorage.setItem(key,JSON.stringify(state))}
-     catch{battleStatus.textContent='Döyüş nəticəsi yadda saxlanmadı.';return}
-     render();
+     try{localStorage.setItem('tvq_border_battle_kingdom',kingdom.id)}catch{}
+     const params=new URLSearchParams({target:'border',kingdom:kingdom.id,infantry:String(city.army.infantry||0),spearman:String(city.army.spearman||0),archer:String(city.army.archer||0),cavalry:String(city.army.cavalry||0),knight:String(city.army.knight||0),garrison:'75'});
+     location.href='./battle.html?'+params.toString();
     });
     card.append(battleButton,battleStatus);
    }
