@@ -115,6 +115,22 @@ function renderTerrain(terrain, wallDamage = 0, siege = {}) {
 
 function renderBattlefield(attacker, defender, direction, terrain = 'plains', wallDamage = 0, siege = {}) {
   renderTerrain(terrain, wallDamage, siege);
+  const field = document.getElementById('battlefield');
+  field.querySelector('#fortressDefenses')?.remove();
+  if (terrain === 'fortress' && (defender.archer || 0) > 0) {
+    const defenses = document.createElementNS(svgNS, 'g');
+    defenses.setAttribute('id', 'fortressDefenses');
+    const guardCount = Math.min(4, Math.max(1, Math.ceil(defender.archer / 25)));
+    for (let i = 0; i < guardCount; i++) {
+      const x = 226 + i * 49;
+      const guard = svgNode('g', { transform: `translate(${x} 75)` }, defenses);
+      svgNode('path', { d: 'M-17 4 L-17 -12 L-10 -12 L-10 -19 L-3 -19 L-3 -12 L4 -12 L4 -19 L11 -19 L11 -12 L17 -12 L17 4Z', fill: '#8b8c80', stroke: '#292b26', 'stroke-width': 2 }, guard);
+      svgNode('circle', { cx: 0, cy: -8, r: 5, fill: '#d9b58a', stroke: '#292b26', 'stroke-width': 1.5 }, guard);
+      svgNode('path', { d: 'M-7 -3 L7 -3 L9 13 L-9 13Z', fill: '#b97861', stroke: '#292b26', 'stroke-width': 1.5 }, guard);
+      svgNode('path', { d: 'M-12 -5 Q-20 5 -12 14 M-12 -5 L-12 14 M-12 5 L8 -6', fill: 'none', stroke: '#d7c49b', 'stroke-width': 2 }, guard);
+    }
+    field.appendChild(defenses);
+  }
   const gate = field.querySelector('#fortressGate');
   if (gate && (siege.ram || 0) > 0) {
     gate.animate(
@@ -251,7 +267,10 @@ function playCombatAnimation(attacker = {}, defender = {}, siege = {}, result = 
   }
   const defendingShots = Math.min(8, Math.ceil((defender.archer || 0) / 20));
   for (let i = 0; i < defendingShots; i++) {
-    launch(370 - i * 15, 80 + (i % 3) * 8, 185 - i * 8, 240 + (i % 2) * 12, '#f0b29a', 160 + i * 105, 2);
+    const wallArcher = result.terrain === 'fortress';
+    const sourceX = wallArcher ? 226 + (i % 4) * 49 : 370 - i * 15;
+    const sourceY = wallArcher ? 66 : 80 + (i % 3) * 8;
+    launch(sourceX, sourceY, 185 - i * 8, 240 + (i % 2) * 12, '#f0b29a', 160 + i * 105, 2);
   }
   const catapultShots = Math.min(4, siege.catapult || 0);
   for (let i = 0; i < catapultShots; i++) {
