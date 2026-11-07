@@ -149,7 +149,7 @@ document.querySelector('#train').addEventListener('click',()=>{
 document.querySelector('#sendArmy').addEventListener('click',()=>{
  if(Object.values(army).every(v=>v===0)){document.querySelector('#armyStatus').textContent='Əvvəlcə kazarmada qoşun hazırla.';return}
  const params=new URLSearchParams();for(const [type,count] of Object.entries(army))params.set(type,String(count));
- location.href='./battle.html?'+params.toString();
+ location.href='./world-map.html?'+params.toString();
 });
 updateArmyStatus();
 renderArmyInCity();
