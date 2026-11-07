@@ -36,8 +36,27 @@ function renderTerrain(terrain, wallDamage = 0, siege = {}) {
     for (let x = 220; x < 386; x += 28) svgNode('rect', { x, y: 65, width: 14, height: 15, fill: '#99998a', stroke: '#282b27', 'stroke-width': 2 }, scene);
     svgNode('rect', { x: 270, y: 35, width: 58, height: 44, fill: '#858679', stroke: '#282b27', 'stroke-width': 4 }, scene);
     svgNode('path', { d: 'M262 36 L299 8 L336 36Z', fill: '#6f4032', stroke: '#282b27', 'stroke-width': 3 }, scene);
-    svgNode('rect', { x: 284, y: 91, width: 24, height: 39, fill: '#332c25' }, scene);
+    svgNode('rect', { x: 284, y: 91, width: 24, height: 39, fill: '#211d19' }, scene);
     const damage = Math.max(0, Math.min(100, Number(wallDamage) || 0));
+    const gate = svgNode('g', { id: 'fortressGate' }, scene);
+    const gateOpen = damage >= 100;
+    const leftGate = svgNode('path', {
+      d: gateOpen ? 'M284 92 L273 96 L267 128 L280 130Z' : 'M284 92 L296 92 L296 130 L284 130Z',
+      fill: '#80552f', stroke: '#30251e', 'stroke-width': 2
+    }, gate);
+    const rightGate = svgNode('path', {
+      d: gateOpen ? 'M308 92 L319 96 L325 128 L312 130Z' : 'M296 92 L308 92 L308 130 L296 130Z',
+      fill: '#684326', stroke: '#30251e', 'stroke-width': 2
+    }, gate);
+    for (let y = 101; y <= 121; y += 10) {
+      svgNode('path', { d: `M285 ${y} L295 ${y} M297 ${y} L307 ${y}`, stroke: '#c0965b', 'stroke-width': 1.5 }, gate);
+    }
+    if (damage >= 25 && damage < 100) {
+      svgNode('path', { d: 'M294 96 L290 108 L297 115 L292 128', fill: 'none', stroke: '#241c16', 'stroke-width': 2.5 }, gate);
+    }
+    if (damage >= 70 && damage < 100) {
+      svgNode('path', { d: 'M285 114 L292 119 L287 130 M301 101 L297 109 L304 116', fill: 'none', stroke: '#241c16', 'stroke-width': 2 }, gate);
+    }
     if (damage >= 25) {
       svgNode('path', { d: damage >= 70 ? 'M248 78 L270 96 L258 111 L284 130 M270 96 L292 85 L307 101 L328 91 M307 101 L300 124' : 'M268 78 L281 92 L272 108 M281 92 L299 83', fill: 'none', stroke: '#292722', 'stroke-width': damage >= 70 ? 5 : 3, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, scene);
     }
@@ -86,6 +105,14 @@ function renderTerrain(terrain, wallDamage = 0, siege = {}) {
 
 function renderBattlefield(attacker, defender, direction, terrain = 'plains', wallDamage = 0, siege = {}) {
   renderTerrain(terrain, wallDamage, siege);
+  const gate = field.querySelector('#fortressGate');
+  if (gate && (siege.ram || 0) > 0) {
+    gate.animate(
+      [{ transform: 'translate(0px,0px)' }, { transform: 'translate(3px,0px)' },
+       { transform: 'translate(-3px,0px)' }, { transform: 'translate(0px,0px)' }],
+      { duration: 430, delay: 250, iterations: Math.min(4, siege.ram), easing: 'ease-in-out' }
+    );
+  }
   const attackLayer = document.getElementById('attackerUnits');
   const defendLayer = document.getElementById('defenderUnits');
   const arrowLayer = document.getElementById('attackArrow');
@@ -154,7 +181,7 @@ for(const type of troopIds){
   field.value=String(Math.max(0,Math.min(9999,Math.floor(Number(dispatched.get(type))||0))));
  }
 }
-function playCombatAnimation(attacker = {}, siege = {}) {
+function playCombatAnimation(attacker = {}, defender = {}, siege = {}, result = {}) {
   const field = document.getElementById('battlefield');
   const svgNS = 'http://www.w3.org/2000/svg';
   const projectileLayer = document.createElementNS(svgNS, 'g');
@@ -207,6 +234,10 @@ function playCombatAnimation(attacker = {}, siege = {}) {
   const archerShots = Math.min(8, Math.ceil((attacker.archer || 0) / 20));
   for (let i = 0; i < archerShots; i++) {
     launch(90 + i * 18, 235 + (i % 2) * 12, 380 + i * 7, 150 + (i % 3) * 15, '#e8d7ad', i * 95, 2);
+  }
+  const defendingShots = Math.min(8, Math.ceil((defender.archer || 0) / 20));
+  for (let i = 0; i < defendingShots; i++) {
+    launch(370 - i * 15, 80 + (i % 3) * 8, 185 - i * 8, 240 + (i % 2) * 12, '#f0b29a', 160 + i * 105, 2);
   }
   const catapultShots = Math.min(4, siege.catapult || 0);
   for (let i = 0; i < catapultShots; i++) {
@@ -317,7 +348,7 @@ document.getElementById('fight').addEventListener('click', () => {
   const survivingDefender = result.remaining?.defender ?? defender;
   currentWallDamage = result.siege?.wallDamage || 0;
   renderBattlefield(survivingAttacker, survivingDefender, direction, terrain, currentWallDamage, siege);
-  playCombatAnimation(attacker, siege);
+  playCombatAnimation(attacker, defender, siege, result);
   const panel = document.getElementById('result');
   panel.style.display = 'block';
   if(isWorldMapAttack){try{const worldKey='tvq_world_state_v1';const world=JSON.parse(localStorage.getItem(worldKey)||'{}');const previous=world.redFortress||{};const captured=result.winner==='attacker';const now=Date.now();world.redFortress={...previous,captured,updatedAt:now,wallDamage:result.siege?.wallDamage??previous.wallDamage??0,capturedAt:captured?now:(previous.capturedAt||null),garrison:captured?{infantry:0,spearman:0,archer:0,cavalry:0,knight:0}:survivingDefender,remainingDefenders:total(survivingDefender),lastBattle:{winner:result.winner,at:now,attackerLosses:result.losses?.attacker||{},defenderLosses:result.losses?.defender||{},survivingAttackers:total(survivingAttacker)}};localStorage.setItem(worldKey,JSON.stringify(world));localStorage.removeItem('tvq_active_journey_v1');const outcome=document.createElement('p');outcome.style.cssText='margin-top:12px;color:#f0d69d;font-weight:700';outcome.textContent=captured?'Qırmızı Qala fəth edildi! Şəhərə qayıdaraq nəticəni gör.':'Hücum uğursuz oldu. Sağ qalan ordu şəhərə qaytarıldı.';panel.appendChild(outcome);const back=document.createElement('a');back.href='./city.html';back.textContent='Şəhərə qayıt';back.style.cssText='display:block;text-align:center;margin-top:10px;padding:12px;background:#76542c;border-radius:9px;color:white;text-decoration:none';panel.appendChild(back);}catch(error){console.warn('Döyüş nəticəsi saxlanmadı',error)}}
