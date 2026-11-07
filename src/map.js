@@ -469,6 +469,7 @@ function mountDiplomacyContracts(){
  state.standings=state.standings||{};
  state.completed=state.completed||{};
  state.relations=state.relations||{};
+ state.aidClaims=state.aidClaims||{};
  if(state.day!==day){state.day=day;state.completed={};}
  const kingdoms=[
   {id:'north',name:'Şimal İttifaqı',resource:'wood',base:180,bonus:260,rep:3,icon:'❄️'},
@@ -506,6 +507,28 @@ function mountDiplomacyContracts(){
    const relation=state.relations[kingdom.id]||'neutral';
    card.innerHTML='<b>'+kingdom.icon+' '+kingdom.name+'</b><div style="font-size:12px;margin:5px 0 9px">Nüfuz: '+standing+' · Münasibət: '+relationNames[relation]+'</div><p style="margin:0 0 8px">'+amount+' '+resourceName+' təhvil ver · '+reward+' qızıl və '+kingdom.rep+' nüfuz qazan</p><button type="button" '+(completed?'disabled':'')+'>'+ (completed?'✓ Müqavilə tamamlandı':'Müqaviləni yerinə yetir')+'</button><small class="contractStatus" style="display:block;margin-top:7px">'+(completed?'Bu günün mükafatı artıq alınıb.':'Resurslar şəhər anbarından çıxılacaq.')+'</small><div style="margin-top:10px;padding-top:9px;border-top:1px solid #80633f"><button type="button" class="relationAction">'+relationActions[relation]+'</button><small class="relationStatus" style="display:block;margin-top:6px">'+(relation==='neutral'?'İttifaq ticarət güzəştlərini gücləndirəcək.':relation==='allied'?'İttifaq qüvvədədir. Müharibə elan etsən, münasibətlər pozulacaq.':'Müharibə vəziyyətindəsən. Sülh üçün ödəniş et.')+'</small></div>';
    card.querySelector('.relationAction').addEventListener('click',()=>changeRelation(kingdom,card));
+   const aidButton=document.createElement('button');
+   aidButton.type='button';
+   aidButton.style.cssText='margin-top:8px;width:100%';
+   const aidClaimed=state.aidClaims[kingdom.id]===day;
+   aidButton.disabled=relation!=='allied'||aidClaimed;
+   aidButton.textContent=relation!=='allied'?'Hərbi yardım üçün müttəfiq ol':aidClaimed?'✓ Bugünkü hərbi yardım alındı':'🛡 Müttəfiqdən hərbi yardım istə';
+   const aidStatus=document.createElement('small');
+   aidStatus.style.cssText='display:block;margin-top:5px';
+   aidStatus.textContent=aidClaimed?'Bu krallıqdan bu gün artıq yardım almısan.':relation==='allied'?'Gündə bir dəfə: 40 piyada, 20 oxçu və 10 süvari.':'Hərbi yardım yalnız ittifaq qurulduqda açılır.';
+   aidButton.addEventListener('click',()=>{
+    if((state.relations[kingdom.id]||'neutral')!=='allied'||state.aidClaims[kingdom.id]===day)return;
+    let city={};try{city=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}')}catch{}
+    city.army=city.army||{};
+    city.army.infantry=(Number(city.army.infantry)||0)+40;
+    city.army.archer=(Number(city.army.archer)||0)+20;
+    city.army.cavalry=(Number(city.army.cavalry)||0)+10;
+    state.aidClaims[kingdom.id]=day;
+    try{localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(city));localStorage.setItem(key,JSON.stringify(state))}
+    catch{aidStatus.textContent='Yardım yadda saxlanmadı. Yenidən cəhd et.';return}
+    render();
+   });
+   card.append(aidButton,aidStatus);
    const button=card.querySelector('button');
    button.addEventListener('click',()=>{
     let city={};try{city=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}')}catch{}
