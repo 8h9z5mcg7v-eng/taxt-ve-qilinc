@@ -30,3 +30,7 @@ Qeyd: `.gltf` formatı xarici tekstura və buffer fayllarından asılı ola bil�
 
 ## Mobil aktiv yoxlaması
 GLB yoxlayıcısı fayl ölçüsü, mesh, üçbucaq, material və tekstura göstəricilərini göstərir. İlkin optimizasiya xəbərdarlıqları 30 MB fayl, 250k tris, 150 mesh, 30 material və 4K-dan böyük teksturalar üçün verilir. Bu hədlər yalnız ilkin süzgəcdir; real iPhone FPS/yaddaş/istilik testi olmadan model mobil üçün hazır sayılmır. Ətraflı meyarlar: [MOBILE_ASSET_ACCEPTANCE.md](docs/MOBILE_ASSET_ACCEPTANCE.md).
+
+
+## Qala-şəhər səhnəsinin növbəti quruluş planı
+İlk şəhər üçün ölçülü yerləşdirmə və kamera planı [CITY_LAYOUT.md](docs/CITY_LAYOUT.md) sənədinə əlavə edilib. Əsas qala modeli öz divar və darvazasını ehtiva etdiyinə görə ayrıca divar dəsti ilkin səhnədə təkrarlanmayacaq. Əlavə binalar faktiki GLB ölçüləri yoxlanıldıqdan sonra yerləşdiriləcək.
