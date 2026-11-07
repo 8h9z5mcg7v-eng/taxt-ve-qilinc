@@ -50,7 +50,7 @@ function renderTerrain(terrain, wallDamage = 0, siege = {}) {
       svgNode('text', { x: 300, y: 148, 'text-anchor': 'middle', fill: '#ffe0a1', 'font-size': 11, 'font-weight': 700 }, scene, 'DİVAR YARILIB');
     }
   }
-  if ((siege.catapult || 0) > 0 || (siege.ram || 0) > 0) {
+  if ((siege.catapult || 0) > 0 || (siege.ram || 0) > 0 || (siege.tower || 0) > 0) {
     const machines = document.createElementNS(svgNS, 'g');
     machines.setAttribute('id', 'siegeMachines');
     const catapults = Math.min(4, Math.max(0, Number(siege.catapult) || 0));
@@ -61,6 +61,16 @@ function renderTerrain(terrain, wallDamage = 0, siege = {}) {
       svgNode('path', { d: 'M-17 12 L0 -17 L18 12 M-12 5 L12 5 M0 -17 L0 -28', fill: 'none', stroke: '#4a3020', 'stroke-width': 5, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, machine);
       svgNode('path', { d: 'M-4 -28 L4 -28 L3 -22 L-3 -22Z', fill: '#9a7544', stroke: '#30251e', 'stroke-width': 2 }, machine);
       svgNode('circle', { cx: 0, cy: -30, r: 4, fill: '#292722' }, machine);
+    }
+    const towers = Math.min(2, Math.max(0, Number(siege.tower) || 0));
+    for (let i = 0; i < towers; i++) {
+      const x = 445 + i * 58;
+      const y = 250 - i * 7;
+      const tower = svgNode('g', { transform: `translate(${x} ${y})` }, machines);
+      svgNode('path', { d: 'M-18 30 L-18 -28 L18 -28 L18 30Z', fill: '#9a7544', stroke: '#30251e', 'stroke-width': 3 }, tower);
+      svgNode('path', { d: 'M-24 -28 L0 -43 L24 -28Z', fill: '#6e4930', stroke: '#30251e', 'stroke-width': 3 }, tower);
+      svgNode('rect', { x: -7, y: -18, width: 14, height: 17, fill: '#252923', stroke: '#30251e', 'stroke-width': 2 }, tower);
+      svgNode('path', { d: 'M-10 30 L-10 39 M10 30 L10 39', stroke: '#30251e', 'stroke-width': 4 }, tower);
     }
     const rams = Math.min(2, Math.max(0, Number(siege.ram) || 0));
     for (let i = 0; i < rams; i++) {
