@@ -55,8 +55,8 @@ export function resolveBattle({ attacker, defender, direction = 'south', tactic 
   const wallDamage = Math.min(wallMax, siegeEngines.ram * 18 + siegeEngines.catapult * 30);
   const wallRemaining = Math.max(0, wallMax - wallDamage);
   const wallBreached = wallMax > 0 && wallRemaining === 0;
-  const wallProtection = wallMax > 0 ? 1 + (wallRemaining / wallMax) * 0.32 : 1;
-  const siegeAttackBonus = siegeEngines.catapult * 14 + (wallBreached ? siegeEngines.ram * 6 : 0);
+  const wallProtection = wallMax > 0 ? (1 + (wallRemaining / wallMax) * 0.32) / 1.32 : 1;
+  const siegeAttackBonus = wallMax > 0 ? siegeEngines.catapult * 14 + (wallBreached ? siegeEngines.ram * 6 : 0) : 0;
   const attackPower = rawAttackPower * directionBonus * terrainAttackBonus * cavalryTerrainFactor + siegeAttackBonus;
   const defendPower = calculatePower(defendArmy, true, 'balanced', attackArmy) * (wallBreached ? 1 : terrainDefenseBonus * wallProtection);
   const ratio = attackPower / Math.max(1, defendPower);
