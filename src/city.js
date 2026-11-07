@@ -327,6 +327,26 @@ function renderBattleHistory(){
  panel.querySelector('#clearBattleHistory').addEventListener('click',()=>{
   if(!confirm('Bütün döyüş tarixçəsi silinsin?'))return;
   localStorage.removeItem('tvq_battle_history_v1');renderBattleHistory();
+function mountGeneralPanel(){
+ const key='tvq_general_v1';
+ let state={id:'alp',xp:0};
+ try{state={...state,...JSON.parse(localStorage.getItem(key)||'{}')}}catch{}
+ const generals={
+  alp:{name:'Alp Arslan',title:'Süvari sərkərdəsi',desc:'Süvari hücumuna +18%, bütün qoşunlara +3%.',bonus:'cavalry'},
+  tomris:{name:'Tomris',title:'Oxçu sərkərdəsi',desc:'Oxçu hücumuna +18%, bütün qoşunlara +3%.',bonus:'archer'},
+  babek:{name:'Babək',title:'Piyada sərkərdəsi',desc:'Piyada və nizəçi hücumuna +15%, bütün qoşunlara +3%.',bonus:'infantry'}
+ };
+ if(!generals[state.id])state.id='alp';
+ const level=Math.min(10,1+Math.floor(Math.max(0,Number(state.xp)||0)/100));
+ let panel=document.getElementById('generalPanel');
+ if(!panel){panel=document.createElement('section');panel.id='generalPanel';panel.style.cssText='position:fixed;left:10px;top:145px;z-index:7;width:min(245px,calc(100vw - 20px));padding:10px;border:1px solid #b58a55;border-radius:10px;background:#17251feF;color:#f4e6c8;font:11px/1.45 system-ui;box-shadow:0 8px 24px #0008';document.body.append(panel)}
+ panel.innerHTML='<b>🛡 Sərkərdə heyəti</b><div style="margin:5px 0">Səviyyə <b>'+level+'/10</b> · Təcrübə <b>'+Math.max(0,Number(state.xp)||0)+'</b>/'+(level*100)+'</div><select id="generalSelect" style="width:100%;padding:8px;border-radius:7px;background:#26352d;color:#fff;border:1px solid #806d4a"><option value="alp">Alp Arslan</option><option value="tomris">Tomris</option><option value="babek">Babək</option></select><div id="generalDesc" style="margin-top:7px;color:#e6d5b4"></div><div style="height:5px;background:#3b4034;border-radius:5px;margin-top:7px;overflow:hidden"><div id="generalXpBar" style="height:100%;width:'+(Math.max(0,Number(state.xp)||0)%100)+'%;background:#d1a85d"></div></div><small>Döyüşdən sonra təcrübə qazanır.</small>';
+ const select=panel.querySelector('#generalSelect');select.value=state.id;
+ const update=()=>{state.id=select.value;localStorage.setItem(key,JSON.stringify(state));panel.querySelector('#generalDesc').textContent=generals[state.id].title+' — '+generals[state.id].desc};
+ select.addEventListener('change',update);update();
+}
+mountGeneralPanel();
+
  });
 }
 function processReturningArmy(){
