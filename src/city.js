@@ -64,6 +64,35 @@ for(let i=0;i<3;i++)roofHouse('Bazar köşkü',17+i*8,84,6,5,3,wood,roof);
 for(let i=0;i<5;i++){const t=new THREE.Mesh(new THREE.ConeGeometry(2.3,7,7),i%2?grass2:grass);t.position.set(-82+i*13,3,-72-(i%2)*12);t.castShadow=true;scene.add(t)}
 // Decorative rocks and field rows beyond the walls.
 for(let i=0;i<18;i++){const x=-120+(i%6)*12,z=112+Math.floor(i/6)*9;box('Əkin sahəsi',x,.1,z,7,.2,5,i%2?grass2:roadmat,false)}
+// Banners, courtyard torches and small patrol squads add readable life to the blockout.
+function banner(x,z,color){
+ const pole=new THREE.Mesh(new THREE.CylinderGeometry(.18,.22,11,8),metal);pole.position.set(x,5.5,z);pole.castShadow=true;scene.add(pole);
+ const cloth=new THREE.Mesh(new THREE.PlaneGeometry(5,3.4),mat(color,.72));cloth.position.set(x+2.45,8.1,z);cloth.rotation.y=Math.PI/2;cloth.castShadow=true;scene.add(cloth);
+}
+banner(-13,-13,0x9a3430);banner(13,13,0xc49a42);banner(0,48,0x9a3430);
+function torch(x,z){
+ const post=new THREE.Mesh(new THREE.CylinderGeometry(.22,.3,3,7),wood);post.position.set(x,1.5,z);scene.add(post);
+ const flame=new THREE.Mesh(new THREE.SphereGeometry(.65,8,8),new THREE.MeshBasicMaterial({color:0xffa43b}));flame.position.set(x,3.35,z);scene.add(flame);
+ const light=new THREE.PointLight(0xff9b42,1.1,13);light.position.set(x,3.5,z);scene.add(light);
+}
+torch(-9,44);torch(9,44);torch(-8,-45);torch(8,-45);
+function makePatrol(x,z,armorColor){
+ const group=new THREE.Group();group.position.set(x,0,z);
+ const armor=mat(armorColor,.55),skin=mat(0xb98b68),cloak=mat(0x6b302b);
+ const body=new THREE.Mesh(new THREE.CylinderGeometry(.75,.95,2.7,8),armor);body.position.y=3.1;body.castShadow=true;group.add(body);
+ const head=new THREE.Mesh(new THREE.SphereGeometry(.72,10,8),skin);head.position.y=5.1;head.castShadow=true;group.add(head);
+ const helmet=new THREE.Mesh(new THREE.ConeGeometry(.85,1.25,8),metal);helmet.position.y=6.05;helmet.castShadow=true;group.add(helmet);
+ const cape=new THREE.Mesh(new THREE.BoxGeometry(1.3,2.3,.25),cloak);cape.position.set(0,3.2,-.72);group.add(cape);
+ const sword=new THREE.Mesh(new THREE.BoxGeometry(.16,2.6,.22),metal);sword.position.set(1.05,3.5,0);sword.rotation.z=-.22;group.add(sword);
+ scene.add(group);return group;
+}
+const patrols=[makePatrol(-13,16,0x6e7780),makePatrol(13,16,0x8b754c),makePatrol(-5,38,0x687c68),makePatrol(5,38,0x8b3434)];
+// Tree clusters beyond the settlement walls.
+function tree(x,z,scale=1){
+ const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.55*scale,.8*scale,5*scale,7),wood);trunk.position.set(x,2.5*scale,z);trunk.castShadow=true;scene.add(trunk);
+ for(let i=0;i<3;i++){const crown=new THREE.Mesh(new THREE.ConeGeometry((4.2-i*.65)*scale,6*scale,8),i%2?grass:grass2);crown.position.set(x,5.2*scale+i*3*scale,z);crown.castShadow=true;scene.add(crown)}
+}
+for(let i=0;i<24;i++){const x=-125+(i%8)*15,z=-115+Math.floor(i/8)*17;if(Math.abs(x)<65&&Math.abs(z)<65)continue;tree(x,z,.75+(i%3)*.15)}
 const controls=new OrbitControls(camera,renderer.domElement);controls.target.set(0,10,12);controls.enableDamping=true;controls.dampingFactor=.07;controls.maxPolarAngle=Math.PI*.48;controls.minDistance=75;controls.maxDistance=330;
 const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2(),info=document.querySelector('#info');
 let selectedBuilding='';
@@ -77,4 +106,5 @@ document.querySelector('#upgrade').addEventListener('click',()=>{if(!selectedBui
 refreshResources();
 document.querySelector('#home').addEventListener('click',()=>{camera.position.set(150,165,175);controls.target.set(0,10,12);controls.update()});
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.5))});
-renderer.setAnimationLoop(()=>{controls.update();renderer.render(scene,camera)});
+const patrolClock=new THREE.Clock();
+renderer.setAnimationLoop(()=>{const t=patrolClock.getElapsedTime();patrols.forEach((p,i)=>{p.position.x+=Math.sin(t*.7+i)*.012;p.rotation.y=Math.sin(t*.55+i)*.22});controls.update();renderer.render(scene,camera)});
