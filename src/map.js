@@ -470,6 +470,7 @@ function mountDiplomacyContracts(){
  state.completed=state.completed||{};
  state.relations=state.relations||{};
  state.aidClaims=state.aidClaims||{};
+ state.borderBattles=state.borderBattles||{};
  if(state.day!==day){state.day=day;state.completed={};}
  const kingdoms=[
   {id:'north',name:'Şimal İttifaqı',resource:'wood',base:180,bonus:260,rep:3,icon:'❄️'},
@@ -529,6 +530,34 @@ function mountDiplomacyContracts(){
     render();
    });
    card.append(aidButton,aidStatus);
+   if(relation==='war'){
+    const battleButton=document.createElement('button');
+    battleButton.type='button';
+    battleButton.style.cssText='margin-top:8px;width:100%';
+    const battleStatus=document.createElement('small');
+    battleStatus.style.cssText='display:block;margin-top:5px';
+    const battleDone=state.borderBattles[kingdom.id]===day;
+    battleButton.disabled=battleDone;
+    battleButton.textContent=battleDone?'✓ Sərhəd bu gün qorunub':'⚔ Sərhəd basqınını dəf et';
+    battleStatus.textContent=battleDone?'Bu gün bu krallığın basqını dəf edilib.':'Tələb: 30 piyada, 20 oxçu, 10 süvari. Qələbə mükafatı: 80 qızıl.';
+    battleButton.addEventListener('click',()=>{
+     if(state.borderBattles[kingdom.id]===day)return;
+     let city={};try{city=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}')}catch{}
+     city.army=city.army||{};
+     const required={infantry:30,archer:20,cavalry:10};
+     const missing=Object.keys(required).filter(type=>(Number(city.army[type])||0)<required[type]);
+     if(missing.length){battleStatus.textContent='Qoşun çatmır. Lazım olan: 30 piyada, 20 oxçu, 10 süvari.';return}
+     city.army.infantry-=8;city.army.archer-=5;city.army.cavalry-=2;
+     city.resources=city.resources||{wood:1200,stone:1000,gold:500};
+     city.resources.gold=(Number(city.resources.gold)||0)+80;
+     state.borderBattles[kingdom.id]=day;
+     state.standings[kingdom.id]=(Number(state.standings[kingdom.id])||0)+1;
+     try{localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(city));localStorage.setItem(key,JSON.stringify(state))}
+     catch{battleStatus.textContent='Döyüş nəticəsi yadda saxlanmadı.';return}
+     render();
+    });
+    card.append(battleButton,battleStatus);
+   }
    const button=card.querySelector('button');
    button.addEventListener('click',()=>{
     let city={};try{city=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}')}catch{}
