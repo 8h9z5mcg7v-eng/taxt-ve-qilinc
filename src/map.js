@@ -93,7 +93,7 @@ if(fortressState.captured){
  targets.enemy.enemy=false;
 }
 
-for(const id of ['village','mine']){if(territory[id]?.captured){const el=document.querySelector('[data-id="'+id+'"];if(el){el.querySelector('span').textContent='🏳 '+territories.find(t=>t.id===id).name;el.querySelector('small').textContent='Sənin nəzarətində';}}}
+for(const id of ['village','mine']){if(territory[id]?.captured){const el=document.querySelector('[data-id="'+id+'"]');if(el){el.querySelector('span').textContent='🏳 '+territories.find(t=>t.id===id).name;el.querySelector('small').textContent='Sənin nəzarətində';}}}
 const journeyKey='tvq_active_journey_v1';
 const marchButton=document.querySelector('#march');
 let journey=null;
