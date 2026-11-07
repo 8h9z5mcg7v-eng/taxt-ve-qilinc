@@ -12,15 +12,23 @@ try{caravans=JSON.parse(localStorage.getItem(caravanKey)||'{}')}catch{caravans={
 function settleCaravan(id){
  const trip=caravans[id];if(!trip||trip.status!=='traveling'||Date.now()<trip.arrivesAt)return false;
  const target=territories.find(x=>x.id===id);if(!target)return false;
+ const settlementId=id+':'+String(trip.sentAt);
  let ownership={};try{ownership=JSON.parse(localStorage.getItem(territoryKey)||'{}')}catch{}
  if(!ownership[id]?.captured){
   caravans[id]={status:'intercepted',sentAt:trip.sentAt,arrivesAt:trip.arrivesAt,lossReason:'territory-lost'};
-  try{localStorage.setItem(caravanKey,JSON.stringify(caravans))}catch{}
+  try{localStorage.setItem(caravanKey,JSON.stringify(caravans))}catch{return false}
   return true;
  }
- let city={};try{city=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}')}catch{}
+ let city={};try{city=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}')}catch{return false}
  city.resources=city.resources||{wood:1200,stone:1000,gold:500};
  city.army=city.army||{};
+ city.caravanSettlements=city.caravanSettlements||{};
+ const previous=city.caravanSettlements[settlementId];
+ if(previous){
+  caravans[id]={...previous,status:'returned',sentAt:trip.sentAt,arrivesAt:trip.arrivesAt};
+  try{localStorage.setItem(caravanKey,JSON.stringify(caravans))}catch{return false}
+  return true;
+ }
  const escort=trip.escort||{infantry:0,spearman:0,archer:0,cavalry:0,knight:0};
  const escortCount=Object.values(escort).reduce((sum,n)=>sum+(Number(n)||0),0);
  const banditRoll=(Math.abs(Math.floor(Number(trip.sentAt)||0)*17+id.length*31)%100);
@@ -35,9 +43,13 @@ function settleCaravan(id){
  }
  for(const key of troopIds)city.army[key]=(Number(city.army[key])||0)+(Number(survivors[key])||0);
  for(const key of Object.keys(reward))city.resources[key]=(Number(city.resources[key])||0)+reward[key];
- try{localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(city))}catch{}
- caravans[id]={status:'returned',sentAt:trip.sentAt,arrivesAt:trip.arrivesAt,reward,escortSurvivors:survivors,banditResult};
- try{localStorage.setItem(caravanKey,JSON.stringify(caravans))}catch{}
+ const settlement={reward,escortSurvivors:survivors,banditResult,settledAt:Date.now()};
+ city.caravanSettlements[settlementId]=settlement;
+ const settlementIds=Object.keys(city.caravanSettlements);
+ if(settlementIds.length>30)for(const oldId of settlementIds.slice(0,settlementIds.length-30))delete city.caravanSettlements[oldId];
+ try{localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(city))}catch{return false}
+ caravans[id]={status:'returned',sentAt:trip.sentAt,arrivesAt:trip.arrivesAt,...settlement};
+ try{localStorage.setItem(caravanKey,JSON.stringify(caravans))}catch{return false}
  return true;
 }
 const territoryKey='tvq_territory_v1';
