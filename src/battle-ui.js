@@ -281,12 +281,16 @@ function playCombatAnimation(attacker = {}, defender = {}, siege = {}, result = 
   [...attackLayer.querySelectorAll('g')].forEach((group, index) => {
     const formation = group.getAttribute('transform');
     const breached = !!result.siege?.wallBreached;
-    group.animate(
-      breached
-        ? [{ transform: formation }, { transform: formation + ' translate(0,-36)' }, { transform: formation + ' translate(0,-58)' }]
-        : [{ transform: formation }, { transform: formation + ' translate(0,-18)' }, { transform: formation }],
-      { duration: breached ? 1450 : 760, delay: index * 130, fill: breached ? 'forwards' : 'none', easing: 'ease-in-out' }
-    );
+    const attackerWon = result.winner === 'attacker';
+    const movement = breached && attackerWon
+      ? [{ transform: formation }, { transform: formation + ' translate(0,-36)' }, { transform: formation + ' translate(0,-58)' }]
+      : breached
+        ? [{ transform: formation }, { transform: formation + ' translate(0,-22)' }, { transform: formation + ' translate(0,10)' }]
+        : [{ transform: formation }, { transform: formation + ' translate(0,-18)' }, { transform: formation }];
+    group.animate(movement, {
+      duration: breached ? 1450 : 760, delay: index * 130,
+      fill: breached ? 'forwards' : 'none', easing: 'ease-in-out'
+    });
   });
   [...defendLayer.querySelectorAll('g')].forEach((group, index) => {
     const formation = group.getAttribute('transform');
@@ -297,6 +301,38 @@ function playCombatAnimation(attacker = {}, defender = {}, siege = {}, result = 
       { duration: 680, delay: index * 100, easing: 'ease-out' }
     );
   });
+  // A breached gate triggers a visible melee only after the attackers reach
+  // the courtyard; if defenders win, the defending line surges forward.
+  if (result.siege?.wallBreached) {
+    const meleeLayer = document.createElementNS(svgNS, 'g');
+    meleeLayer.setAttribute('id', 'courtyardMelee');
+    field.querySelector('#courtyardMelee')?.remove();
+    field.appendChild(meleeLayer);
+    const attackerWon = result.winner === 'attacker';
+    for (let i = 0; i < 5; i++) {
+      const clash = document.createElementNS(svgNS, 'path');
+      const x = 266 + i * 17;
+      const y = 174 + (i % 2) * 19;
+      clash.setAttribute('d', `M${x - 7} ${y - 8} L${x + 7} ${y + 8} M${x + 7} ${y - 8} L${x - 7} ${y + 8}`);
+      clash.setAttribute('stroke', attackerWon ? '#f7d27e' : '#f0a18b');
+      clash.setAttribute('stroke-width', '3');
+      clash.setAttribute('stroke-linecap', 'round');
+      meleeLayer.appendChild(clash);
+      clash.animate(
+        [{ opacity: 0, transform: 'scale(.45)' }, { opacity: 1, transform: 'scale(1.2)' }, { opacity: 0, transform: 'scale(.7)' }],
+        { duration: 620, delay: 1050 + i * 170, easing: 'ease-out' }
+      ).onfinish = () => clash.remove();
+    }
+    if (!attackerWon) {
+      [...defendLayer.querySelectorAll('g')].forEach((group, index) => {
+        const formation = group.getAttribute('transform');
+        group.animate(
+          [{ transform: formation }, { transform: formation + ' translate(0,18)' }, { transform: formation }],
+          { duration: 820, delay: 1350 + index * 120, easing: 'ease-in-out' }
+        );
+      });
+    }
+  }
   const arrow = document.querySelector('#attackArrow line');
   if (arrow) {
     arrow.animate(
