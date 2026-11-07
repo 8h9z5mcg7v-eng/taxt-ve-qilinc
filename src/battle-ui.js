@@ -246,7 +246,15 @@ if(isBorderBattle){
 }
 if(isWorldMapAttack||isBorderBattle){
  let city={};try{city=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}')}catch{}
- const available=city.army||{};
+ let available=city.army||{};
+ // World-map troops have already been deducted from the city at dispatch.
+ // Validate the battle form against the active journey, not the city's remaining garrison.
+ if(isWorldMapAttack){
+  try{
+   const activeJourney=JSON.parse(localStorage.getItem('tvq_active_journey_v1')||'null');
+   available=activeJourney?.target==='red-fortress'?(activeJourney.army||{}):{};
+  }catch{available={}}
+ }
  for(const type of troopIds){
   const field=document.getElementById('a-'+type);
   const requested=Math.max(0,Math.floor(Number(dispatched.get(type))||0));
