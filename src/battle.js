@@ -3,6 +3,7 @@ import { TROOPS, createArmy, armySize } from './troops.js';
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 const DIRECTIONS = new Set(['north', 'east', 'south', 'west']);
 const TACTICS = new Set(['balanced', 'wedge', 'line', 'volley']);
+const TERRAIN = new Set(['plains', 'forest', 'hill', 'fortress']);
 
 function calculatePower(army, defending, formation, opponents) {
   const enemyCount = Math.max(1, armySize(opponents));
@@ -27,21 +28,32 @@ function calculatePower(army, defending, formation, opponents) {
  * direction: north | east | south | west
  * tactic: balanced | wedge | line | volley
  */
-export function resolveBattle({ attacker, defender, direction = 'south', tactic = 'balanced', seed = 1 }) {
+export function resolveBattle({ attacker, defender, direction = 'south', tactic = 'balanced', terrain = 'plains', seed = 1 }) {
   const attackArmy = createArmy(attacker);
   const defendArmy = createArmy(defender);
   const attackCount = armySize(attackArmy);
   const defendCount = armySize(defendArmy);
   const safeDirection = DIRECTIONS.has(direction) ? direction : 'south';
   const safeTactic = TACTICS.has(tactic) ? tactic : 'balanced';
+  const safeTerrain = TERRAIN.has(terrain) ? terrain : 'plains';
 
   if (!attackCount || !defendCount) {
     return { winner: attackCount ? 'attacker' : 'defender', direction: safeDirection, tactic: safeTactic, attacker: attackArmy, defender: defendArmy, log: ['Döyüş üçün hər iki tərəfdə qoşun olmalıdır.'] };
   }
 
   const directionBonus = safeDirection === 'west' || safeDirection === 'east' ? 1.08 : 1;
-  const attackPower = calculatePower(attackArmy, false, safeTactic, defendArmy) * directionBonus;
-  const defendPower = calculatePower(defendArmy, true, 'balanced', attackArmy);
+  const terrainAttackBonus = safeTerrain === 'hill' ? 1.06 : 1;
+  const terrainDefenseBonus = safeTerrain === 'forest' ? 1.12 : safeTerrain === 'hill' ? 1.18 : safeTerrain === 'fortress' ? 1.32 : 1;
+  const cavalryPenalty = safeTerrain === 'forest' || safeTerrain === 'fortress' ? 0.88 : 1;
+  const rawAttackPower = calculatePower(attackArmy, false, safeTactic, defendArmy);
+  const adjustedAttackPower = Object.entries(attackArmy).reduce((sum, [type, count]) => {
+    const unitPower = count * TROOPS[type].attack;
+    const terrainFactor = type === 'cavalry' ? cavalryPenalty : 1;
+    return sum + unitPower * terrainFactor;
+  }, 0);
+  const formationRatio = rawAttackPower > 0 ? adjustedAttackPower / rawAttackPower : 1;
+  const attackPower = rawAttackPower * directionBonus * terrainAttackBonus * formationRatio;
+  const defendPower = calculatePower(defendArmy, true, 'balanced', attackArmy) * terrainDefenseBonus;
   const ratio = attackPower / Math.max(1, defendPower);
   const attackerWins = ratio >= 1;
   const random = (Math.sin(seed * 9301 + 49297) * 233280) % 1;
@@ -57,7 +69,8 @@ export function resolveBattle({ attacker, defender, direction = 'south', tactic 
   const defenderLosses = losses(defendArmy, defenderLossRate, false);
 
   return {
-    winner, direction: safeDirection, tactic: safeTactic,
+    winner, direction: safeDirection, tactic: safeTactic, terrain: safeTerrain,
+    modifiers: { direction: directionBonus, attackerTerrain: terrainAttackBonus * formationRatio, defenderTerrain: terrainDefenseBonus },
     power: { attacker: Math.round(attackPower), defender: Math.round(defendPower) },
     remaining: {
       attacker: Object.fromEntries(Object.keys(attackArmy).map(type => [type, attackArmy[type] - attackerLosses[type]])),
@@ -67,6 +80,7 @@ export function resolveBattle({ attacker, defender, direction = 'south', tactic 
     log: [
       `Hücum istiqaməti: ${safeDirection}`,
       `Taktika: ${safeTactic}`,
+      `Ərazi: ${safeTerrain}`,
       `Hücum gücü: ${Math.round(attackPower)} · Müdafiə gücü: ${Math.round(defendPower)}`,
       winner === 'attacker' ? 'Hücum edən tərəf üstün gəldi.' : 'Müdafiə tərəfi qalib gəldi.'
     ]
