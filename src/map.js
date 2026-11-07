@@ -60,8 +60,7 @@ function settleCaravan(id){
  for(const key of Object.keys(reward))city.resources[key]=(Number(city.resources[key])||0)+reward[key];
  const settlement={reward,escortSurvivors:survivors,banditResult,settledAt:Date.now()};
  city.caravanSettlements[settlementId]=settlement;
- const settlementIds=Object.keys(city.caravanSettlements);
- if(settlementIds.length>30)for(const oldId of settlementIds.slice(0,settlementIds.length-30))delete city.caravanSettlements[oldId];
+ // Keep settlement IDs permanently: an old delayed retry must never pay twice.
  try{localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(city))}catch{return false}
  caravans[id]={status:'returned',sentAt:trip.sentAt,arrivesAt:trip.arrivesAt,...settlement};
  try{localStorage.setItem(caravanKey,JSON.stringify(caravans))}catch{return false}
