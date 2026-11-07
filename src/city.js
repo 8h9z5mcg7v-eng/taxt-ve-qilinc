@@ -96,7 +96,10 @@ for(let i=0;i<24;i++){const x=-125+(i%8)*15,z=-115+Math.floor(i/8)*17;if(Math.ab
 const controls=new OrbitControls(camera,renderer.domElement);controls.target.set(0,10,12);controls.enableDamping=true;controls.dampingFactor=.07;controls.maxPolarAngle=Math.PI*.48;controls.minDistance=75;controls.maxDistance=330;
 const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2(),info=document.querySelector('#info');
 let selectedBuilding='';
-let resources={wood:1200,stone:1000,gold:500};
+const SAVE_KEY='taxt-ve-qilinc-city-v1';
+let savedCity={};
+try{savedCity=JSON.parse(localStorage.getItem(SAVE_KEY)||'{}')}catch{}
+let resources={wood:Math.max(0,Number(savedCity.resources?.wood??1200)),stone:Math.max(0,Number(savedCity.resources?.stone??1000)),gold:Math.max(0,Number(savedCity.resources?.gold??500))};
 const levels={};
 const resourceNodes={wood:document.querySelector('#wood'),stone:document.querySelector('#stone'),gold:document.querySelector('#gold')};
 function refreshResources(){for(const key of Object.keys(resources))resourceNodes[key].textContent=resources[key].toLocaleString('en-US')}
@@ -104,7 +107,10 @@ function showBuilding(label){selectedBuilding=label;const level=levels[label]||1
 renderer.domElement.addEventListener('pointerup',e=>{const rect=renderer.domElement.getBoundingClientRect();pointer.x=((e.clientX-rect.left)/rect.width)*2-1;pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;raycaster.setFromCamera(pointer,camera);const hits=raycaster.intersectObjects(pickables,false);if(hits.length){const label=hits[0].object.userData.label||'Şəhər obyekti';showBuilding(label)}});
 document.querySelector('#upgrade').addEventListener('click',()=>{if(!selectedBuilding){info.innerHTML='<b>Tikili seçilməyib</b>İnkişaf etdirmək üçün əvvəlcə şəhərdə binaya toxun.';return}const current=levels[selectedBuilding]||1;const cost={wood:current*150,stone:current*100,gold:current*50};if(resources.wood<cost.wood||resources.stone<cost.stone||resources.gold<cost.gold){info.innerHTML='<b>Resurs çatışmır</b>Bu inkişaf üçün daha çox odun, daş və qızıl lazımdır.';return}resources.wood-=cost.wood;resources.stone-=cost.stone;resources.gold-=cost.gold;levels[selectedBuilding]=current+1;refreshResources();info.innerHTML='<b>'+selectedBuilding+' · Səviyyə '+(current+1)+'</b>İnkişaf tamamlandı. Xərc: '+cost.wood+' odun, '+cost.stone+' daş, '+cost.gold+' qızıl.'});
 refreshResources();
-const army={infantry:0,spearman:0,archer:0,cavalry:0,knight:0};
+const army={infantry:0,spearman:0,archer:0,cavalry:0,knight:0,...(savedCity.army||{})};
+function saveCity(){try{localStorage.setItem(SAVE_KEY,JSON.stringify({resources,army,levels}))}catch{}}
+for(const key of Object.keys(army))army[key]=Math.max(0,Math.floor(Number(army[key])||0));
+Object.assign(levels,savedCity.levels||{});
 const troopCosts={infantry:{wood:10,gold:5},spearman:{wood:15,stone:5},archer:{wood:10,stone:10},cavalry:{wood:20,gold:10},knight:{stone:20,gold:20}};
 const troopTitles={infantry:'Piyada',spearman:'Nizəçi',archer:'Oxçu',cavalry:'Süvari',knight:'Cəngavər'};
 const recruit=document.querySelector('#recruit');
@@ -117,7 +123,7 @@ document.querySelector('#train').addEventListener('click',()=>{
  const totalCost={wood:(cost.wood||0)*count,stone:(cost.stone||0)*count,gold:(cost.gold||0)*count};
  if(Object.keys(totalCost).some(k=>resources[k]<totalCost[k])){document.querySelector('#armyStatus').textContent='Resurs çatışmır — '+count+' '+troopTitles[type]+' hazırlamaq mümkün deyil.';return}
  for(const key of Object.keys(resources))resources[key]-=totalCost[key];
- army[type]+=count;refreshResources();updateArmyStatus();
+ army[type]+=count;refreshResources();saveCity();updateArmyStatus();
 });
 document.querySelector('#sendArmy').addEventListener('click',()=>{
  if(Object.values(army).every(v=>v===0)){document.querySelector('#armyStatus').textContent='Əvvəlcə kazarmada qoşun hazırla.';return}
@@ -125,6 +131,7 @@ document.querySelector('#sendArmy').addEventListener('click',()=>{
  location.href='./battle.html?'+params.toString();
 });
 updateArmyStatus();
+saveCity();
 document.querySelector('#home').addEventListener('click',()=>{camera.position.set(150,165,175);controls.target.set(0,10,12);controls.update()});
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.5))});
 const patrolClock=new THREE.Clock();
