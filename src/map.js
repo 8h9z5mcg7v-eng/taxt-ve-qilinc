@@ -191,6 +191,24 @@ function renderRaidAlert(){
 }
 renderRaidAlert();
 setInterval(renderRaidAlert,60000);
+const raidMarker=document.createElement('div');
+raidMarker.id='enemyRaidMarker';
+raidMarker.textContent='⚔️ 100';
+raidMarker.title='Düşmən basqın dəstəsi';
+raidMarker.style.cssText='display:none;position:absolute;z-index:5;left:88%;top:82%;transform:translate(-50%,-50%);padding:7px 9px;border:1px solid #f0b1a0;border-radius:9px;background:#6b2925;color:#fff;font-weight:800;font-size:12px;box-shadow:0 2px 12px #0009;pointer-events:none';
+const raidStyle=document.createElement('style');
+raidStyle.textContent='@keyframes enemyApproach{0%{left:88%;top:82%}100%{left:76%;top:70%}}#enemyRaidMarker.approaching{display:block;animation:enemyApproach 18s ease-in-out infinite alternate}';
+document.head.append(raidStyle);
+document.querySelector('#map').append(raidMarker);
+function renderEnemyApproach(){
+ if(!fortressState.captured){raidMarker.classList.remove('approaching');raidMarker.style.display='none';return;}
+ const base=Number(fortressState.lastRaidAt||fortressState.capturedAt||Date.now());
+ const left=base+6*60*60*1000-Date.now();
+ if(left<=60*60*1000){raidMarker.classList.add('approaching');raidMarker.style.display='block';}
+ else{raidMarker.classList.remove('approaching');raidMarker.style.display='none';}
+}
+renderEnemyApproach();
+setInterval(renderEnemyApproach,60000);
 
 for(const id of ['village','mine']){if(territory[id]?.captured){const el=document.querySelector('[data-id="'+id+'"]');if(el){el.querySelector('span').textContent='🏳 '+territories.find(t=>t.id===id).name;el.querySelector('small').textContent='Sənin nəzarətində';}}}
 const journeyKey='tvq_active_journey_v1';
