@@ -49,12 +49,12 @@ export function resolveBattle({ attacker, defender, direction = 'south', tactic 
   const winner = attackerWins ? 'attacker' : 'defender';
   const attackerLossRate = clamp(0.28 + (defendPower / Math.max(1, attackPower)) * 0.18, 0.18, 0.78);
   const defenderLossRate = clamp(0.28 + (attackPower / Math.max(1, defendPower)) * 0.18, 0.18, 0.78);
-  const losses = (army, lossRate) => Object.fromEntries(Object.entries(army).map(([type, count]) => {
-    const rangedPenalty = attackerWins && type === 'archer' ? 0.75 : 1;
-    return [type, Math.min(count, Math.round(count * lossRate * variance * rangedPenalty))];
+  const losses = (army, lossRate, isAttacker) => Object.fromEntries(Object.entries(army).map(([type, count]) => {
+    const rangedProtection = isAttacker && attackerWins && type === 'archer' ? 0.75 : 1;
+    return [type, Math.min(count, Math.round(count * lossRate * variance * rangedProtection))];
   }));
-  const attackerLosses = losses(attackArmy, attackerLossRate);
-  const defenderLosses = losses(defendArmy, defenderLossRate);
+  const attackerLosses = losses(attackArmy, attackerLossRate, true);
+  const defenderLosses = losses(defendArmy, defenderLossRate, false);
 
   return {
     winner, direction: safeDirection, tactic: safeTactic,
