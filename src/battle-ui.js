@@ -642,8 +642,9 @@ document.getElementById('fight').addEventListener('click', () => {
         const battleLoss = Math.max(0, Number(result.losses?.attacker?.[type]) || 0);
         wounded[type] = (Number(wounded[type]) || 0) + Math.floor(battleLoss * 0.3);
       }
-      const storedArmy = isWorldMapAttack ? { infantry: 0, spearman: 0, archer: 0, cavalry: 0, knight: 0 } : survivingAttacker;
-      localStorage.setItem(saveKey, JSON.stringify({ ...saved, army: storedArmy, wounded }));
+      // The marching army was already removed from the city when the journey began.
+      // Preserve any troops recruited while it was away; returning survivors are settled by the return-journey queue.
+      localStorage.setItem(saveKey, JSON.stringify({ ...saved, army: saved.army || {}, wounded }));
     } catch (error) {
       console.warn('Ordunun nəticəsini yadda saxlamaq mümkün olmadı.', error);
     }
