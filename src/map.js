@@ -609,6 +609,12 @@ function mountDiplomacyContracts(){
      if(state.borderBattles[kingdom.id]===day)return;
      const required={infantry:30,archer:20,cavalry:10};
      const launch=async()=>{
+      const activeKey='tvq_active_border_battle_v1';
+      let active=null;try{active=JSON.parse(localStorage.getItem(activeKey)||'null')}catch{}
+      if(active?.url){
+       if(active.kingdom===kingdom.id&&active.day===day){location.href=active.url;return;}
+       throw new Error('Başqa sərhəd döyüşü davam edir. Əvvəl həmin döyüşü tamamla.');
+      }
       let city={};try{city=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}')}catch{throw new Error('Şəhər yaddaşı oxunmadı.')}
       city.army=city.army||{};
       const missing=Object.keys(required).filter(type=>(Number(city.army[type])||0)<required[type]);
@@ -618,9 +624,12 @@ function mountDiplomacyContracts(){
       const enemy=enemyFor[kingdom.id]||enemyFor.north;
       const params=new URLSearchParams({target:'border',battleId:'border-'+kingdom.id+'-'+day,kingdom:kingdom.id,...Object.fromEntries(Object.entries(army).map(([k,v])=>[k,String(v)])),garrison:String(Object.entries(enemy).filter(([k])=>k!=='terrain').reduce((sum,[,v])=>sum+v,0)),terrain:enemy.terrain,...Object.fromEntries(Object.entries(enemy).filter(([k])=>k!=='terrain').map(([k,v])=>['def_'+k,String(v)]))});
       for(const type of Object.keys(army))city.army[type]=Math.max(0,(Number(city.army[type])||0)-army[type]);
+      const battleUrl='./battle.html?'+params.toString();
+      // Persist a resumable battle URL before deducting troops, preventing duplicate dispatches.
+      localStorage.setItem(activeKey,JSON.stringify({battleId:'border-'+kingdom.id+'-'+day,kingdom:kingdom.id,day,url:battleUrl,startedAt:Date.now()}));
       localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(city));
       localStorage.setItem('tvq_border_battle_kingdom',kingdom.id);
-      location.href='./battle.html?'+params.toString();
+      location.href=battleUrl;
      };
      try{
       if(navigator.locks?.request)await navigator.locks.request('tvq-city-economy',launch);else await launch();
