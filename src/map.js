@@ -643,31 +643,40 @@ function renderCapturedFrontiers(){
  map.after(info);
  const collectButton=info.querySelector('#collectFrontierIncome');
  collectButton.addEventListener('click',()=>{
-  let current={};try{current=JSON.parse(localStorage.getItem('tvq_diplomacy_v1')||'{}')}catch{}
+  let current={};
+  try{current=JSON.parse(localStorage.getItem('tvq_diplomacy_v1')||'{}')}catch{info.querySelector('#frontierIncomeStatus').textContent='İttifaq yaddaşı oxunmadı; gəlir toplanmadı.';return}
   current.borderCampaigns=current.borderCampaigns||{};
-  let city={};try{city=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}')}catch{}
+  let city={};
+  try{city=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}')}catch{info.querySelector('#frontierIncomeStatus').textContent='Şəhər yaddaşı oxunmadı; gəlir toplanmadı.';return}
   city.resources=city.resources||{wood:1200,stone:1000,gold:500};
+  city.frontierCollections=city.frontierCollections||{};
   const now=Date.now();
   const earned={wood:0,stone:0,gold:0};
   for(const site of sites){
    const campaign=current.borderCampaigns[site.id];
    if(!campaign?.captured)continue;
    const last=Math.max(0,Number(campaign.lastCollectedAt)||Number(campaign.capturedAt)||now);
-   const hours=Math.min(24,Math.max(0,(now-last)/3600000));
-   earned.wood+=Math.floor(hours*site.wood);
-   earned.stone+=Math.floor(hours*site.stone);
-   earned.gold+=Math.floor(hours*site.gold);
-   campaign.lastCollectedAt=now;
+   const collectionId=site.id+':'+String(last);
+   let collection=city.frontierCollections[collectionId];
+   if(!collection){
+    const hours=Math.min(24,Math.max(0,(now-last)/3600000));
+    const gain={wood:Math.floor(hours*site.wood),stone:Math.floor(hours*site.stone),gold:Math.floor(hours*site.gold)};
+    collection={collectedAt:now,gain};
+    for(const key of Object.keys(gain))city.resources[key]=(Number(city.resources[key])||0)+gain[key];
+    city.frontierCollections[collectionId]=collection;
+   }
+   for(const key of Object.keys(earned))earned[key]+=Number(collection.gain?.[key])||0;
+   campaign.lastCollectedAt=Number(collection.collectedAt)||now;
   }
-  for(const key of Object.keys(earned))city.resources[key]=(Number(city.resources[key])||0)+earned[key];
-  try{
-   localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(city));
-   localStorage.setItem('tvq_diplomacy_v1',JSON.stringify(current));
-  }catch{info.querySelector('#frontierIncomeStatus').textContent='Gəliri yadda saxlamaq mümkün olmadı.';return;}
+  const ids=Object.keys(city.frontierCollections);
+  if(ids.length>100)for(const oldId of ids.slice(0,ids.length-100))delete city.frontierCollections[oldId];
+  try{localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(city))}
+  catch{info.querySelector('#frontierIncomeStatus').textContent='Gəlir yadda saxlanmadı; təkrar toplama qeydi yaradılmadı.';return}
+  try{localStorage.setItem('tvq_diplomacy_v1',JSON.stringify(current))}
+  catch{info.querySelector('#frontierIncomeStatus').textContent='Gəlir bir dəfə hesablandı və şəhərdə qorunur; qala vaxtı yenilənmədi. Təkrar toplama qoşun/resurs verməyəcək.';return}
   info.querySelector('#frontierIncomeStatus').textContent='Toplandı: '+earned.wood+' odun · '+earned.stone+' daş · '+earned.gold+' qızıl. Növbəti gəlir bundan sonra hesablanacaq.';
   collectButton.disabled=true;
- });
- for(const site of owned){
+ }); for(const site of owned){
   const campaign=campaigns[site.id];
   const guard=campaign.garrison||{};
   const count=Object.values(guard).reduce((n,v)=>n+(Number(v)||0),0);
