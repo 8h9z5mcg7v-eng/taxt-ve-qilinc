@@ -131,6 +131,36 @@ function renderTerritorySummary(){
 renderTerritorySummary();
 const army={infantry:0,spearman:0,archer:0,cavalry:0,knight:0,...(savedCity.army||{})};
 function saveCity(){try{localStorage.setItem(SAVE_KEY,JSON.stringify({resources,army,levels}))}catch{}}
+function collectOfflineTerritoryIncome(){
+ let outposts={},world={};
+ try{outposts=JSON.parse(localStorage.getItem(territoryKey)||'{}')}catch{}
+ try{world=JSON.parse(localStorage.getItem(worldKey)||'{}')}catch{}
+ const now=Date.now(),cap=24*60*60*1000;
+ const sources=[
+  {id:'village',rates:{wood:18,stone:4,gold:2},state:outposts.village},
+  {id:'mine',rates:{wood:4,stone:18,gold:5},state:outposts.mine},
+  {id:'redFortress',rates:{wood:20,stone:15,gold:5},state:world.redFortress}
+ ];
+ let collected={wood:0,stone:0,gold:0},changed=false;
+ for(const source of sources){
+  const state=source.state;
+  if(!state?.captured)continue;
+  const last=Number(state.lastCollectedAt)||now;
+  const elapsed=Math.min(cap,Math.max(0,now-last));
+  for(const key of Object.keys(collected))collected[key]+=Math.floor(elapsed/3600000*source.rates[key]);
+  state.lastCollectedAt=now;changed=true;
+ }
+ if(changed){
+  for(const key of Object.keys(resources))resources[key]+=collected[key];
+  try{localStorage.setItem(territoryKey,JSON.stringify(outposts));localStorage.setItem(worldKey,JSON.stringify(world))}catch{}
+  refreshResources();saveCity();
+  const panel=document.querySelector('#territorySummary');
+  if(panel&&Object.values(collected).some(v=>v>0)){
+   const note=document.createElement('div');note.textContent='Şəhərə qayıdış gəliri: '+collected.wood+' odun · '+collected.stone+' daş · '+collected.gold+' qızıl';note.style.cssText='margin-top:6px;color:#f0d18e';panel.append(note);
+  }
+ }
+ return collected;
+}
 for(const key of Object.keys(army))army[key]=Math.max(0,Math.floor(Number(army[key])||0));
 Object.assign(levels,savedCity.levels||{});
 const troopCosts={infantry:{wood:10,gold:5},spearman:{wood:15,stone:5},archer:{wood:10,stone:10},cavalry:{wood:20,gold:10},knight:{stone:20,gold:20}};
@@ -175,6 +205,7 @@ document.querySelector('#sendArmy').addEventListener('click',()=>{
 });
 updateArmyStatus();
 renderArmyInCity();
+collectOfflineTerritoryIncome();
 saveCity();
 try{const world=JSON.parse(localStorage.getItem('tvq_world_state_v1')||'{}');if(world.redFortress){info.innerHTML=world.redFortress.captured?'<b>🏆 Qırmızı Qala fəth edildi!</b>Qələbə tarixi: '+new Date(world.redFortress.updatedAt).toLocaleString('az-AZ')+'.':'<b>⚔ Hücum başa çatdı</b>Düşmən qalası müdafiə olunur. Sağ qalan düşmən: '+world.redFortress.remainingDefenders+'. Ordunu yenidən hazırlaya bilərsən.';}}catch{}
 document.querySelector('#home').addEventListener('click',()=>{camera.position.set(150,165,175);controls.target.set(0,10,12);controls.update()});
