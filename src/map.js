@@ -506,8 +506,8 @@ function mountDiplomacyContracts(){
    const garrison=campaign.garrison||{infantry:0,spearman:0,archer:0,cavalry:0,knight:0};
    const count=Object.values(garrison).reduce((n,v)=>n+(Number(v)||0),0);
    if(!campaign.nextRaidAt)campaign.nextRaidAt=(Number(campaign.capturedAt)||now)+24*60*60*1000;
-   if(now<campaign.nextRaidAt||!count)continue;
-   const result=resolveBattle({attacker:attackers[kingdom.id]||attackers.north,defender:garrison,direction:'south',tactic:'balanced',defenderTactic:'balanced',terrain:kingdom.id==='iron'?'fortress':kingdom.id==='north'?'forest':'plains',seed:Math.floor(campaign.nextRaidAt/1000)});
+   if(now<campaign.nextRaidAt)continue;
+   const result=count?resolveBattle({attacker:attackers[kingdom.id]||attackers.north,defender:garrison,direction:'south',tactic:'balanced',defenderTactic:'balanced',terrain:kingdom.id==='iron'?'fortress':kingdom.id==='north'?'forest':'plains',seed:Math.floor(campaign.nextRaidAt/1000)}):{winner:'attacker',remaining:{defender:{infantry:0,spearman:0,archer:0,cavalry:0,knight:0}},losses:{attacker:{},defender:{}}};
    campaign.garrison=result.remaining.defender;
    campaign.lastRaidAt=now;
    campaign.lastRaidWinner=result.winner;
