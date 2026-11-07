@@ -88,6 +88,8 @@ function inspectModel(root) {
   let triangles = 0;
   const materials = new Set();
   const textures = new Set();
+  let maxTextureEdge = 0;
+  let textureCount = 0;
 
   root.traverse(node => {
     if (!node.isMesh) return;
@@ -101,12 +103,19 @@ function inspectModel(root) {
       if (!material) continue;
       materials.add(material);
       for (const value of Object.values(material)) {
-        if (value?.isTexture) textures.add(value);
+        if (value?.isTexture) {
+          textures.add(value);
+          const image = value.image;
+          const width = image?.width || image?.videoWidth || image?.naturalWidth || 0;
+          const height = image?.height || image?.videoHeight || image?.naturalHeight || 0;
+          maxTextureEdge = Math.max(maxTextureEdge, width, height);
+        }
       }
     }
   });
 
-  return { meshes, triangles: Math.round(triangles), materials: materials.size, textures: textures.size };
+  textureCount = textures.size;
+  return { meshes, triangles: Math.round(triangles), materials: materials.size, textures: textureCount, maxTextureEdge };
 }
 
 function disposeObject(object) {
@@ -163,7 +172,16 @@ fileInput.addEventListener('change', () => {
         size.x.toFixed(1) + ' × ' + size.y.toFixed(1) + ' × ' + size.z.toFixed(1) +
         ' m · ' + stats.meshes + ' mesh · ' + stats.triangles.toLocaleString('en-US') +
         ' tris · ' + stats.materials + ' material · ' + stats.textures + ' texture' +
+        (stats.maxTextureEdge ? ' · max tekstura ' + stats.maxTextureEdge + 'px' : '') +
         (gltf.animations.length ? ' · ' + gltf.animations.length + ' animasiya' : '');
+      const warnings = [];
+      if (stats.triangles > 250000) warnings.push('Poliqon sayı yüksəkdir (>250k)');
+      if (stats.meshes > 150) warnings.push('Mesh sayı yüksəkdir (>150)');
+      if (stats.materials > 30) warnings.push('Material sayı yüksəkdir (>30)');
+      if (stats.maxTextureEdge > 4096) warnings.push('4K-dan böyük tekstura aşkarlandı');
+      if (file.size > 30 * 1048576) warnings.push('Fayl 30 MB-dan böyükdür');
+      if (warnings.length) modelSummary += ' · OPTİMİZASİYA: ' + warnings.join('; ');
+      else modelSummary += ' · ilkin mobil limitlər uyğundur';
       updateStatus();
     },
     xhr => {
