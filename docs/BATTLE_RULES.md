@@ -12,7 +12,7 @@
 - Döyüş taktikası: balanslı, paz (süvari), xətt (piyada/nizəçi), yaylım (oxçu).
 - Nəticə: güc müqayisəsi, itkilər və qalan qoşun sayı.
 
-## Hazırkı tətbiq
+## Döyüş meydanı görünüşü\n`battle.html` səhifəsində hücum və müdafiə orduları beş qoşun sinfi üzrə sxematik düzülür. Seçilmiş hücum istiqaməti oxla göstərilir. Bu, taktiki yerləşmənin 2D sxemidir; 3D model və animasiya deyil.\n\n## Hazırkı tətbiq
 `src/troops.js` qoşun parametrlərini və ordu yaratma funksiyasını saxlayır.
 `src/battle.js` deterministik prototip döyüş hesablayıcısıdır.
 
