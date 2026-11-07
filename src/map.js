@@ -101,13 +101,15 @@ function showOutpostControls(id){
   let city={};try{city=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}')}catch{}
   city.resources=city.resources||{wood:1200,stone:1000,gold:500};
   if((Number(city.resources.gold)||0)<10){caravanStatus.textContent='Karvan üçün 10 qızıl lazımdır.';return;}
-  const escortCount=Math.max(0,Math.min(army.infantry,Math.floor(Number(panel.querySelector('#caravanEscort').value)||0)));
-  if(escortCount>army.infantry){caravanStatus.textContent='Müşayiətçi sayı ordudan çox ola bilməz.';return;}
+  const requestedEscort=Math.max(0,Math.floor(Number(panel.querySelector('#caravanEscort').value)||0));
+  if(requestedEscort>army.infantry){caravanStatus.textContent='Müşayiətçi sayı mövcud piyadadan çox ola bilməz.';return;}
+  const escortCount=requestedEscort;
   city.resources.gold-=10;
   city.army=city.army||{};
   city.army.infantry=Math.max(0,(Number(city.army.infantry)||0)-escortCount);
   army.infantry=Math.max(0,army.infantry-escortCount);
   try{localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(city))}catch{}
+  stats.innerHTML=troopIds.filter(k=>army[k]>0).map(k=>'<span>'+names[k]+': '+army[k]+'</span>').join('')||'<span>Səyyar ordu qalmayıb</span>';
   const sentAt=Date.now(),arrivesAt=sentAt+60000;
   caravans[id]={status:'traveling',sentAt,arrivesAt,escort:{infantry:escortCount,spearman:0,archer:0,cavalry:0,knight:0}};
   try{localStorage.setItem(caravanKey,JSON.stringify(caravans))}catch{}
