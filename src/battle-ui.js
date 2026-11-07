@@ -59,7 +59,15 @@ function renderBattlefield(attacker, defender, direction) {
   svgNode('text', { x: 300, y: 155, 'text-anchor': 'middle', fill: '#fff0c5', 'font-size': 11, 'font-weight': 700, stroke: '#263b2d', 'stroke-width': 3, 'paint-order': 'stroke' }, arrowLayer, 'HÜCUM İSTİQAMƏTİ');
 }
 
-renderBattlefield(readArmy('a'), readArmy('d'), document.getElementById('direction').value);
+function refreshPreview() {
+  renderBattlefield(readArmy('a'), readArmy('d'), document.getElementById('direction').value);
+}
+
+refreshPreview();
+document.querySelectorAll('input[type="number"], #direction').forEach(control => {
+  control.addEventListener('input', refreshPreview);
+  control.addEventListener('change', refreshPreview);
+});
 document.getElementById('fight').addEventListener('click', () => {
   const attacker = readArmy('a');
   const defender = readArmy('d');
@@ -67,13 +75,17 @@ document.getElementById('fight').addEventListener('click', () => {
   const tactic = document.getElementById('tactic').value;
   const terrain = document.getElementById('terrain').value;
   const result = resolveBattle({ attacker, defender, direction, tactic, terrain, seed: Date.now() % 100000 });
-  renderBattlefield(attacker, defender, direction);
+  const survivingAttacker = result.remaining?.attacker ?? attacker;
+  const survivingDefender = result.remaining?.defender ?? defender;
+  renderBattlefield(survivingAttacker, survivingDefender, direction);
   const panel = document.getElementById('result');
   panel.style.display = 'block';
   document.getElementById('winner').textContent =
     total(attacker) && total(defender)
       ? result.winner === 'attacker' ? '⚔ Hücum ordusu qalib gəldi' : '🛡 Müdafiə ordusu qalib gəldi'
       : 'Döyüş baş tutmadı';
+  document.querySelector('#battlefield').setAttribute('aria-label',
+    `Döyüşdən sonra sağ qalanlar: hücum ${total(survivingAttacker)}, müdafiə ${total(survivingDefender)} nəfər`);
   document.getElementById('ap').textContent = result.power?.attacker ?? '—';
   document.getElementById('dp').textContent = result.power?.defender ?? '—';
   document.getElementById('ar').textContent = total(result.remaining?.attacker ?? attacker);
