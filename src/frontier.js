@@ -19,10 +19,46 @@ const well=new THREE.Mesh(new THREE.CylinderGeometry(4,4,2,12),stone);well.posit
 for(let i=0;i<18;i++){const x=-105+(i%6)*20,z=-105+Math.floor(i/6)*22;const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.6,.8,5,7),wood);trunk.position.set(x,2.5,z);scene.add(trunk);const crown=new THREE.Mesh(new THREE.ConeGeometry(4.5,10,7),mat(0x38543a));crown.position.set(x,8,z);crown.castShadow=true;scene.add(crown)}
 const pole=new THREE.Mesh(new THREE.CylinderGeometry(.2,.25,12,8),gold);pole.position.set(0,6,42);scene.add(pole);const flag=new THREE.Mesh(new THREE.PlaneGeometry(6,4),mat(site.flag));flag.position.set(3,9,42);scene.add(flag);
 for(const x of [-10,10]){const fire=new THREE.Mesh(new THREE.SphereGeometry(.8,8,8),new THREE.MeshBasicMaterial({color:0xffa33b}));fire.position.set(x,3,35);scene.add(fire);const light=new THREE.PointLight(0xffa33b,1.5,18);light.position.set(x,4,35);scene.add(light)}
+// Animated garrison patrol: articulated guards circle the inner courtyard.
+const patrols=[];
+function makeGuard(x,z,phase,armorColor){
+ const root=new THREE.Group();root.position.set(x,0,z);scene.add(root);
+ const armor=mat(armorColor),skin=mat(0xb98b68),cloak=mat(0x71352d),iron=mat(0x555e61);
+ const torso=new THREE.Mesh(new THREE.CylinderGeometry(1.05,1.3,3.2,8),armor);torso.position.y=4.1;torso.castShadow=true;root.add(torso);
+ const head=new THREE.Mesh(new THREE.SphereGeometry(.85,10,8),skin);head.position.y=6.35;head.castShadow=true;root.add(head);
+ const helmet=new THREE.Mesh(new THREE.ConeGeometry(1,1.5,8),iron);helmet.position.y=7.45;helmet.castShadow=true;root.add(helmet);
+ const cape=new THREE.Mesh(new THREE.BoxGeometry(1.8,2.8,.3),cloak);cape.position.set(0,4,-.95);root.add(cape);
+ const leftLeg=new THREE.Group();leftLeg.position.set(-.55,2.8,0);root.add(leftLeg);
+ const rightLeg=new THREE.Group();rightLeg.position.set(.55,2.8,0);root.add(rightLeg);
+ for(const leg of [leftLeg,rightLeg]){const mesh=new THREE.Mesh(new THREE.BoxGeometry(.72,2.8,.8),iron);mesh.position.y=-1.35;mesh.castShadow=true;leg.add(mesh)}
+ const leftArm=new THREE.Group();leftArm.position.set(-1.15,5.1,0);root.add(leftArm);
+ const rightArm=new THREE.Group();rightArm.position.set(1.15,5.1,0);root.add(rightArm);
+ for(const arm of [leftArm,rightArm]){const mesh=new THREE.Mesh(new THREE.CylinderGeometry(.34,.42,2.2,7),armor);mesh.position.y=-.95;mesh.rotation.z=-.18;mesh.castShadow=true;arm.add(mesh)}
+ const spear=new THREE.Mesh(new THREE.CylinderGeometry(.09,.09,7,6),wood);spear.position.set(0,2.5,0);rightArm.add(spear);
+ const tip=new THREE.Mesh(new THREE.ConeGeometry(.28,.9,6),iron);tip.position.set(0,6.3,0);rightArm.add(tip);
+ patrols.push({root,leftLeg,rightLeg,leftArm,rightArm,phase});
+}
+for(let i=0;i<6;i++)makeGuard(-24+(i%3)*24, i<3?-13:33, i*1.1, i%2?0x8b754c:0x687783);
+function animatePatrols(time){
+ patrols.forEach((g,i)=>{
+  const t=time*.00022+g.phase;
+  const perimeter=2*(76+48),p=(t*12)%perimeter;
+  let x,z,angle;
+  if(p<76){x=-38+p;z=-24;angle=Math.PI/2}
+  else if(p<124){x=38;z=-24+(p-76);angle=0}
+  else if(p<200){x=38-(p-124);z=24;angle=-Math.PI/2}
+  else{x=-38;z=24-(p-200);angle=Math.PI}
+  g.root.position.set(x,0,z);g.root.rotation.y=angle;
+  const step=Math.sin(t*9+i)*.48;
+  g.leftLeg.rotation.x=step;g.rightLeg.rotation.x=-step;
+  g.leftArm.rotation.x=-step*.65;g.rightArm.rotation.x=step*.65;
+  g.root.position.y=Math.abs(Math.sin(t*9+i))*.12;
+ });
+}
 let dragging=false,lastX=0,lastY=0,rotation=0,tilt=0;renderer.domElement.addEventListener('pointerdown',e=>{dragging=true;lastX=e.clientX;lastY=e.clientY;renderer.domElement.setPointerCapture(e.pointerId)});
 renderer.domElement.addEventListener('pointermove',e=>{if(!dragging)return;rotation+=(e.clientX-lastX)*.008;tilt=Math.max(-.25,Math.min(.35,tilt+(e.clientY-lastY)*.004));lastX=e.clientX;lastY=e.clientY});renderer.domElement.addEventListener('pointerup',()=>dragging=false);renderer.domElement.addEventListener('pointercancel',()=>dragging=false);
 renderer.domElement.addEventListener('wheel',e=>{camera.position.multiplyScalar(e.deltaY>0?1.08:.92);camera.position.clampLength(70,230)},{passive:true});
-const orbitRadius=150;function animate(){requestAnimationFrame(animate);camera.position.x=Math.sin(rotation)*orbitRadius*.72;camera.position.z=Math.cos(rotation)*orbitRadius*.72;camera.position.y=Math.max(55,88+tilt*100);camera.lookAt(0,8,0);renderer.render(scene,camera)}animate();
+const orbitRadius=150;function animate(time=0){requestAnimationFrame(animate);animatePatrols(time);camera.position.x=Math.sin(rotation)*orbitRadius*.72;camera.position.z=Math.cos(rotation)*orbitRadius*.72;camera.position.y=Math.max(55,88+tilt*100);camera.lookAt(0,8,0);renderer.render(scene,camera)}animate();
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 document.querySelector('#name').textContent=site.name;const total=Object.values(campaign?.garrison||{}).reduce((n,v)=>n+(Number(v)||0),0);
 document.querySelector('#desc').textContent=campaign?.captured?'Bu məntəqə sənin krallığının nəzarətindədir. Müdafiə qarnizonunu dünya xəritəsindən idarə et.':'Bu qala hazırda sənin nəzarətində deyil. Dünya xəritəsində sərhəd kampaniyasını davam etdir.';
