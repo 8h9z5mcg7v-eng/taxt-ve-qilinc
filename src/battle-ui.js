@@ -322,6 +322,14 @@ function playCombatAnimation(attacker = {}, defender = {}, siege = {}, result = 
   for (let i = 0; i < catapultShots; i++) {
     launch(115 + i * 24, 210, 365 + i * 10, 158 + i * 12, '#e1a34b', i * 170, 5);
   }
+  const fortressCounterShots = result.terrain === 'fortress'
+    ? Math.min(8, result.siege?.defensiveCatapults || 0) : 0;
+  for (let i = 0; i < fortressCounterShots; i++) {
+    const sourceX = 230 + (i % 4) * 44;
+    const targetX = 92 + (i * 37) % 390;
+    const targetY = 242 + (i % 3) * 17;
+    launch(sourceX, 78, targetX, targetY, '#8f8b80', 260 + i * 210, 6);
+  }
   // Bring siege engines forward during the assault sequence.
   const siegeLayer = field.querySelector('#siegeMachines');
   if (siegeLayer) {
