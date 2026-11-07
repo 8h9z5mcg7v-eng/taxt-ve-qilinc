@@ -91,16 +91,14 @@ test('fortress wall damage is capped and cannot become negative', () => {
 });
 
 test('losses never exceed the number of units in each troop class', () => {
-  const result = resolveBattle({
-    attacker: { infantry: 1, archer: 2, cavalry: 1 },
-    defender: { infantry: 1, spearman: 1, knight: 1 },
-    seed: 999
-  });
-  for (const [type, count] of Object.entries(result.attacker)) {
+  const attacker = { infantry: 1, archer: 2, cavalry: 1 };
+  const defender = { infantry: 1, spearman: 1, knight: 1 };
+  const result = resolveBattle({ attacker, defender, seed: 999 });
+  for (const [type, count] of Object.entries(attacker)) {
     assert.ok(result.losses.attacker[type] <= count);
     assert.ok(result.remaining.attacker[type] >= 0);
   }
-  for (const [type, count] of Object.entries(result.defender)) {
+  for (const [type, count] of Object.entries(defender)) {
     assert.ok(result.losses.defender[type] <= count);
     assert.ok(result.remaining.defender[type] >= 0);
   }
