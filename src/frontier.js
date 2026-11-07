@@ -10,7 +10,24 @@ const mat=c=>new THREE.MeshStandardMaterial({color:c,roughness:.9});const grass=
 const ground=new THREE.Mesh(new THREE.PlaneGeometry(240,240),grass);ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
 function box(x,y,z,w,h,d,m){const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y+h/2,z);o.castShadow=true;o.receiveShadow=true;scene.add(o);return o}
 function tower(x,z){const t=new THREE.Mesh(new THREE.CylinderGeometry(6,7,18,10),stone);t.position.set(x,9,z);t.castShadow=true;scene.add(t);const cap=new THREE.Mesh(new THREE.ConeGeometry(7,9,10),roof);cap.position.set(x,22,z);cap.castShadow=true;scene.add(cap)}
-box(0,0,-43,104,14,7,stone);box(0,0,43,104,14,7,stone);box(-49,0,0,7,14,90,stone);box(49,0,0,7,14,90,stone);
+box(0,0,-43,104,14,7,stone);box(0,0,43,104,14,7,stone);box(-49,0,0,7,14,90,stone);
+const wallDamage=Math.max(0,Math.min(100,Number(campaign?.wallDamage)||0));
+if(wallDamage>0){
+ const rubbleMat=mat(0x625e53),crackMat=new THREE.LineBasicMaterial({color:0x292a25});
+ const crackCount=Math.min(8,Math.ceil(wallDamage/12));
+ for(let i=0;i<crackCount;i++){
+  const x=-24+i*6,z=39.2;
+  const points=[new THREE.Vector3(x,12,z),new THREE.Vector3(x+2,8,z),new THREE.Vector3(x-1,5,z),new THREE.Vector3(x+2,1,z)];
+  const crack=new THREE.Line(new THREE.BufferGeometry().setFromPoints(points),crackMat);scene.add(crack);
+ }
+ const rubbleCount=Math.min(18,Math.ceil(wallDamage/6));
+ for(let i=0;i<rubbleCount;i++){
+  const size=.8+(i%3)*.45;
+  const block=new THREE.Mesh(new THREE.DodecahedronGeometry(size,0),rubbleMat);
+  block.position.set(-8+(i%9)*2, size*.6, 39+(Math.floor(i/9)*2));block.rotation.set(i*.4,i*.7,i*.2);block.castShadow=true;scene.add(block);
+ }
+ if(wallDamage>=100){box(-2,0,42,18,2,9,darkStone);const breach=new THREE.Mesh(new THREE.BoxGeometry(20,1.2,10),mat(0x3e3b32));breach.position.set(-2,1,42);scene.add(breach)}
+}box(49,0,0,7,14,90,stone);
 for(const p of [[-49,-43],[49,-43],[-49,43],[49,43]])tower(p[0],p[1]);box(0,0,43,20,17,9,darkStone);box(0,0,49,8,10,2,wood);
 box(0,0,-5,28,25,25,stone);box(0,25,-5,20,10,19,darkStone);const keepRoof=new THREE.Mesh(new THREE.ConeGeometry(17,13,4),roof);keepRoof.position.set(0,42,-5);keepRoof.rotation.y=Math.PI/4;keepRoof.castShadow=true;scene.add(keepRoof);
 function house(x,z,w,d,h){box(x,0,z,w,h,d,wood);const r=new THREE.Mesh(new THREE.ConeGeometry(Math.max(w,d)*.75,h*.8,4),roof);r.position.set(x,h+h*.35,z);r.rotation.y=Math.PI/4;r.castShadow=true;scene.add(r)}
@@ -100,5 +117,5 @@ function animate(time=0){requestAnimationFrame(animate);animatePatrols(time);cam
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 document.querySelector('#name').textContent=site.name;const total=Object.values(campaign?.garrison||{}).reduce((n,v)=>n+(Number(v)||0),0);
 document.querySelector('#desc').textContent=campaign?.captured?(total?'Qala sənin nəzarətindədir. Piyada: '+(garrison.infantry||0)+' · Nizəçi: '+(garrison.spearman||0)+' · Oxçu: '+(garrison.archer||0)+' · Süvari: '+(garrison.cavalry||0)+' · Cəngavər: '+(garrison.knight||0)+'.':'Qala sənin nəzarətindədir, lakin qarnizon boşdur. Dünya xəritəsinə qayıdıb müdafiəçi göndər.'):'Bu qala hazırda sənin nəzarətində deyil. Dünya xəritəsində sərhəd kampaniyasını davam etdir.';
-document.querySelector('#stats').innerHTML='<span>🛡 Qarnizon: '+total+' əsgər</span><span>⚔ Patrul: '+patrolCount+'</span><span>🏹 Divar oxçuları: '+visibleArchers+'</span><span>🪵 '+site.wood+' odun/saat</span><span>🪨 '+site.stone+' daş/saat</span><span>🪙 '+site.gold+' qızıl/saat</span>';
-document.querySelector('#notice').textContent=campaign?.captured?'Qala divarları, darvaza və qarnizon binaları hazırdır. Divar oxçuları vizual müdafiə atəşi açır.':'Məntəqə itirilib və ya hələ fəth edilməyib.';
+document.querySelector('#stats').innerHTML='<span>🛡 Qarnizon: '+total+' əsgər</span><span>🧱 Divar zədəsi: '+wallDamage+'/100</span><span>⚔ Patrul: '+patrolCount+'</span><span>🏹 Divar oxçuları: '+visibleArchers+'</span><span>🪵 '+site.wood+' odun/saat</span><span>🪨 '+site.stone+' daş/saat</span><span>🪙 '+site.gold+' qızıl/saat</span>';
+document.querySelector('#notice').textContent=campaign?.captured?'Qala divarları, darvaza və qarnizon binaları hazırdır. Mühasirə zədəsi: '+wallDamage+'/100 · '+(wallDamage>=100?'divar yarılıb':'divar müdafiədədir')+'.':'Məntəqə itirilib və ya hələ fəth edilməyib.';
