@@ -186,7 +186,7 @@ function renderTerritorySummary(){
 }
 renderTerritorySummary();
 const army={infantry:0,spearman:0,archer:0,cavalry:0,knight:0,...(savedCity.army||{})};
-function saveCity(){try{localStorage.setItem(SAVE_KEY,JSON.stringify({resources,army,levels,wounded}))}catch{}}
+function saveCity(){try{localStorage.setItem(SAVE_KEY,JSON.stringify({resources,army,levels,wounded,treatmentEndsAt}))}catch{}}
 function collectOfflineTerritoryIncome(){
  let outposts={},world={};
  try{outposts=JSON.parse(localStorage.getItem(territoryKey)||'{}')}catch{}
@@ -254,9 +254,6 @@ function processHospital(){
  saveCity();
  renderHospital();
 }
-processHospital();
-setInterval(processHospital,1000);
-renderHospital();
 const troopGroups=[];
 const troopColors={infantry:0x9b493b,spearman:0x71808b,archer:0x527b4d,cavalry:0x987044,knight:0xb7b8bd};
 function renderArmyInCity(){
@@ -294,6 +291,8 @@ document.querySelector('#sendArmy').addEventListener('click',()=>{
 });
 updateArmyStatus();
 renderArmyInCity();
+processHospital();
+setInterval(processHospital,1000);
 collectOfflineTerritoryIncome();
 saveCity();
 try{const world=JSON.parse(localStorage.getItem('tvq_world_state_v1')||'{}');if(world.redFortress){info.innerHTML=world.redFortress.captured?'<b>🏆 Qırmızı Qala fəth edildi!</b>Qələbə tarixi: '+new Date(world.redFortress.updatedAt).toLocaleString('az-AZ')+'.':'<b>⚔ Hücum başa çatdı</b>Düşmən qalası müdafiə olunur. Sağ qalan düşmən: '+world.redFortress.remainingDefenders+'. Ordunu yenidən hazırlaya bilərsən.';}}catch{}
