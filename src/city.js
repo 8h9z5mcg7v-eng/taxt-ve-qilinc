@@ -116,6 +116,27 @@ const troopTitles={infantry:'Piyada',spearman:'Nizəçi',archer:'Oxçu',cavalry:
 const recruit=document.querySelector('#recruit');
 document.querySelector('#recruitToggle').addEventListener('click',()=>recruit.classList.toggle('open'));
 function updateArmyStatus(){document.querySelector('#armyStatus').textContent='Hazır qoşun: '+Object.entries(army).map(([k,v])=>troopTitles[k]+': '+v).join(' · ')}
+const troopGroups=[];
+const troopColors={infantry:0x9b493b,spearman:0x71808b,archer:0x527b4d,cavalry:0x987044,knight:0xb7b8bd};
+function renderArmyInCity(){
+ troopGroups.forEach(g=>scene.remove(g));troopGroups.length=0;
+ const entries=Object.entries(army).filter(([,count])=>count>0);
+ entries.forEach(([type,count],i)=>{
+  const group=new THREE.Group();group.position.set(-35+i*17,0,-9);
+  const visible=Math.min(5,Math.max(1,Math.ceil(count/20)));
+  for(let n=0;n<visible;n++){
+   const soldier=new THREE.Group();
+   const body=new THREE.Mesh(new THREE.CylinderGeometry(.65,.85,2.2,7),mat(troopColors[type],.62));body.position.y=2.5;soldier.add(body);
+   const head=new THREE.Mesh(new THREE.SphereGeometry(.55,8,7),mat(0xb98b68));head.position.y=4.05;soldier.add(head);
+   const helmet=new THREE.Mesh(new THREE.ConeGeometry(.65,.8,7),metal);helmet.position.y=4.7;soldier.add(helmet);
+   if(type==='spearman'||type==='archer'){const weapon=new THREE.Mesh(new THREE.CylinderGeometry(.07,.07,3.7,5),wood);weapon.position.set(.9,3,0);weapon.rotation.z=-.15;soldier.add(weapon)}
+   if(type==='cavalry'||type==='knight'){const horse=new THREE.Mesh(new THREE.BoxGeometry(2.3,1.5,1.1),mat(0x594333));horse.position.set(0,1.1,-1);soldier.add(horse)}
+   soldier.position.set((n%3)*2.3,0,Math.floor(n/3)*2.5);group.add(soldier);
+  }
+  scene.add(group);troopGroups.push(group);
+ });
+}
+
 document.querySelector('#train').addEventListener('click',()=>{
  const type=document.querySelector('#troopType').value;
  const count=Math.max(1,Math.min(500,Math.floor(Number(document.querySelector('#troopCount').value)||1)));
@@ -123,7 +144,7 @@ document.querySelector('#train').addEventListener('click',()=>{
  const totalCost={wood:(cost.wood||0)*count,stone:(cost.stone||0)*count,gold:(cost.gold||0)*count};
  if(Object.keys(totalCost).some(k=>resources[k]<totalCost[k])){document.querySelector('#armyStatus').textContent='Resurs çatışmır — '+count+' '+troopTitles[type]+' hazırlamaq mümkün deyil.';return}
  for(const key of Object.keys(resources))resources[key]-=totalCost[key];
- army[type]+=count;refreshResources();saveCity();updateArmyStatus();
+ army[type]+=count;refreshResources();saveCity();updateArmyStatus();renderArmyInCity();
 });
 document.querySelector('#sendArmy').addEventListener('click',()=>{
  if(Object.values(army).every(v=>v===0)){document.querySelector('#armyStatus').textContent='Əvvəlcə kazarmada qoşun hazırla.';return}
@@ -131,6 +152,7 @@ document.querySelector('#sendArmy').addEventListener('click',()=>{
  location.href='./battle.html?'+params.toString();
 });
 updateArmyStatus();
+renderArmyInCity();
 saveCity();
 document.querySelector('#home').addEventListener('click',()=>{camera.position.set(150,165,175);controls.target.set(0,10,12);controls.update()});
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.5))});
