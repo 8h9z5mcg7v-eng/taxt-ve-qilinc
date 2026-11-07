@@ -6,6 +6,22 @@ let storedArmy={};try{storedArmy=JSON.parse(localStorage.getItem('taxt-ve-qilinc
 const total=Object.values(army).reduce((a,b)=>a+b,0);
 const stats=document.querySelector('#armyStats');
 stats.innerHTML=troopIds.filter(k=>army[k]>0).map(k=>'<span>'+names[k]+': '+army[k]+'</span>').join('')||'<span>Ordu məlumatı yoxdur</span>';
+const caravanKey='tvq_caravans_v1';
+let caravans={};
+try{caravans=JSON.parse(localStorage.getItem(caravanKey)||'{}')}catch{caravans={}}
+function settleCaravan(id){
+ const trip=caravans[id];if(!trip||trip.status!=='traveling'||Date.now()<trip.arrivesAt)return false;
+ const target=territories.find(x=>x.id===id);if(!target)return false;
+ const reward={wood:target.wood*2,stone:target.stone*2,gold:target.gold*2};
+ let city={};try{city=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}')}catch{}
+ city.resources=city.resources||{wood:1200,stone:1000,gold:500};
+ for(const key of Object.keys(reward))city.resources[key]=(Number(city.resources[key])||0)+reward[key];
+ try{localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(city))}catch{}
+ caravans[id]={status:'returned',sentAt:trip.sentAt,arrivesAt:trip.arrivesAt,reward};
+ try{localStorage.setItem(caravanKey,JSON.stringify(caravans))}catch{}
+ return true;
+}
+for(const id of ['village','mine'])settleCaravan(id);
 const territoryKey='tvq_territory_v1';
 let territory={};
 try{territory=JSON.parse(localStorage.getItem(territoryKey)||'{}')}catch{}
@@ -23,7 +39,7 @@ function showOutpostControls(id){
  const gain={wood:Math.floor(hours*target.wood),stone:Math.floor(hours*target.stone),gold:Math.floor(hours*target.gold)};
  const guard=territory[id]?.garrison||{infantry:0,spearman:0,archer:0,cavalry:0,knight:0};
  const guardTotal=Object.values(guard).reduce((a,n)=>a+(Number(n)||0),0);
- panel.innerHTML='<b>'+target.name+'</b><p>'+(owned?'Sənin nəzarətindədir. Toplanmamış gəlir: '+gain.wood+' odun, '+gain.stone+' daş, '+gain.gold+' qızıl.':'Məntəqə düşmən tərəfindən qorunur. Ələ keçirmək üçün döyüşdə qalib gəl.')+'</p><div class="stats"><span>🪵 '+target.wood+'/saat</span><span>🪨 '+target.stone+'/saat</span><span>🪙 '+target.gold+'/saat</span></div>'+(owned?'<p>🛡️ Qarnizon: '+guardTotal+'</p><button id="collectOutpost">Gəliri topla</button><button id="enemyRaid" style="margin:8px 0">⚔ Düşmən basqınını sına</button><div style="margin-top:10px"><label>Piyada <input id="ogInf" type="number" min="0" max="'+army.infantry+'" value="0"></label><label>Nizəçi <input id="ogSp" type="number" min="0" max="'+army.spearman+'" value="0"></label><label>Oxçu <input id="ogAr" type="number" min="0" max="'+army.archer+'" value="0"></label><label>Süvari <input id="ogCa" type="number" min="0" max="'+army.cavalry+'" value="0"></label><label>Cəngavər <input id="ogKn" type="number" min="0" max="'+army.knight+'" value="0"></label><button id="assignOutpostGuard">Qarnizon yerləşdir</button></div>':'<button id="captureOutpost">Məntəqəni ələ keçir</button>');
+ panel.innerHTML='<b>'+target.name+'</b><p>'+(owned?'Sənin nəzarətindədir. Toplanmamış gəlir: '+gain.wood+' odun, '+gain.stone+' daş, '+gain.gold+' qızıl.':'Məntəqə düşmən tərəfindən qorunur. Ələ keçirmək üçün döyüşdə qalib gəl.')+'</p><div class="stats"><span>🪵 '+target.wood+'/saat</span><span>🪨 '+target.stone+'/saat</span><span>🪙 '+target.gold+'/saat</span></div>'+(owned?'<p>🛡️ Qarnizon: '+guardTotal+'</p><button id="collectOutpost">Gəliri topla</button><button id="sendCaravan" style="margin:8px 0">🚚 Ticarət karvanı göndər · 10 qızıl</button><div id="caravanStatus" style="font-size:12px;margin:6px 0"></div><button id="enemyRaid" style="margin:8px 0">⚔ Düşmən basqınını sına</button><div style="margin-top:10px"><label>Piyada <input id="ogInf" type="number" min="0" max="'+army.infantry+'" value="0"></label><label>Nizəçi <input id="ogSp" type="number" min="0" max="'+army.spearman+'" value="0"></label><label>Oxçu <input id="ogAr" type="number" min="0" max="'+army.archer+'" value="0"></label><label>Süvari <input id="ogCa" type="number" min="0" max="'+army.cavalry+'" value="0"></label><label>Cəngavər <input id="ogKn" type="number" min="0" max="'+army.knight+'" value="0"></label><button id="assignOutpostGuard">Qarnizon yerləşdir</button></div>':'<button id="captureOutpost">Məntəqəni ələ keçir</button>');
  if(!owned){
   panel.querySelector('#captureOutpost').addEventListener('click',()=>{
    if(total===0){panel.querySelector('p').textContent='Məntəqəni ələ keçirmək üçün ordun olmalıdır.';return;}
@@ -49,6 +65,38 @@ function showOutpostControls(id){
   });
   return;
  }
+ const caravanButton=panel.querySelector('#sendCaravan');
+ const caravanStatus=panel.querySelector('#caravanStatus');
+ const activeTrip=caravans[id];
+ if(activeTrip?.status==='traveling'){
+  caravanStatus.textContent='Karvan yoldadır. Qayıdış: '+Math.max(0,Math.ceil((activeTrip.arrivesAt-Date.now())/1000))+' saniyə.';
+  caravanButton.disabled=true;
+ }else if(activeTrip?.status==='returned'){
+  caravanStatus.textContent='Son karvan qayıtdı: '+activeTrip.reward.wood+' odun, '+activeTrip.reward.stone+' daş, '+activeTrip.reward.gold+' qızıl.';
+ }
+ caravanButton.addEventListener('click',()=>{
+  if(!territory[id]?.captured){caravanStatus.textContent='Karvan üçün məntəqə sənin nəzarətində olmalıdır.';return;}
+  if(caravans[id]?.status==='traveling'&&Date.now()<caravans[id].arrivesAt){caravanStatus.textContent='Bu məntəqədən artıq karvan yoldadır.';return;}
+  let city={};try{city=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}')}catch{}
+  city.resources=city.resources||{wood:1200,stone:1000,gold:500};
+  if((Number(city.resources.gold)||0)<10){caravanStatus.textContent='Karvan üçün 10 qızıl lazımdır.';return;}
+  city.resources.gold-=10;
+  try{localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(city))}catch{}
+  const sentAt=Date.now(),arrivesAt=sentAt+60000;
+  caravans[id]={status:'traveling',sentAt,arrivesAt};
+  try{localStorage.setItem(caravanKey,JSON.stringify(caravans))}catch{}
+  caravanButton.disabled=true;
+  caravanStatus.textContent='🚚 Karvan yola düşdü. Təxmini qayıdış: 60 saniyə.';
+  const timer=setInterval(()=>{
+   if(settleCaravan(id)){
+    clearInterval(timer);
+    const trip=caravans[id];
+    caravanStatus.textContent='Karvan qayıtdı: '+trip.reward.wood+' odun, '+trip.reward.stone+' daş, '+trip.reward.gold+' qızıl.';
+    caravanButton.disabled=false;
+   }else if(Date.now()>=arrivesAt)clearInterval(timer);
+   else caravanStatus.textContent='🚚 Karvan yoldadır. Qayıdış: '+Math.ceil((arrivesAt-Date.now())/1000)+' saniyə.';
+  },1000);
+ });
  panel.querySelector('#enemyRaid').addEventListener('click',()=>{
   const raider={infantry:35,spearman:20,archer:25,cavalry:15,knight:5};
   if(guardTotal===0){territory[id].captured=false;try{localStorage.setItem(territoryKey,JSON.stringify(territory))}catch{};panel.querySelector('p').textContent='Qarnizon olmadığı üçün düşmən məntəqəni ələ keçirdi!';return}
