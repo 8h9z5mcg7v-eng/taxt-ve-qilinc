@@ -19,8 +19,9 @@ function calculatePower(army, defending, formation, opponents, commander = null)
     const counteredCount = Object.entries(createArmy(opponents))
       .reduce((sum, [enemyType, enemyUnits]) => sum + (unit.counters === enemyType ? enemyUnits : 0), 0);
     const counterBonus = 1 + 0.25 * (counteredCount / enemyCount);
-    const generalBonus = !defending && commander
-      ? (commander.bonus === type || (commander.bonus === 'infantry' && type === 'spearman') ? 1.18 : 1.03)
+    const commanderType = commander?.bonus || ({alp:'cavalry',tomris:'archer',babek:'infantry'}[commander?.id]);
+    const generalBonus = !defending && commanderType
+      ? (commanderType === type || (commanderType === 'infantry' && type === 'spearman') ? 1.18 : 1.03)
       : 1;
     total += count * base * formationBonus * counterBonus * generalBonus;
   }
