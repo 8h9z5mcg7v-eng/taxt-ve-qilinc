@@ -52,3 +52,23 @@ test('hill terrain gives the attacker a modest height advantage', () => {
   const hill = resolveBattle({ ...input, terrain: 'hill' });
   assert.ok(hill.power.attacker > plains.power.attacker);
 });
+
+
+test('ram and catapults damage fortress walls and can breach them', () => {
+  const base = { attacker: { infantry: 30 }, defender: { infantry: 20 }, terrain: 'fortress', seed: 8 };
+  const noSiege = resolveBattle({ ...base, siege: {} });
+  const siege = resolveBattle({ ...base, siege: { ram: 2, catapult: 3 } });
+  assert.equal(noSiege.siege.wallDamage, 0);
+  assert.equal(siege.siege.wallDamage, 100);
+  assert.equal(siege.siege.wallBreached, true);
+  assert.ok(siege.power.attacker > noSiege.power.attacker);
+});
+
+test('siege engines do not apply wall damage on open terrain', () => {
+  const result = resolveBattle({
+    attacker: { infantry: 10 }, defender: { infantry: 10 },
+    terrain: 'plains', siege: { ram: 5, catapult: 5 }, seed: 8
+  });
+  assert.equal(result.siege.wallMax, 0);
+  assert.equal(result.siege.wallDamage, 0);
+});
