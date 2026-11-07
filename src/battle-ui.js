@@ -83,8 +83,6 @@ function renderBattlefield(attacker, defender, direction, terrain = 'plains') {
       }
       svgNode('text', { 'text-anchor': 'middle', y: 43, fill: '#fff4dc', 'font-size': 12, 'font-weight': 700, stroke: '#17251f', 'stroke-width': 2, 'paint-order': 'stroke' }, g, String(count));
       svgNode('text', { 'text-anchor': 'middle', y: 57, fill: '#e7e2d4', 'font-size': 9, stroke: '#17251f', 'stroke-width': 1, 'paint-order': 'stroke' }, g, troopNames[type]);
-      svgNode('text', { 'text-anchor': 'middle', y: 39, fill: '#fff4dc', 'font-size': 12, 'font-weight': 700, stroke: '#17251f', 'stroke-width': 2, 'paint-order': 'stroke' }, g, String(count));
-      svgNode('text', { 'text-anchor': 'middle', y: 54, fill: '#e7e2d4', 'font-size': 9 }, g, troopNames[type]);
     }
   }
   const arrows = {
@@ -114,6 +112,29 @@ for(const type of troopIds){
 }
 function playCombatAnimation() {
   const field = document.getElementById('battlefield');
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const projectileLayer = document.createElementNS(svgNS, 'g');
+  projectileLayer.setAttribute('id', 'combatProjectiles');
+  field.querySelector('#combatProjectiles')?.remove();
+  field.appendChild(projectileLayer);
+  const launch = (x1, y1, x2, y2, color, delay = 0, width = 3) => {
+    const shot = document.createElementNS(svgNS, 'line');
+    shot.setAttribute('x1', x1); shot.setAttribute('y1', y1);
+    shot.setAttribute('x2', x1); shot.setAttribute('y2', y1);
+    shot.setAttribute('stroke', color); shot.setAttribute('stroke-width', width);
+    shot.setAttribute('stroke-linecap', 'round');
+    projectileLayer.appendChild(shot);
+    shot.animate(
+      [{ x2: x1, y2: y1, opacity: 0.2 }, { x2, y2, opacity: 1 }],
+      { duration: 520, delay, easing: 'ease-in' }
+    );
+  };
+  for (let i = 0; i < 5; i++) {
+    launch(90 + i * 18, 235 + (i % 2) * 12, 380 + i * 7, 150 + (i % 3) * 15, '#e8d7ad', i * 95, 2);
+  }
+  for (let i = 0; i < 3; i++) {
+    launch(115 + i * 24, 210, 365 + i * 10, 158 + i * 12, '#e1a34b', i * 170, 5);
+  }
   const attackLayer = document.getElementById('attackerUnits');
   const defendLayer = document.getElementById('defenderUnits');
   field.classList.remove('combat-active');
