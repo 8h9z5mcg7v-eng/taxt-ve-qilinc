@@ -55,7 +55,9 @@ function makeWallArcher(x,z,turn){
  const helmet=new THREE.Mesh(new THREE.ConeGeometry(.68,1,8),iron);helmet.position.y=4;root.add(helmet);
  const bow=new THREE.Mesh(new THREE.TorusGeometry(1.35,.11,6,16,Math.PI),wood);bow.position.set(.95,2.25,.25);bow.rotation.z=Math.PI/2;root.add(bow);
  const arrow=new THREE.Mesh(new THREE.CylinderGeometry(.045,.045,2.7,5),iron);arrow.rotation.z=Math.PI/2;arrow.position.set(1.1,2.3,.2);root.add(arrow);
- wallArchers.push({root,arrow,turn,phase:turn*.8});
+ const bolt=new THREE.Mesh(new THREE.CylinderGeometry(.055,.055,2.8,5),wood);bolt.rotation.x=Math.PI/2;bolt.position.set(x,16,z);scene.add(bolt);
+ const tip=new THREE.Mesh(new THREE.ConeGeometry(.16,.55,5),iron);tip.rotation.x=Math.PI/2;tip.position.set(x,16,z+turn*.9);scene.add(tip);
+ wallArchers.push({root,arrow,turn,phase:turn*.8,bolt,tip,startX:x,startZ:z});
 }
 const archerCount=Math.max(0,Number(garrison.archer)||0);
 const visibleArchers=Math.min(10,Math.ceil(archerCount/5));
@@ -65,7 +67,17 @@ for(let i=0;i<visibleArchers;i++){
 }
 
 function animatePatrols(time){
- wallArchers.forEach((a,i)=>{const pulse=Math.sin(time*.002+a.phase);a.root.rotation.y=a.turn<0?Math.PI:0;a.arrow.position.y=2.3+pulse*.12;a.arrow.rotation.z=Math.PI/2+pulse*.04});
+ wallArchers.forEach((a,i)=>{
+  const pulse=Math.sin(time*.002+a.phase),cycle=((time*.001+a.phase*2)%4+4)%4;
+  a.root.rotation.y=a.turn<0?Math.PI:0;
+  a.arrow.position.y=2.3+pulse*.12;
+  a.arrow.rotation.z=Math.PI/2+pulse*.04;
+  const firing=cycle>1.15&&cycle<2.45;
+  const travel=Math.max(0,cycle-1.15)/1.3;
+  a.bolt.visible=firing;a.tip.visible=firing;
+  a.bolt.position.set(a.startX,16,a.startZ+a.turn*travel*24);
+  a.tip.position.set(a.startX,16,a.startZ+a.turn*(travel*24+.9));
+ });
  patrols.forEach((g,i)=>{
   const t=time*.00022+g.phase;
   const perimeter=2*(76+48),p=(t*12)%perimeter;
@@ -89,4 +101,4 @@ addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updat
 document.querySelector('#name').textContent=site.name;const total=Object.values(campaign?.garrison||{}).reduce((n,v)=>n+(Number(v)||0),0);
 document.querySelector('#desc').textContent=campaign?.captured?(total?'Qala sənin nəzarətindədir. Piyada: '+(garrison.infantry||0)+' · Nizəçi: '+(garrison.spearman||0)+' · Oxçu: '+(garrison.archer||0)+' · Süvari: '+(garrison.cavalry||0)+' · Cəngavər: '+(garrison.knight||0)+'.':'Qala sənin nəzarətindədir, lakin qarnizon boşdur. Dünya xəritəsinə qayıdıb müdafiəçi göndər.'):'Bu qala hazırda sənin nəzarətində deyil. Dünya xəritəsində sərhəd kampaniyasını davam etdir.';
 document.querySelector('#stats').innerHTML='<span>🛡 Qarnizon: '+total+' əsgər</span><span>⚔ Patrul: '+patrolCount+'</span><span>🏹 Divar oxçuları: '+visibleArchers+'</span><span>🪵 '+site.wood+' odun/saat</span><span>🪨 '+site.stone+' daş/saat</span><span>🪙 '+site.gold+' qızıl/saat</span>';
-document.querySelector('#notice').textContent=campaign?.captured?'Qala divarları, darvaza, qarnizon binaları və müşahidə qüllələri hazırdır.':'Məntəqə itirilib və ya hələ fəth edilməyib.';
+document.querySelector('#notice').textContent=campaign?.captured?'Qala divarları, darvaza və qarnizon binaları hazırdır. Divar oxçuları vizual müdafiə atəşi açır.':'Məntəqə itirilib və ya hələ fəth edilməyib.';
