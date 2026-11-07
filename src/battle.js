@@ -19,7 +19,10 @@ function calculatePower(army, defending, formation, opponents, commander = null)
     const counteredCount = Object.entries(createArmy(opponents))
       .reduce((sum, [enemyType, enemyUnits]) => sum + (unit.counters === enemyType ? enemyUnits : 0), 0);
     const counterBonus = 1 + 0.25 * (counteredCount / enemyCount);
-    total += count * base * formationBonus * counterBonus;
+    const generalBonus = !defending && commander
+      ? (commander.bonus === type || (commander.bonus === 'infantry' && type === 'spearman') ? 1.18 : 1.03)
+      : 1;
+    total += count * base * formationBonus * counterBonus * generalBonus;
   }
   return total;
 }
@@ -49,7 +52,7 @@ export function resolveBattle({ attacker, defender, direction = 'south', tactic 
   const terrainAttackBonus = safeTerrain === 'hill' ? 1.06 : 1;
   const terrainDefenseBonus = safeTerrain === 'forest' ? 1.12 : safeTerrain === 'hill' ? 1.18 : safeTerrain === 'fortress' ? 1.32 : 1;
   const cavalryPenalty = safeTerrain === 'forest' || safeTerrain === 'fortress' ? 0.88 : 1;
-  const rawAttackPower = calculatePower(attackArmy, false, safeTactic, defendArmy);
+  const rawAttackPower = calculatePower(attackArmy, false, safeTactic, defendArmy, commander);
   const totalAttackers = Math.max(1, attackCount);
   const cavalryShare = attackArmy.cavalry / totalAttackers;
   const cavalryTerrainFactor = 1 - (1 - cavalryPenalty) * cavalryShare;
