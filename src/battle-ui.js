@@ -571,7 +571,8 @@ document.getElementById('fight').addEventListener('click', () => {
     try { const diplomacy=JSON.parse(localStorage.getItem('tvq_diplomacy_v1')||'{}'); const kingdom=dispatched.get('kingdom')||localStorage.getItem('tvq_border_battle_kingdom'); priorWallDamage=Number(diplomacy.borderCampaigns?.[kingdom]?.wallDamage)||0; } catch {}
   }
   let wallLevel = 1;
-  if (terrain === 'fortress') {
+  // City wall upgrades protect the player's own fortress only; never apply them to enemy targets.
+  if (terrain === 'fortress' && !isWorldMapAttack && !isBorderBattle) {
     try {
       const city = JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1') || '{}');
       const levels = city.levels || {};
