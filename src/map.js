@@ -12,6 +12,12 @@ try{caravans=JSON.parse(localStorage.getItem(caravanKey)||'{}')}catch{caravans={
 function settleCaravan(id){
  const trip=caravans[id];if(!trip||trip.status!=='traveling'||Date.now()<trip.arrivesAt)return false;
  const target=territories.find(x=>x.id===id);if(!target)return false;
+ let ownership={};try{ownership=JSON.parse(localStorage.getItem(territoryKey)||'{}')}catch{}
+ if(!ownership[id]?.captured){
+  caravans[id]={status:'intercepted',sentAt:trip.sentAt,arrivesAt:trip.arrivesAt,lossReason:'territory-lost'};
+  try{localStorage.setItem(caravanKey,JSON.stringify(caravans))}catch{}
+  return true;
+ }
  const reward={wood:target.wood*2,stone:target.stone*2,gold:target.gold*2};
  let city={};try{city=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}')}catch{}
  city.resources=city.resources||{wood:1200,stone:1000,gold:500};
@@ -73,6 +79,8 @@ function showOutpostControls(id){
   caravanButton.disabled=true;
  }else if(activeTrip?.status==='returned'){
   caravanStatus.textContent='Son karvan qayıtdı: '+activeTrip.reward.wood+' odun, '+activeTrip.reward.stone+' daş, '+activeTrip.reward.gold+' qızıl.';
+ }else if(activeTrip?.status==='intercepted'){
+  caravanStatus.textContent='Karvan ələ keçirildi: məntəqə səfər zamanı düşmənə keçdi.';
  }
  caravanButton.addEventListener('click',()=>{
   if(!territory[id]?.captured){caravanStatus.textContent='Karvan üçün məntəqə sənin nəzarətində olmalıdır.';return;}
@@ -91,7 +99,8 @@ function showOutpostControls(id){
    if(settleCaravan(id)){
     clearInterval(timer);
     const trip=caravans[id];
-    caravanStatus.textContent='Karvan qayıtdı: '+trip.reward.wood+' odun, '+trip.reward.stone+' daş, '+trip.reward.gold+' qızıl.';
+    if(trip.status==='returned')caravanStatus.textContent='Karvan qayıtdı: '+trip.reward.wood+' odun, '+trip.reward.stone+' daş, '+trip.reward.gold+' qızıl.';
+    else caravanStatus.textContent='Karvan ələ keçirildi: məntəqə səfər zamanı düşmənə keçdi.';
     caravanButton.disabled=false;
    }else if(Date.now()>=arrivesAt)clearInterval(timer);
    else caravanStatus.textContent='🚚 Karvan yoldadır. Qayıdış: '+Math.ceil((arrivesAt-Date.now())/1000)+' saniyə.';
