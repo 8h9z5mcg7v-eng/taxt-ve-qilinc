@@ -18,6 +18,7 @@ renderer.setSize(innerWidth, innerHeight - VIEWPORT_FOOTER);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.15;
+renderer.info.autoReset = true;
 host.appendChild(renderer.domElement);
 
 scene.add(new THREE.HemisphereLight(0xdde8ff, 0x51402b, 2.0));
@@ -53,6 +54,12 @@ let mixer = null;
 const clock = new THREE.Clock();
 let initialCamera = null;
 const initialTarget = new THREE.Vector3();
+let modelSummary = '';
+let fpsFrames = 0;
+let fpsStarted = performance.now();
+let displayedFps = 0;
+let displayedCalls = 0;
+let displayedTriangles = 0;
 
 function frameObject(object) {
   const box = new THREE.Box3().setFromObject(object);
@@ -121,6 +128,12 @@ function resetView() {
   controls.update();
 }
 
+function updateStatus() {
+  if (!current) return;
+  status.textContent = modelSummary + ' · ' + displayedFps + ' FPS · ' +
+    displayedCalls + ' draw calls · ' + displayedTriangles.toLocaleString('en-US') + ' render tris';
+}
+
 document.querySelector('#pick').addEventListener('click', () => fileInput.click());
 document.querySelector('#reset').addEventListener('click', resetView);
 
@@ -145,12 +158,13 @@ fileInput.addEventListener('change', () => {
       if (mixer) gltf.animations.forEach(clip => mixer.clipAction(clip).play());
 
       const mb = (file.size / 1048576).toFixed(1);
-      status.textContent =
+      modelSummary =
         file.name + ' · ' + mb + ' MB · ' +
         size.x.toFixed(1) + ' × ' + size.y.toFixed(1) + ' × ' + size.z.toFixed(1) +
         ' m · ' + stats.meshes + ' mesh · ' + stats.triangles.toLocaleString('en-US') +
         ' tris · ' + stats.materials + ' material · ' + stats.textures + ' texture' +
         (gltf.animations.length ? ' · ' + gltf.animations.length + ' animasiya' : '');
+      updateStatus();
     },
     xhr => {
       if (xhr.total) status.textContent = 'Yüklənir… ' + Math.round(xhr.loaded / xhr.total * 100) + '%';
@@ -176,6 +190,17 @@ renderer.setAnimationLoop(() => {
   mixer?.update(clock.getDelta());
   controls.update();
   renderer.render(scene, camera);
+
+  fpsFrames += 1;
+  const now = performance.now();
+  if (now - fpsStarted >= 1000) {
+    displayedFps = Math.round(fpsFrames * 1000 / (now - fpsStarted));
+    displayedCalls = renderer.info.render.calls;
+    displayedTriangles = renderer.info.render.triangles;
+    fpsFrames = 0;
+    fpsStarted = now;
+    updateStatus();
+  }
 });
 
 let lastTap = 0;
