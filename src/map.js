@@ -228,7 +228,6 @@ function showOutpostControls(id){
   const previousArmy={...army},previousGuard={...guard},previousTerritory=JSON.stringify(territory[id]);
   for(const k of keys){army[k]-=chosen[k];guard[k]=(Number(guard[k])||0)+chosen[k]}
   territory[id].garrison=guard;
-  territory[id].garrisonRevision=(Number(territory[id].garrisonRevision)||0)+1;
   try{
    const city=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}');
    city.army={...army};
@@ -244,37 +243,172 @@ function showOutpostControls(id){
   showOutpostControls(id);
  });
  panel.querySelector('#recallOutpostGuard').addEventListener('click',()=>{
-   if(!territory[id]?.captured){panel.querySelector('p').textContent='Məntəqə artıq sənin nəzarətində deyil.';return;}
-   const returning={...guard};
-   if(!Object.values(returning).some(n=>Number(n)>0)){panel.querySelector('p').textContent='Qaytarılacaq qarnizon yoxdur.';return;}
-   let city={};
-   try{city=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}')}catch{
-    panel.querySelector('p').textContent='Qarnizon qaytarılmadı: şəhər yaddaşı oxunmadı.';return;
-   }
-   const revision=Math.max(0,Number(territory[id].garrisonRevision)||0);
-   const recallId=id+':'+revision;
-   city.army=city.army||{};
-   city.outpostGarrisonReturns=city.outpostGarrisonReturns||{};
-   if(!city.outpostGarrisonReturns[recallId]){
-    for(const k of troopIds){
-     const count=Math.max(0,Math.floor(Number(returning[k])||0));
-     city.army[k]=Math.max(0,Math.floor(Number(city.army[k])||0))+count;
-    }
-    city.outpostGarrisonReturns[recallId]={returnedAt:Date.now(),troops:returning};
-    const ids=Object.keys(city.outpostGarrisonReturns);
-    if(ids.length>60)for(const oldId of ids.slice(0,ids.length-60))delete city.outpostGarrisonReturns[oldId];
-    try{localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(city))}catch{
-     panel.querySelector('p').textContent='Qarnizon qaytarılmadı: qoşunların şəhər yaddaşı saxlanmadı.';return;
-    }
-   }
-   const nextTerritory={...territory,[id]:{...territory[id],garrison:{infantry:0,spearman:0,archer:0,cavalry:0,knight:0},garrisonRevision:revision+1}};
-   try{localStorage.setItem(territoryKey,JSON.stringify(nextTerritory))}catch{
-    panel.querySelector('p').textContent='Qarnizonun şəhər ordusuna qaytarılması qeydə alındı; məntəqə yenilənməsi alınmadı. Təkrar cəhd qoşunları ikiqat artırmayacaq.';return;
-   }
-   territory=nextTerritory;
-   for(const k of troopIds)army[k]=Math.max(0,Math.floor(Number(city.army[k])||0));
-   stats.innerHTML=troopIds.filter(k=>army[k]>0).map(k=>'<span>'+names[k]+': '+army[k]+'</span>').join('')||'<span>Səyyar ordu qalmayıb</span>';
-   showOutpostControls(id);
+  if(!territory[id]?.captured){panel.querySelector('p').textContent='Məntəqə artıq sənin nəzarətində deyil.';return;}
+  const returning={...guard};
+  if(!Object.values(returning).some(n=>Number(n)>0)){panel.querySelector('p').textContent='Qaytarılacaq qarnizon yoxdur.';return;}
+  let city={};try{city=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}')}catch{}
+  const previousTerritory=JSON.stringify(territory[id]),previousArmy={...army};
+  city.army=city.army||{};
+  for(const k of troopIds){
+   const count=Math.max(0,Math.floor(Number(returning[k])||0));
+   city.army[k]=(Number(city.army[k])||0)+count;
+   army[k]=city.army[k];
+  }
+  territory[id].garrison={infantry:0,spearman:0,archer:0,cavalry:0,knight:0};
+  try{
+   localStorage.setItem(territoryKey,JSON.stringify(territory));
+   localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(city));
+  }catch{
+   territory[id]=JSON.parse(previousTerritory);
+   for(const k of troopIds)army[k]=previousArmy[k];
+   panel.querySelector('p').textContent='Qarnizon geri çağırıla bilmədi: yaddaş yazısı uğursuz oldu. Əvvəlki qarnizon saxlanıldı.';
+   return;
+  }
+  stats.innerHTML=troopIds.filter(k=>army[k]>0).map(k=>'<span>'+names[k]+': '+army[k]+'</span>').join('')||'<span>Səyyar ordu qalmayıb</span>';
+  showOutpostControls(id);
+ });
+}
+const targets={
+capital:{title:'Paytaxt',description:'Bu sənin əsas qaləndir. Buradan ordunu və resurslarını idarə et.',enemy:false},
+village:{title:'Sərhəd kəndi',description:'Kənddə kəşfiyyat və gələcək resurs tapşırıqları üçün məntəqə seçildi.',enemy:false},
+forest:{title:'Qaranlıq meşə',description:'Meşə kəşfiyyat üçün uyğundur. Bu prototipdə döyüş hədəfi deyil.',enemy:false},
+mine:{title:'Dəmir mədəni',description:'Mədən resurs məntəqəsidir. Gələcək mərhələdə ələ keçirmə mexanikası əlavə olunacaq.',enemy:false},
+enemy:{title:'Qırmızı Qala — Düşmən',description:'Düşmən qarnizonu: 300 əsgər. Bu, sınaq döyüşüdür; nəticələr hələ serverdə qorunmur.',enemy:true}
+};
+let selected=null;
+let fortressState={};
+const worldKey='tvq_world_state_v1';
+let worldState={};
+try{worldState=JSON.parse(localStorage.getItem(worldKey)||'{}');fortressState=worldState.redFortress||{}}catch{worldState={};fortressState={}}
+function saveWorld(){try{localStorage.setItem(worldKey,JSON.stringify(worldState))}catch{}}
+function showTerritoryEconomy(){
+ const panel=document.querySelector('.panel');
+ let section=document.querySelector('#territoryEconomy');
+ if(!section){section=document.createElement('div');section.id='territoryEconomy';section.style.cssText='margin-top:12px;padding:12px;border:1px solid #756448;border-radius:9px;background:#1d2b25';panel.append(section)}
+ const now=Date.now();const last=Number(fortressState.lastCollectedAt||now);const hours=Math.min(24,Math.max(0,(now-last)/3600000));
+ const gain={wood:Math.floor(hours*20),stone:Math.floor(hours*15),gold:Math.floor(hours*5)};
+ section.innerHTML='<b>🏰 İdarə olunan ərazi</b><p>Qırmızı Qala hər saat +20 odun, +15 daş və +5 qızıl istehsal edir. Toplanmamış gəlir maksimum 24 saat saxlanılır.</p><div class="stats"><span>🪵 '+gain.wood+' odun</span><span>🪨 '+gain.stone+' daş</span><span>🪙 '+gain.gold+' qızıl</span></div><button id="collectIncome" style="margin-top:10px">Gəliri topla</button>';
+ section.querySelector('#collectIncome').addEventListener('click',()=>{
+  if(!fortressState.captured)return;
+  let city={};try{city=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}')}catch{}
+  city.resources=city.resources||{wood:1200,stone:1000,gold:500};
+  for(const key of ['wood','stone','gold'])city.resources[key]=Math.max(0,Number(city.resources[key])||0)+gain[key];
+  try{localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(city))}catch{}
+  fortressState.lastCollectedAt=now;worldState.redFortress=fortressState;saveWorld();
+  section.innerHTML='<b>Gəlir toplandı!</b><p>'+gain.wood+' odun, '+gain.stone+' daş və '+gain.gold+' qızıl şəhərin yaddaşına əlavə edildi. Şəhərə qayıdıb resurs panelini yenilə.</p>';
+ });
+}
+function showGarrisonControls(){
+ const panel=document.querySelector('.panel');
+ let section=document.querySelector('#garrisonControls');
+ if(!section){section=document.createElement('div');section.id='garrisonControls';section.style.cssText='margin-top:12px;padding:10px;border:1px solid #756448;border-radius:9px;background:#1d2b25';panel.append(section)}
+ const garrison=fortressState.garrison||{infantry:0,spearman:0,archer:0,cavalry:0,knight:0};
+ const totalGarrison=Object.values(garrison).reduce((a,n)=>a+n,0);
+ section.innerHTML='<b>Qala qarnizonu: '+totalGarrison+' əsgər</b><p>Qalanı müdafiə etmək üçün ordudan əsgər ayır.</p><label style="display:block;font-size:12px;margin:7px 0">Piyada <input id="gInf" type="number" min="0" max="'+army.infantry+'" value="0"></label><label style="display:block;font-size:12px;margin:7px 0">Nizəçi <input id="gSp" type="number" min="0" max="'+army.spearman+'" value="0"></label><label style="display:block;font-size:12px;margin:7px 0">Oxçu <input id="gAr" type="number" min="0" max="'+army.archer+'" value="0"></label><label style="display:block;font-size:12px;margin:7px 0">Süvari <input id="gCa" type="number" min="0" max="'+army.cavalry+'" value="0"></label><label style="display:block;font-size:12px;margin:7px 0">Cəngavər <input id="gKn" type="number" min="0" max="'+army.knight+'" value="0"></label><button id="assignGarrison">Qarnizonu yerləşdir</button><button id="raidFortress" style="margin:8px 0">⚔ Düşmən basqınını sına</button>';
+ section.querySelector('#raidFortress').addEventListener('click',()=>{
+  const raider={infantry:35,spearman:20,archer:25,cavalry:15,knight:5};
+  if(totalGarrison===0){
+   fortressState.captured=false;
+   fortressState.garrison={infantry:0,spearman:0,archer:0,cavalry:0,knight:0};
+   worldState.redFortress=fortressState;saveWorld();
+   const enemy=document.querySelector('[data-id="enemy"]');
+   enemy.classList.remove('owned');
+   enemy.querySelector('span').textContent='🛡 Düşmən qalası';
+   enemy.querySelector('small').textContent='Düşmən nəzarətində';
+   targets.enemy.title='Qırmızı Qala — Düşmən';
+   targets.enemy.description='Düşmən qarnizonu: 300 əsgər. Qalanı yenidən fəth etmək üçün ordu göndər.';
+   targets.enemy.enemy=true;
+   section.querySelector('p').textContent='Qarnizon olmadığı üçün düşmən qalanı ələ keçirdi.';
+   marchButton.disabled=true;
+   return;
+  }
+  const battle=resolveBattle({attacker:raider,defender:garrison,direction:'south',tactic:'balanced',defenderTactic:(fortressState.defensePlan?.tactic||'balanced'),terrain:'fortress',seed:Date.now()%100000});
+  fortressState.garrison=battle.remaining.defender;
+  fortressState.lastRaidAt=Date.now();
+  if(battle.winner==='attacker')fortressState.captured=false;
+  worldState.redFortress=fortressState;saveWorld();
+  const enemy=document.querySelector('[data-id="enemy"]');
+  if(!fortressState.captured){
+   enemy.classList.remove('owned');
+   enemy.querySelector('span').textContent='🛡 Düşmən qalası';
+   enemy.querySelector('small').textContent='Düşmən nəzarətində';
+   targets.enemy.title='Qırmızı Qala — Düşmən';
+   targets.enemy.description='Düşmən qarnizonu: 300 əsgər. Qalanı yenidən fəth etmək üçün ordu göndər.';
+   targets.enemy.enemy=true;
+  }
+  section.querySelector('p').textContent=(battle.winner==='defender'?'Müdafiə uğurludur! ':'Düşmən qalanı ələ keçirdi. ')+'Qarnizonda sağ qalan: '+Object.values(battle.remaining.defender).reduce((a,n)=>a+n,0)+' · Hücumçu itkisi: '+Object.values(battle.losses.attacker).reduce((a,n)=>a+n,0);
+  if(!fortressState.captured)marchButton.disabled=true;
+ });
+ section.querySelector('#assignGarrison').addEventListener('click',()=>{
+  const keys=['infantry','spearman','archer','cavalry','knight'],ids=['gInf','gSp','gAr','gCa','gKn'];
+  const additions=Object.fromEntries(keys.map((k,i)=>[k,Math.max(0,Math.min(army[k],Math.floor(Number(section.querySelector('#'+ids[i]).value)||0)))]));
+  if(Object.values(additions).every(n=>n===0)){section.querySelector('p').textContent='Yerləşdirmək üçün ən azı bir əsgər seç.';return}
+  for(const k of keys){army[k]-=additions[k];garrison[k]=(garrison[k]||0)+additions[k]}
+  fortressState.garrison=garrison;worldState.redFortress=fortressState;saveWorld();try{const cityKey='taxt-ve-qilinc-city-v1';const city=JSON.parse(localStorage.getItem(cityKey)||'{}');city.army={...army};localStorage.setItem(cityKey,JSON.stringify(city));}catch{}
+  section.querySelector('b').textContent='Qala qarnizonu: '+Object.values(garrison).reduce((a,n)=>a+n,0)+' əsgər';
+  section.querySelector('p').textContent='Qarnizon saxlanıldı. Şəhər ordusundan ayrılan qoşunlar yeniləndi.';
+  stats.innerHTML=keys.filter(k=>army[k]>0).map(k=>'<span>'+names[k]+': '+army[k]+'</span>').join('')||'<span>Səyyar ordu qalmayıb</span>';
+ });
+}
+try{fortressState=JSON.parse(localStorage.getItem('tvq_world_state_v1')||'{}').redFortress||{}}catch{}
+if(fortressState.captured){
+ const firstSeen=Number(fortressState.capturedAt||Date.now());
+ if(!fortressState.capturedAt){fortressState.capturedAt=firstSeen;worldState.redFortress=fortressState;saveWorld();}
+ const raidInterval=6*60*60*1000;
+ let nextRaidAt=Number(fortressState.lastRaidAt||firstSeen)+raidInterval;
+ let resolvedRaids=0;
+ while(fortressState.captured&&Date.now()>=nextRaidAt&&resolvedRaids<8){
+  const guard=fortressState.garrison||{infantry:0,spearman:0,archer:0,cavalry:0,knight:0};
+  const guardCount=Object.values(guard).reduce((sum,n)=>sum+(Number(n)||0),0);
+  if(guardCount>0){
+   const raiders={infantry:35,spearman:20,archer:25,cavalry:15,knight:5};
+   const raid=resolveBattle({attacker:raiders,defender:guard,direction:'south',tactic:'balanced',defenderTactic:(fortressState.defensePlan?.tactic||'balanced'),terrain:'fortress',seed:Math.floor(nextRaidAt/1000)%100000});
+   fortressState.garrison=raid.remaining.defender;
+   fortressState.lastRaidResult={winner:raid.winner,attackerLosses:raid.losses.attacker,defenderLosses:raid.losses.defender,at:nextRaidAt};
+   if(raid.winner==='attacker')fortressState.captured=false;
+  }else{
+   fortressState.captured=false;
+   fortressState.lastRaidResult={winner:'attacker',reason:'no-garrison',at:nextRaidAt};
+  }
+  fortressState.lastRaidAt=nextRaidAt;
+  nextRaidAt+=raidInterval;
+  resolvedRaids++;
+ }
+ if(resolvedRaids){fortressState.resolvedRaidCount=(Number(fortressState.resolvedRaidCount)||0)+resolvedRaids;worldState.redFortress=fortressState;saveWorld();}
+ const enemy=document.querySelector('[data-id="enemy"]');
+ enemy.classList.add('owned');
+ enemy.querySelector('span').textContent='🏳 Sənin qalən';
+ enemy.querySelector('small').textContent='Fəth olunub · Sənin krallığın';
+ targets.enemy.title='Qırmızı Qala — Sənin mülkün';
+ targets.enemy.description='Qala sənin krallığına məxsusdur. Qarnizon yerləşdirərək onu müdafiə et.';
+ targets.enemy.enemy=false;
+}else{
+ const enemy=document.querySelector('[data-id="enemy"]');
+ enemy?.classList.remove('owned');
+ if(enemy&&fortressState.lastRaidResult?.at){
+  enemy.querySelector('small').textContent='Düşmən nəzarətində — son basqın nəticələndi';
+ }
+}
+function renderRaidAlert(){
+ let alert=document.querySelector('#raidAlert');
+ if(!fortressState.captured){alert?.remove();return;}
+ if(!alert){alert=document.createElement('section');alert.id='raidAlert';alert.style.cssText='margin-top:12px;padding:12px;border:1px solid #a87942;border-radius:10px;background:#35291f;color:#f7dfb0';document.querySelector('.panel').append(alert);}
+ const base=Number(fortressState.lastRaidAt||fortressState.capturedAt||Date.now());
+ const next=base+6*60*60*1000;
+ const left=Math.max(0,next-Date.now());
+ const hours=Math.floor(left/3600000),minutes=Math.floor((left%3600000)/60000);
+ const plan=fortressState.defensePlan||{tactic:'balanced'};
+ const tacticNames={balanced:'Balanslı müdafiə',line:'Sıx müdafiə xətti',volley:'Oxçu yaylımı',wedge:'Süvari pazı'};
+ alert.innerHTML='<b>⚠ Qala müdafiəsi</b><p>'+(left===0?'Basqın vaxtı çatıb. Xəritəni yenilədikdə müdafiə döyüşü hesablanacaq.':left<=60*60*1000?'DİQQƏT: düşmən basqını yaxınlaşır!':'Növbəti mümkün basqına qalan vaxt: '+hours+' saat '+minutes+' dəqiqə.')+'</p><small>Qarnizonunu gücləndir. Basqın yalnız xəritə yenidən yüklənəndə hesablanır.</small>';
+ let controls=alert.querySelector('#defensePlan');
+ if(!controls){
+  controls=document.createElement('div');controls.id='defensePlan';controls.style.cssText='margin-top:10px';
+  controls.innerHTML='<label for="defenseTactic">Müdafiə taktikası</label><select id="defenseTactic" style="display:block;width:100%;margin:6px 0;padding:10px;border-radius:8px;background:#26342b;color:#fff;border:1px solid #a87942"><option value="balanced">Balanslı müdafiə</option><option value="line">Sıx müdafiə xətti</option><option value="volley">Oxçu yaylımı</option><option value="wedge">Süvari pazı</option></select><small id="planSaved">Müdafiə əmri yadda saxlanılır.</small>';
+  alert.append(controls);
+  controls.querySelector('#defenseTactic').addEventListener('change',e=>{
+   fortressState.defensePlan={...(fortressState.defensePlan||{}),tactic:e.target.value};
+   worldState.redFortress=fortressState;saveWorld();
+   controls.querySelector('#planSaved').textContent='Müdafiə əmri yadda saxlanıldı: '+tacticNames[e.target.value]+'.';
   });
  }
  controls.querySelector('#defenseTactic').value=plan.tactic||'balanced';
