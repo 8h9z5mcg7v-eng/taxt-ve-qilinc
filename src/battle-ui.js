@@ -451,6 +451,46 @@ function playCombatAnimation(attacker = {}, defender = {}, siege = {}, result = 
     }
     field.appendChild(impact);
   }
+  // Show representative fallen soldiers for each side, scaled to actual battle losses.
+  const casualtyLayer = document.createElementNS(svgNS, 'g');
+  casualtyLayer.setAttribute('id', 'battleCasualties');
+  field.querySelector('#battleCasualties')?.remove();
+  const casualtyLanes = { infantry: 105, spearman: 220, archer: 370, cavalry: 490, knight: 300 };
+  for (const side of ['attacker', 'defender']) {
+    const losses = result.losses?.[side] || {};
+    const color = side === 'attacker' ? '#c8e0b7' : '#e5a18b';
+    let shown = 0;
+    for (const type of troopIds) {
+      const lost = Math.max(0, Math.floor(Number(losses[type]) || 0));
+      if (!lost) continue;
+      const marks = Math.min(3, Math.max(1, Math.ceil(lost / Math.max(1, Math.ceil(((attacker[type] || 0) + (defender[type] || 0)) / 18)))));
+      for (let i = 0; i < marks; i++) {
+        const x = casualtyLanes[type] + (i - (marks - 1) / 2) * 13 + (side === 'attacker' ? 0 : 7);
+        const y = side === 'attacker' ? 285 + (shown % 2) * 8 : 137 + (shown % 2) * 8;
+        const fallen = svgNode('g', { transform: `translate(${x} ${y})`, opacity: 0 }, casualtyLayer);
+        svgNode('circle', { cx: 0, cy: 0, r: 4, fill: '#d9b58a', stroke: '#292722', 'stroke-width': 1 }, fallen);
+        svgNode('path', { d: 'M-3 5 L10 8 L13 13 L-7 12Z', fill: color, stroke: '#292722', 'stroke-width': 1.5 }, fallen);
+        svgNode('path', { d: 'M-2 10 L-10 16 M7 11 L14 17 M0 7 L-9 4', stroke: '#30251e', 'stroke-width': 2.5, 'stroke-linecap': 'round' }, fallen);
+        fallen.animate(
+          [{ opacity: 0, transform: `translate(${x} ${y-13}) rotate(-22deg)` },
+           { opacity: 1, transform: `translate(${x} ${y}) rotate(0deg)` }],
+          { duration: 520, delay: 700 + shown * 115, fill: 'forwards', easing: 'ease-out' }
+        );
+        shown++;
+      }
+      if (shown >= 8) break;
+    }
+    const totalLost = Object.values(losses).reduce((sum, count) => sum + Math.max(0, Number(count) || 0), 0);
+    if (totalLost > 0) {
+      svgNode('text', {
+        x: side === 'attacker' ? 72 : 528, y: side === 'attacker' ? 326 : 28,
+        'text-anchor': side === 'attacker' ? 'start' : 'end',
+        fill: color, 'font-size': 11, 'font-weight': 700,
+        stroke: '#17251f', 'stroke-width': 2, 'paint-order': 'stroke'
+      }, casualtyLayer, `İTKİ: ${totalLost}`);
+    }
+  }
+  field.appendChild(casualtyLayer);
   if (result.siege?.wallBreached) {
     const meleeLayer = document.createElementNS(svgNS, 'g');
     meleeLayer.setAttribute('id', 'courtyardMelee');
