@@ -233,8 +233,10 @@ function playCombatAnimation(attacker = {}, siege = {}) {
   }
 }
 
+let currentWallDamage = 0;
+
 function refreshPreview() {
-  renderBattlefield(readArmy('a'), readArmy('d'), document.getElementById('direction').value, document.getElementById('terrain').value, 0, { ram: Number(document.getElementById('ram').value) || 0, catapult: Number(document.getElementById('catapult').value) || 0 });
+  renderBattlefield(readArmy('a'), readArmy('d'), document.getElementById('direction').value, document.getElementById('terrain').value, currentWallDamage, { ram: Number(document.getElementById('ram').value) || 0, catapult: Number(document.getElementById('catapult').value) || 0 });
 }
 
 refreshPreview();
@@ -277,7 +279,8 @@ document.getElementById('fight').addEventListener('click', () => {
     console.warn('Ordunun nəticəsini yadda saxlamaq mümkün olmadı.', error);
   }
   const survivingDefender = result.remaining?.defender ?? defender;
-  renderBattlefield(survivingAttacker, survivingDefender, direction, terrain, result.siege?.wallDamage || 0, siege);
+  currentWallDamage = result.siege?.wallDamage || 0;
+  renderBattlefield(survivingAttacker, survivingDefender, direction, terrain, currentWallDamage, siege);
   playCombatAnimation(attacker, siege);
   const panel = document.getElementById('result');
   panel.style.display = 'block';
