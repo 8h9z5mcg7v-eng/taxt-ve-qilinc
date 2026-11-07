@@ -139,6 +139,52 @@ function renderBattlefield(attacker, defender, direction, terrain = 'plains', wa
       { duration: 430, delay: 250, iterations: Math.min(4, siege.ram), easing: 'ease-in-out' }
     );
   }
+  // Ram strikes visibly shake the fortress gate; a completed breach throws masonry outward.
+  if (result.terrain === 'fortress' && (siege.ram || 0) > 0) {
+    const gate = field.querySelector('#fortressGate');
+    if (gate) {
+      gate.animate(
+        [{ transform: 'translate(0px,0px)' }, { transform: 'translate(-3px,1px)' },
+         { transform: 'translate(4px,-1px)' }, { transform: 'translate(-2px,1px)' },
+         { transform: 'translate(0px,0px)' }],
+        { duration: 520, delay: 280, iterations: Math.min(4, siege.ram), easing: 'ease-in-out' }
+      );
+    }
+    const impactLayer = document.createElementNS(svgNS, 'g');
+    impactLayer.setAttribute('id', 'gateImpactEffects');
+    field.querySelector('#gateImpactEffects')?.remove();
+    field.appendChild(impactLayer);
+    for (let strike = 0; strike < Math.min(4, siege.ram); strike++) {
+      const sparks = document.createElementNS(svgNS, 'path');
+      const x = 296 + (strike % 2) * 8;
+      const y = 111 + (strike % 2) * 5;
+      sparks.setAttribute('d', `M${x - 13} ${y} L${x - 4} ${y - 5} L${x} ${y - 15} M${x + 3} ${y - 2} L${x + 13} ${y - 9} M${x + 2} ${y + 3} L${x + 11} ${y + 10}`);
+      sparks.setAttribute('fill', 'none');
+      sparks.setAttribute('stroke', '#f2c16b');
+      sparks.setAttribute('stroke-width', '3');
+      sparks.setAttribute('stroke-linecap', 'round');
+      impactLayer.appendChild(sparks);
+      sparks.animate(
+        [{ opacity: 0, transform: 'scale(.5)' }, { opacity: 1, transform: 'scale(1.2)' }, { opacity: 0, transform: 'scale(.8)' }],
+        { duration: 430, delay: 300 + strike * 420, easing: 'ease-out' }
+      ).onfinish = () => sparks.remove();
+    }
+    if (result.siege?.wallBreached) {
+      for (let stone = 0; stone < 9; stone++) {
+        const debris = document.createElementNS(svgNS, 'circle');
+        debris.setAttribute('cx', 300 + (stone % 3 - 1) * 15);
+        debris.setAttribute('cy', 119);
+        debris.setAttribute('r', 3 + stone % 3);
+        debris.setAttribute('fill', ['#77786d', '#a39b88', '#5e625d'][stone % 3]);
+        impactLayer.appendChild(debris);
+        debris.animate(
+          [{ transform: 'translate(0px,0px)', opacity: 1 },
+           { transform: `translate(${(stone % 3 - 1) * 20}px,${-18 - (stone % 4) * 9}px)`, opacity: 0 }],
+          { duration: 780, delay: 850 + stone * 35, easing: 'ease-out' }
+        ).onfinish = () => debris.remove();
+      }
+    }
+  }
   const attackLayer = document.getElementById('attackerUnits');
   const defendLayer = document.getElementById('defenderUnits');
   const arrowLayer = document.getElementById('attackArrow');
