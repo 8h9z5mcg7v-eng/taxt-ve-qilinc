@@ -8,7 +8,7 @@ export const TROOPS = Object.freeze({
 });
 
 export function createArmy(composition = {}) {
-  return Object.fromEntries(Object.keys(TROOPS).map(id => [id, Math.max(0, Math.floor(Number(composition[id]) || 0))]));
+  return Object.fromEntries(Object.keys(TROOPS).map(id => [id, Math.max(0, Math.min(9999, Math.floor(Number(composition[id]) || 0)))]));
 }
 
 export function armySize(army) {
