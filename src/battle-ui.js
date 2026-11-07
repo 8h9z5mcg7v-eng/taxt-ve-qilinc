@@ -254,9 +254,14 @@ if(isWorldMapAttack){
  else if(Number(journey.arrivesAt)>Date.now())strategicBattleLockReason='Ordu hələ düşmən qalasına çatmayıb.';
 }
 if(isBorderBattle){
- let diplomacy={};try{diplomacy=JSON.parse(localStorage.getItem('tvq_diplomacy_v1')||'{}')}catch{}
- const kingdom=dispatched.get('kingdom')||localStorage.getItem('tvq_border_battle_kingdom');
- if(kingdom&&diplomacy.borderBattles?.[kingdom]===todayKey)strategicBattleLockReason='Bu sərhəd döyüşü bu gün artıq tamamlanıb.';
+  let diplomacy={};try{diplomacy=JSON.parse(localStorage.getItem('tvq_diplomacy_v1')||'{}')}catch{}
+  const kingdom=dispatched.get('kingdom')||localStorage.getItem('tvq_border_battle_kingdom');
+  let active=null;try{active=JSON.parse(localStorage.getItem('tvq_active_border_battle_v1')||'null')}catch{}
+  const activeParams=active?.url?new URLSearchParams(String(active.url).split('?')[1]||''):null;
+  const dispatchMatches=!!activeParams&&active.battleId===battleId&&active.kingdom===kingdom&&active.day===todayKey&&
+   troopIds.every(type=>Math.max(0,Math.floor(Number(activeParams.get(type))||0))===Math.max(0,Math.floor(Number(dispatched.get(type))||0)));
+  if(!dispatchMatches)strategicBattleLockReason='Bu döyüş üçün etibarlı aktiv qoşun göndərişi tapılmadı. Dünya xəritəsindən yenidən başla.';
+  else if(kingdom&&diplomacy.borderBattles?.[kingdom]===todayKey)strategicBattleLockReason='Bu sərhəd döyüşü bu gün artıq tamamlanıb.';
 }
 if(isWorldMapAttack||isBorderBattle){
  let city={};try{city=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}')}catch{}
