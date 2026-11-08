@@ -61,7 +61,21 @@ function renderTerrain(terrain, wallDamage = 0, siege = {}) {
     }
   } else if (terrain === 'fortress') {
     const damage = Math.max(0, Math.min(100, Number(wallDamage) || 0));
-    svgNode('rect', { x: 214, y: 76, width: 172, height: 54, fill: '#77786d', stroke: '#282b27', 'stroke-width': 5 }, scene);
+    const defenseWallLevel = Math.max(1, Math.min(10, Math.floor(Number(siege.defenseWallLevel) || 1)));
+    const wallBaseHeight = 48 + Math.floor((defenseWallLevel - 1) / 3) * 2;
+    svgNode('rect', { x: 214, y: 76 - (wallBaseHeight - 48), width: 172, height: wallBaseHeight + 6, fill: '#77786d', stroke: '#282b27', 'stroke-width': 5 + Math.floor((defenseWallLevel - 1) / 4) }, scene);
+    if (defenseWallLevel >= 3) {
+      for (let brace = 0; brace < Math.floor(defenseWallLevel / 2); brace++) {
+        const braceX = 220 + brace * 32;
+        svgNode('path', { d: `M${braceX} 81 L${braceX + 9} 81 L${braceX + 9} 126 L${braceX} 126Z`, fill: defenseWallLevel >= 7 ? '#9b8b6a' : '#686b62', stroke: '#343630', 'stroke-width': 1.4 }, scene);
+      }
+    }
+    if (defenseWallLevel >= 6) {
+      svgNode('path', { d: 'M216 76 L384 76 M216 83 L384 83', stroke: '#c4a56c', 'stroke-width': 1.8, opacity: .9 }, scene);
+    }
+    if (defenseWallLevel >= 9) {
+      svgNode('path', { d: 'M214 119 L386 119', stroke: '#c4a56c', 'stroke-width': 3 }, scene);
+    }
     for (let i = 0, x = 220; x < 386; x += 28, i++) {
       // Damaged walls progressively lose their merlons instead of only
       // displaying a generic damage badge.
@@ -753,7 +767,9 @@ let currentWallDamage = 0;
 
 function refreshPreview() {
   const previewCity = (() => { try { return JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1') || '{}'); } catch { return {}; } })();
-  renderBattlefield(readArmy('a'), readArmy('d'), document.getElementById('direction').value, document.getElementById('terrain').value, currentWallDamage, { ram: Number(document.getElementById('ram').value) || 0, catapult: Number(document.getElementById('catapult').value) || 0, tower: Number(document.getElementById('tower').value) || 0, defenseCatapult: Number(document.getElementById('defenseCatapult')?.value) || 0, defenseTowerLevel: Math.max(1, Math.min(10, Math.floor(Number(previewCity.levels?.['Müdafiə qülləsi']) || 1))) });
+  const previewWallNames = ['Şimal qala divarı','Cənub qala divarı','Qərb qala divarı','Şərq qala divarı'];
+  const previewWallLevel = Math.max(1, Math.min(10, Math.round(previewWallNames.reduce((sum, name) => sum + (Number(previewCity.levels?.[name]) || 1), 0) / previewWallNames.length)));
+  renderBattlefield(readArmy('a'), readArmy('d'), document.getElementById('direction').value, document.getElementById('terrain').value, currentWallDamage, { ram: Number(document.getElementById('ram').value) || 0, catapult: Number(document.getElementById('catapult').value) || 0, tower: Number(document.getElementById('tower').value) || 0, defenseCatapult: Number(document.getElementById('defenseCatapult')?.value) || 0, defenseTowerLevel: Math.max(1, Math.min(10, Math.floor(Number(previewCity.levels?.['Müdafiə qülləsi']) || 1))), defenseWallLevel: previewWallLevel });
 }
 
 refreshPreview();
@@ -830,6 +846,7 @@ document.getElementById('fight').addEventListener('click', async () => {
   const localBuildings=(()=>{try{return JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}').levels||{}}catch{return {}}})();
   const attackerBuildings={barracks:Number(dispatched.get('barracksLevel'))||Number(localBuildings['Kazarma'])||1,archery:Number(dispatched.get('archeryLevel'))||Number(localBuildings['Oxçuluq meydançası'])||1,stable:Number(dispatched.get('stableLevel'))||Number(localBuildings['Tövlə'])||1};
   const defenderBuildings=(terrain==='fortress'&&!isWorldMapAttack&&!isBorderBattle)?{tower:Number(localBuildings['Müdafiə qülləsi'])||1,barracks:Number(localBuildings['Kazarma'])||1,archery:Number(localBuildings['Oxçuluq meydançası'])||1,stable:Number(localBuildings['Tövlə'])||1}:{};
+  siege.defenseWallLevel = wallLevel;
   const result = resolveBattle({ attacker, defender, direction, tactic, terrain, siege, defenseCatapult, wallLevel, priorWallDamage, commander, attackerBuildings, defenderBuildings, seed: Date.now() % 100000 });
   if(isWorldMapAttack||isBorderBattle){
    try{
