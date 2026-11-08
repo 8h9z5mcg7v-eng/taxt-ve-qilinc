@@ -405,7 +405,8 @@ function loadCityAssetSource(source,label,x,z,targetWidth,rotation=0,onLoaded){
   root.position.set(x-center.x,-bounds.min.y,z-center.z);
   root.traverse(node=>{
    if(!node.isMesh)return;
-   node.castShadow=true;node.receiveShadow=true;node.userData.label=label;
+   // Imported GLBs can contain many meshes. Skip their shadow passes on compact/mobile viewports.
+   node.castShadow=!compactCityViewport;node.receiveShadow=!compactCityViewport;node.userData.label=label;
    pickables.push(node);
   });
   root.userData.label=label;scene.add(root);
