@@ -602,6 +602,44 @@ function playCombatAnimation(attacker = {}, defender = {}, siege = {}, result = 
       stone.animate([{ transform: 'translate(0,0) rotate(0deg)', opacity: 1 }, { transform: `translate(${(i%2?1:-1)*(8+damage*.08)}px,${8+damage*.12}px) rotate(${i%2?45:-45}deg)`, opacity: 0 }], { duration: 760 + i*35, easing: 'ease-out' });
     }
     field.appendChild(impact);
+    // Each successful siege volley chips a different section of masonry;
+    // fragments fall away and the newly exposed crack remains on the wall.
+    const freshDamage = Math.max(0, Math.min(100, Number(result.siege.wallDamageThisBattle) || 0));
+    if (freshDamage > 0) {
+      const hitCount = Math.min(8, Math.max(1, Math.ceil(freshDamage / 13)));
+      for (let hit = 0; hit < hitCount; hit++) {
+        const x = 226 + ((hit * 37 + 19) % 145);
+        const y = 83 + ((hit * 17 + 9) % 37);
+        const delay = 420 + hit * 190;
+        const fracture = svgNode('path', {
+          d: `M${x} ${y} l-5 8 l8 5 l-5 10 M${x+3} ${y+13} l8 5`,
+          fill: 'none', stroke: '#211f1a', 'stroke-width': 2.8,
+          'stroke-linecap': 'round', 'stroke-linejoin': 'round', opacity: 0
+        }, field);
+        fracture.animate(
+          [{ opacity: 0, strokeWidth: 1 }, { opacity: 1, strokeWidth: 3 }],
+          { duration: 420, delay, fill: 'forwards', easing: 'ease-out' }
+        );
+        for (let piece = 0; piece < 3; piece++) {
+          const shard = svgNode('path', {
+            d: `M${x} ${y+8} l5 -4 l6 4 l-3 6 l-7 0Z`,
+            fill: ['#8c8c80', '#aaa28f', '#686b63'][piece],
+            stroke: '#343630', 'stroke-width': 1
+          }, field);
+          shard.animate(
+            [{ transform: 'translate(0px,0px) rotate(0deg)', opacity: 1 },
+             { transform: `translate(${(piece-1)*13}px,${18+piece*4}px) rotate(${(piece-1)*48}deg)`, opacity: 0 }],
+            { duration: 760, delay: delay + 80 + piece * 25, easing: 'ease-in' }
+          ).onfinish = () => shard.remove();
+        }
+      }
+      const wallShake = field.querySelector('#terrainBackdrop');
+      if (wallShake) wallShake.animate(
+        [{ transform: 'translate(0px,0px)' }, { transform: 'translate(-2px,1px)' },
+         { transform: 'translate(2px,-1px)' }, { transform: 'translate(0px,0px)' }],
+        { duration: 300, delay: 350, iterations: Math.min(4, hitCount), easing: 'ease-in-out' }
+      );
+    }
   }
   // Show representative fallen soldiers for each side, scaled to actual battle losses.
   const casualtyLayer = document.createElementNS(svgNS, 'g');
