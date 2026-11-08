@@ -288,7 +288,7 @@ box('Darvaza keçidi',0,0,wallZ+5,8,9,2,dark);
 roofHouse('Kazarma',-29,-29,18,15,10,plaster,roof2);
 const stableBlockout=roofHouse('Tövlə',29,-29,20,16,9,mat(0xa88e68),roof);
 const smithBlockout=roofHouse('Dəmirçi',-30,26,15,13,8,wood,roof2);
-roofHouse('Oxçuluq meydançası',30,26,19,13,7,plaster,roof);
+const archeryBlockout=roofHouse('Oxçuluq meydançası',30,26,19,13,7,plaster,roof);
 roofHouse('Resurs anbarı',-26,68,18,13,8,wood,roof);
 const bazarBlockout=roofHouse('Bazar',27,68,20,12,7,plaster,roof2);
 // CC0 medieval GLB assets: load real authored meshes and keep the procedural fallback if a host is unavailable.
@@ -330,6 +330,16 @@ loadCityAssetSource(shurikenModelRoot+'b5a546a5-c105-42e9-a2c4-085499cc72c3','Me
 loadCityAssetSource(shurikenModelRoot+'204b547e-938f-41d5-8196-cec75e063f29','Qala darvazası',0,wallZ,19,0,()=>{
  scene.traverse(node=>{if(node.isMesh&&String(node.userData.label||'').startsWith('Darvaza'))node.visible=false});
 });
+// The authored archery set replaces the placeholder target boards; the windmill adds a distinct production landmark beyond the southern fields.
+const archeryTargets=[];
+for(let i=0;i<3;i++){
+ const target=box('Ox hədəfi',24+i*6,2,45,2,4,.5,wood);archeryTargets.push(target);
+ const ring=cylinder('Ox hədəfi',24+i*6,4.1,45,.9,.9,.25,roof,12);archeryTargets.push(ring);
+}
+loadCityAssetSource(shurikenModelRoot+'3fc176c1-463a-493c-aa0e-9387422ff5e9','Oxçuluq meydançası',30,45,19,0,()=>{
+ archeryBlockout.visible=false;archeryTargets.forEach(target=>target.visible=false);
+});
+loadCityAssetSource(shurikenModelRoot+'8ad9b7fd-f461-4e00-90d9-5cc9a821c46d','Yel dəyirmanı',-72,72,22,.15);
 // The CC0 tavern replaces the bazaar blockout once the real GLB arrives.
 loadCityAsset('Tabern.glb','Orta əsr bazarı',27,68,20,0,()=>{bazarBlockout.visible=false});
 // Small authored props make the market square feel occupied.
@@ -338,8 +348,7 @@ loadCityAsset('Barrel.glb','Taxta çəlləklər',39,76,2.6,0);
 loadCityAsset('Lamp.glb','Bazar fənəri',13,62,3,0);
 cylinder('Su quyusu',0,0,67,4,4,2,stone,12);
 const pool=new THREE.Mesh(new THREE.CircleGeometry(3,20),water);pool.rotation.x=-Math.PI/2;pool.position.set(0,2.1,67);scene.add(pool);
-// Archery targets, stable paddock, forge chimney and market stalls.
-for(let i=0;i<3;i++){box('Ox hədəfi',24+i*6,2,45,2,4,.5,wood);cylinder('Ox hədəfi',24+i*6,4.1,45,.9,.9,.25,roof,12)}
+// Stable paddock, forge chimney and market stalls.
 box('Dəmirçi bacası',-36,10,33,3,10,3,stoneDark);
 for(let i=0;i<3;i++)roofHouse('Bazar köşkü',17+i*8,84,6,5,3,wood,roof);
 for(let i=0;i<5;i++){const t=new THREE.Mesh(new THREE.ConeGeometry(2.3,7,7),i%2?grass2:grass);t.position.set(-82+i*13,3,-72-(i%2)*12);t.castShadow=true;scene.add(t)}
