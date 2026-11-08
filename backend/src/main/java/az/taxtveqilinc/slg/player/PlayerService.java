@@ -1,5 +1,6 @@
 package az.taxtveqilinc.slg.player;
 
+import az.taxtveqilinc.slg.city.CityService;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -10,10 +11,12 @@ import java.util.UUID;
 public class PlayerService {
     private final PlayerAccountRepository repository;
     private final PasswordEncoder passwordEncoder;
+    private final CityService cityService;
 
-    public PlayerService(PlayerAccountRepository repository, PasswordEncoder passwordEncoder) {
+    public PlayerService(PlayerAccountRepository repository, PasswordEncoder passwordEncoder, CityService cityService) {
         this.repository = repository;
         this.passwordEncoder = passwordEncoder;
+        this.cityService = cityService;
     }
 
     @Transactional
@@ -26,9 +29,11 @@ public class PlayerService {
         if (repository.existsByNicknameIgnoreCase(normalizedNickname)) {
             throw new IllegalArgumentException("Bu oyunçu adı artıq istifadə olunur.");
         }
-        return repository.save(new PlayerAccount(
+        PlayerAccount player = repository.save(new PlayerAccount(
             normalizedEmail, normalizedNickname, passwordEncoder.encode(rawPassword)
         ));
+        cityService.createForPlayer(player.getId(), player.getNickname());
+        return player;
     }
 
     @Transactional(readOnly = true)
