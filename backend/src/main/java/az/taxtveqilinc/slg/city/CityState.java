@@ -64,14 +64,27 @@ public class CityState {
         }
         if (!now.isAfter(lastResourceUpdateAt)) return;
 
-        Instant upgradeFinish = keepUpgradeEndsAt;
-        if (upgradeFinish != null && upgradeFinish.isAfter(lastResourceUpdateAt)
-                && !upgradeFinish.isAfter(now)) {
-            accrueSegment(upgradeFinish);
-            keepLevel += 1;
-            keepUpgradeEndsAt = null;
+        while (true) {
+            Instant next = nextUpgradeCompletionAfter(lastResourceUpdateAt, now);
+            if (next == null) break;
+            accrueSegment(next);
+            completeKeepUpgradeIfReady(next);
+            completeBuildingUpgrades(next);
         }
         accrueSegment(now);
+    }
+
+    private Instant nextUpgradeCompletionAfter(Instant after, Instant noLaterThan) {
+        Instant next = null;
+        Instant[] candidates = { keepUpgradeEndsAt, woodcutterUpgradeEndsAt,
+            quarryUpgradeEndsAt, farmUpgradeEndsAt, ironMineUpgradeEndsAt };
+        for (Instant candidate : candidates) {
+            if (candidate != null && candidate.isAfter(after) && !candidate.isAfter(noLaterThan)
+                    && (next == null || candidate.isBefore(next))) {
+                next = candidate;
+            }
+        }
+        return next;
     }
 
     private void accrueSegment(Instant segmentEnd) {
