@@ -85,3 +85,5 @@ Temporary development production at keep level 1 (per hour):
 Each keep level above level 1 increases production by 10%. Each resource has a storage cap of 100,000. When the cap is reached, excess production is discarded. These are prototype balancing values, not final live-game economics.
 
 The city API response includes `resourceStorageCap` and `lastResourceUpdateAt`. Unit tests cover offline accrual, fractional accumulation, cap enforcement and backwards clock input. Production rates, upgrades to resource buildings, boosts, protection against clock manipulation at infrastructure level and load testing remain future work.
+
+Production is split at a keep-upgrade completion timestamp when the player has been offline: elapsed time before completion uses the old keep level, and time after completion uses the new level. Resource arithmetic is capped before addition to avoid integer overflow.
