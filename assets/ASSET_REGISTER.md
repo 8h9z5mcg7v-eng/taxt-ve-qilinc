@@ -66,3 +66,5 @@ Aşağıdakı modellər `src/city.js` daxilində GLTFLoader ilə uzaq URL-dən �
 - Model yüklənməyibsə və real cihazda sınaqdan keçməyibsə, “inteqrasiya edildi” deyilmir.
 
 | Medieval Water Sawmill | https://shuriken.studio/models/buildings/medieval-water-sawmill | Free Model License; GLB, 0.4 MB, 7,588 tris, 16 parts | Resurs anbarının yerində taxta istehsalı binası; yüklənəndə prosedur anbar gizlədilir; model brauzerdə vizual yoxlanmayıb |
+
+| Guard Barracks (Medieval MMO Starter Realm) | https://3dassets.dev/assets/medieval-mmo-starter-realm-guard-barracks-8e59d1cc | CC0 1.0; GLB 171.6 KB, 3,556 tris, 8 materials; open/close/banner-sway animations | Kazarma maketini uğurlu yüklənmədə əvəz edir; CORS-enabled CDN; brauzer/iPhone vizual sınağı hələ aparılmayıb |

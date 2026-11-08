@@ -288,7 +288,7 @@ for(const [x,z] of [[-wallX,-wallZ],[wallX,-wallZ],[-wallX,wallZ],[wallX,wallZ]]
 box('Darvaza',0,0,wallZ,19,12,9,stoneDark);
 box('Darvaza keçidi',0,0,wallZ+5,8,9,2,dark);
 // Courtyard buildings, deliberately separated around the keep.
-roofHouse('Kazarma',-29,-29,18,15,10,plaster,roof2);
+const barracksBlockout=roofHouse('Kazarma',-29,-29,18,15,10,plaster,roof2);
 const stableBlockout=roofHouse('Tövlə',29,-29,20,16,9,mat(0xa88e68),roof);
 const smithBlockout=roofHouse('Dəmirçi',-30,26,15,13,8,wood,roof2);
 const archeryBlockout=roofHouse('Oxçuluq meydançası',30,26,19,13,7,plaster,roof);
@@ -331,6 +331,8 @@ loadCityAssetSource('https://files.innerscene.com/library/castle-with-keep-1a75a
 });
 // Free GLB village kit structures replace matching procedural blockouts when loaded.
 const shurikenModelRoot='https://shuriken.studio/models/download/';
+// CC0 guard barracks with tiled roof, banners, spear rack and animated doors.
+loadCityAssetSource('https://cdn.3dassets.dev/assets/28764/v1/model.glb','Kazarma',-29,-29,18,0,()=>{barracksBlockout.visible=false});
 loadCityAssetSource(shurikenModelRoot+'4ce4b4fd-695b-4b5a-9f46-e1c0d929ae7b','Tövlə',29,-29,20,0,()=>{stableBlockout.visible=false});
 loadCityAssetSource(shurikenModelRoot+'e4cc3199-5cd1-421f-bda9-a2ab38cadac3','Dəmirçi',-30,26,15,0,()=>{smithBlockout.visible=false});
 loadCityAssetSource(shurikenModelRoot+'cfe66494-b598-4583-a502-9ceb49f07504','Kənd evi',-48,72,16,0);
