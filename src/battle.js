@@ -66,7 +66,9 @@ export function resolveBattle({ attacker, defender, direction = 'south', tactic 
   const safeWallLevel = clamp(Math.floor(Number(wallLevel) || 1), 1, 10);
   const wallDamageReduction = 1 - (safeWallLevel - 1) * 0.035;
   const incomingWallDamage = (siegeEngines.ram * 18 + siegeEngines.catapult * 30) * wallDamageReduction;
-  const wallDamage = Math.min(wallMax, clamp(Number(priorWallDamage) || 0, 0, wallMax) + incomingWallDamage);
+  const safePriorWallDamage = clamp(Number(priorWallDamage) || 0, 0, wallMax);
+  const wallDamageThisBattle = Math.min(incomingWallDamage, Math.max(0, wallMax - safePriorWallDamage));
+  const wallDamage = Math.min(wallMax, safePriorWallDamage + incomingWallDamage);
   const wallRemaining = Math.max(0, wallMax - wallDamage);
   const wallBreached = wallMax > 0 && wallRemaining === 0;
   const wallLevelBonus = 1 + (safeWallLevel - 1) * 0.045;
@@ -91,7 +93,7 @@ export function resolveBattle({ attacker, defender, direction = 'south', tactic 
 
   return {
     winner, direction: safeDirection, tactic: safeTactic, defenderTactic: safeDefenderTactic, terrain: safeTerrain,
-    siege: { ...siegeEngines, defensiveCatapults, defensiveStoneDamage, wallMax, wallLevel: safeWallLevel, wallLevelBonus, wallDamageReduction, wallDamage, wallRemaining, wallBreached, attackBonus: siegeAttackBonus },
+    siege: { ...siegeEngines, defensiveCatapults, defensiveStoneDamage, wallMax, wallLevel: safeWallLevel, wallLevelBonus, wallDamageReduction, wallDamageBefore: safePriorWallDamage, wallDamageThisBattle, wallDamage, wallRemaining, wallBreached, attackBonus: siegeAttackBonus },
     modifiers: { direction: directionBonus, attackerTerrain: terrainAttackBonus * cavalryTerrainFactor, defenderTerrain: wallBreached ? 1 : terrainDefenseBonus * wallProtection, attackerBuildings: { barracks: Math.max(1,Math.min(10,Math.floor(Number(attackerBuildings.barracks)||1))), archery: Math.max(1,Math.min(10,Math.floor(Number(attackerBuildings.archery)||1))), stable: Math.max(1,Math.min(10,Math.floor(Number(attackerBuildings.stable)||1))) }, defenderBuildings: { tower: Math.max(1,Math.min(10,Math.floor(Number(defenderBuildings.tower)||1))), barracks: Math.max(1,Math.min(10,Math.floor(Number(defenderBuildings.barracks)||1))), archery: Math.max(1,Math.min(10,Math.floor(Number(defenderBuildings.archery)||1))), stable: Math.max(1,Math.min(10,Math.floor(Number(defenderBuildings.stable)||1))) } },
     power: { attacker: Math.round(attackPower), defender: Math.round(defendPower) },
     remaining: {
@@ -107,7 +109,7 @@ export function resolveBattle({ attacker, defender, direction = 'south', tactic 
       `Ərazi: ${safeTerrain}`,
       `Mühasirə: qoçbaşı ${siegeEngines.ram}, katapult ${siegeEngines.catapult}, mühasirə qülləsi ${siegeEngines.tower}`,
       ...(defensiveCatapults ? [`Qala müdafiə katapultları: ${defensiveCatapults} · hücum gücünə zərər: ${defensiveStoneDamage}`] : []),
-      ...(wallMax ? [`Divar səviyyəsi: ${safeWallLevel}/10 · zədə: ${Math.round(wallDamage)}/100 · ${wallBreached ? 'divar yarıldı' : 'divar hələ dayanır'}`] : []),
+      ...(wallMax ? [`Divar səviyyəsi: ${safeWallLevel}/10 · əvvəlki zədə: ${Math.round(safePriorWallDamage)}/100 · bu döyüşdə əlavə zədə: +${Math.round(wallDamageThisBattle)} · ümumi zədə: ${Math.round(wallDamage)}/100 · ${wallBreached ? 'divar yarıldı' : 'divar hələ dayanır'}`] : []),
       `Hücum tikililəri: Kazarma +${(Math.max(1,Math.min(10,Math.floor(Number(attackerBuildings.barracks)||1)))-1)*2.5}% piyada/nizəçi · Oxçuluq +${(Math.max(1,Math.min(10,Math.floor(Number(attackerBuildings.archery)||1)))-1)*3}% oxçu · Tövlə +${(Math.max(1,Math.min(10,Math.floor(Number(attackerBuildings.stable)||1)))-1)*3}% süvari/cəngavər`,
       ...(safeTerrain === 'fortress' ? [`Qala müdafiə tikililəri: Qüllə +${(Math.max(1,Math.min(10,Math.floor(Number(defenderBuildings.tower)||1)))-1)*2.5}% · Kazarma +${(Math.max(1,Math.min(10,Math.floor(Number(defenderBuildings.barracks)||1)))-1)*2}% piyada/nizəçi · Oxçuluq +${(Math.max(1,Math.min(10,Math.floor(Number(defenderBuildings.archery)||1)))-1)*2.5}% oxçu · Tövlə +${(Math.max(1,Math.min(10,Math.floor(Number(defenderBuildings.stable)||1)))-1)*2}% süvari/cəngavər`] : []),
       `Hücum gücü: ${Math.round(attackPower)} · Müdafiə gücü: ${Math.round(defendPower)}`,

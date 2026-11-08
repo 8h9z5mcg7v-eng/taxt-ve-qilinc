@@ -185,3 +185,24 @@ test('battle log explains troop-building bonuses and fortress-only defence upgra
  const defence=resolveBattle({attacker:{infantry:10},defender:{infantry:10},terrain:'fortress',defenderBuildings:{tower:2,barracks:3,archery:2,stable:4},seed:112});
  assert.ok(defence.log.some(line=>line.includes('Qüllə +2.5%')&&line.includes('Kazarma +4%')&&line.includes('Oxçuluq +2.5%')&&line.includes('Tövlə +6%')));
 });
+
+
+test('fortress siege damage accumulates and reports only new damage per battle', () => {
+ const base={attacker:{infantry:20},defender:{infantry:20},terrain:'fortress',seed:121,siege:{ram:1}};
+ const first=resolveBattle(base);
+ assert.equal(first.siege.wallDamageBefore,0);
+ assert.equal(first.siege.wallDamageThisBattle,18);
+ assert.equal(first.siege.wallDamage,18);
+ const second=resolveBattle({...base,priorWallDamage:first.siege.wallDamage});
+ assert.equal(second.siege.wallDamageBefore,18);
+ assert.equal(second.siege.wallDamageThisBattle,18);
+ assert.equal(second.siege.wallDamage,36);
+ assert.ok(second.log.some(line=>line.includes('əvvəlki zədə: 18/100')&&line.includes('bu döyüşdə əlavə zədə: +18')));
+});
+
+test('higher fortress wall levels reduce incoming siege damage', () => {
+ const base={attacker:{infantry:20},defender:{infantry:20},terrain:'fortress',siege:{catapult:2},seed:122};
+ const levelOne=resolveBattle({...base,wallLevel:1});
+ const levelTen=resolveBattle({...base,wallLevel:10});
+ assert.ok(levelTen.siege.wallDamageThisBattle<levelOne.siege.wallDamageThisBattle);
+});
