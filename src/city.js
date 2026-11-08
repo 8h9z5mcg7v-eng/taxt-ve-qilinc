@@ -494,21 +494,25 @@ function makePatrol(x,z,armorColor){
  scene.add(group);return group;
 }
 const patrols=[makePatrol(-13,16,0x6e7780),makePatrol(13,16,0x8b754c),makePatrol(-5,38,0x687c68),makePatrol(5,38,0x8b3434)];
-// Tree clusters beyond the settlement walls. Reuse bark material across every tree.
+// Reuse tree geometry as well as materials to reduce mobile scene allocations.
 const treeBranchMat=mat(0x59412c);
+const treeGeometries={
+ trunk:new THREE.CylinderGeometry(.48,.82,5.5,7),
+ branch:new THREE.CylinderGeometry(.16,.24,2.8,6),
+ foliage:[2.8,2.7,3.2,2.45,2.2].map(radius=>new THREE.IcosahedronGeometry(radius,1))
+};
+const treeFoliageLayout=[[-1.35,5.8,.1], [1.25,6.2,-.35], [0,7.5,0], [-.35,9.2,.25], [1.1,8.6,.4]];
 function tree(x,z,scale=1){
- const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.48*scale,.82*scale,5.5*scale,7),wood);trunk.position.set(x,2.75*scale,z);trunk.castShadow=true;trunk.receiveShadow=true;scene.add(trunk);
- const branchMat=treeBranchMat;
+ const trunk=new THREE.Mesh(treeGeometries.trunk,wood);trunk.position.set(x,2.75*scale,z);trunk.scale.setScalar(scale);trunk.castShadow=true;trunk.receiveShadow=true;scene.add(trunk);
  for(const side of [-1,1]){
-  const branch=new THREE.Mesh(new THREE.CylinderGeometry(.16*scale,.24*scale,2.8*scale,6),branchMat);
-  branch.position.set(side*1.05*scale,4.1*scale,z);branch.rotation.z=side*.68;branch.castShadow=true;scene.add(branch);
+  const branch=new THREE.Mesh(treeGeometries.branch,treeBranchMat);
+  branch.position.set(x+side*1.05*scale,4.1*scale,z);branch.rotation.z=side*.68;branch.scale.setScalar(scale);branch.castShadow=true;scene.add(branch);
  }
  // Layered rounded foliage gives the treeline a fuller silhouette than stacked cones.
- const foliage=[[-1.35,5.8,.1,2.8], [1.25,6.2,-.35,2.7], [0,7.5,0,3.2], [-.35,9.2,.25,2.45], [1.1,8.6,.4,2.2]];
- foliage.forEach(([ox,y,oz,r],i)=>{
-  const crown=new THREE.Mesh(new THREE.IcosahedronGeometry(r*scale,1),i%2?grass:grass2);
+ treeFoliageLayout.forEach(([ox,y,oz],i)=>{
+  const crown=new THREE.Mesh(treeGeometries.foliage[i],i%2?grass:grass2);
   crown.position.set(x+ox*scale,y*scale,z+oz*scale);
-  crown.scale.set(1,.9+(i%2)*.12,1);
+  crown.scale.set(scale,scale*(.9+(i%2)*.12),scale);
   crown.castShadow=true;crown.receiveShadow=true;scene.add(crown);
  });
 }
