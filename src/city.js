@@ -937,4 +937,14 @@ try{const world=JSON.parse(localStorage.getItem('tvq_world_state_v1')||'{}');if(
 document.querySelector('#home').addEventListener('click',()=>{camera.position.set(150,165,175);controls.target.set(0,10,12);controls.update()});
 addEventListener('resize',()=>{const compact=innerWidth<700;camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,compact?1.15:1.5));sun.shadow.mapSize.set(compact?512:2048,compact?512:2048);sun.shadow.needsUpdate=true});
 const patrolClock=new THREE.Clock();
-renderer.setAnimationLoop(()=>{const delta=patrolClock.getDelta(),t=patrolClock.elapsedTime;cityAnimationMixers.forEach(mixer=>mixer.update(delta));patrols.forEach((p,i)=>{p.position.x=p.userData.baseX+Math.sin(t*.7+i)*1.4;p.rotation.y=Math.sin(t*.55+i)*.22});controls.update();renderer.render(scene,camera)});
+function renderCityFrame(){const delta=patrolClock.getDelta(),t=patrolClock.elapsedTime;cityAnimationMixers.forEach(mixer=>mixer.update(delta));patrols.forEach((p,i)=>{p.position.x=p.userData.baseX+Math.sin(t*.7+i)*1.4;p.rotation.y=Math.sin(t*.55+i)*.22});controls.update();renderer.render(scene,camera)}
+// Stop the render loop while the player is in another tab/app. This avoids
+// wasting mobile GPU, battery and heat on a city the player cannot see.
+function syncCityRenderLoop(){
+ if(document.hidden){renderer.setAnimationLoop(null);patrolClock.stop();return}
+ patrolClock.start();
+ controls.update();
+ renderer.setAnimationLoop(renderCityFrame);
+}
+document.addEventListener('visibilitychange',syncCityRenderLoop);
+syncCityRenderLoop();
