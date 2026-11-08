@@ -16,10 +16,12 @@ public class CityController {
 
     public record CityResponse(UUID id, String cityName, int keepLevel,
                                long gold, long wood, long stone, long food, long iron,
+                               long resourceStorageCap, Instant lastResourceUpdateAt,
                                Instant keepUpgradeEndsAt, Instant createdAt) {
         static CityResponse from(CityState city) {
             return new CityResponse(city.getId(), city.getCityName(), city.getKeepLevel(),
                 city.getGold(), city.getWood(), city.getStone(), city.getFood(), city.getIron(),
+                CityState.RESOURCE_CAP, city.getLastResourceUpdateAt(),
                 city.getKeepUpgradeEndsAt(), city.getCreatedAt());
         }
     }
