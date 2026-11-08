@@ -6,6 +6,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
+import java.util.Locale;
 
 @Service
 public class PlayerService {
@@ -21,7 +22,7 @@ public class PlayerService {
 
     @Transactional
     public PlayerAccount register(String email, String nickname, String rawPassword) {
-        String normalizedEmail = email.trim().toLowerCase();
+        String normalizedEmail = email.trim().toLowerCase(Locale.ROOT);
         String normalizedNickname = nickname.trim();
         if (repository.existsByEmailIgnoreCase(normalizedEmail)) {
             throw new IllegalArgumentException("Bu e-poçt artıq qeydiyyatdan keçib.");
