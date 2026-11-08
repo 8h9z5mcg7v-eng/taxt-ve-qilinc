@@ -1,5 +1,18 @@
 import { resolveBattle } from './battle.js';
 const params=new URLSearchParams(location.search);
+// Complete an interrupted border-army dispatch before reading the city state.
+const borderDispatchJournalKey='tvq_pending_border_dispatch_v1';
+function recoverBorderDispatch(){
+ const raw=localStorage.getItem(borderDispatchJournalKey);
+ if(!raw)return;
+ const journal=JSON.parse(raw);
+ if(!journal?.cityAfter||!journal?.active)throw new Error('Sərhəd yürüşünün bərpa qeydi yanlışdır.');
+ localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(journal.cityAfter));
+ localStorage.setItem('tvq_active_border_battle_v1',JSON.stringify(journal.active));
+ localStorage.setItem('tvq_border_battle_kingdom',journal.active.kingdom);
+ localStorage.removeItem(borderDispatchJournalKey);
+}
+try{recoverBorderDispatch()}catch(error){console.error('Sərhəd yürüşü bərpa edilmədi:',error)}
 const troopIds=['infantry','spearman','archer','cavalry','knight'];
 const names={infantry:'Piyada',spearman:'Nizəçi',archer:'Oxçu',cavalry:'Süvari',knight:'Cəngavər'};
 let storedArmy={};try{storedArmy=JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}').army||{}}catch{}const army=Object.fromEntries(troopIds.map(k=>[k,Math.max(0,Math.min(9999,Math.floor(Number(params.has(k)?params.get(k):(storedArmy[k]||0))||0)))]));
@@ -622,10 +635,14 @@ function mountDiplomacyContracts(){
       const params=new URLSearchParams({target:'border',battleId:'border-'+kingdom.id+'-'+day,kingdom:kingdom.id,...Object.fromEntries(Object.entries(army).map(([k,v])=>[k,String(v)])),garrison:String(Object.entries(enemy).filter(([k])=>k!=='terrain').reduce((sum,[,v])=>sum+v,0)),terrain:enemy.terrain,...Object.fromEntries(Object.entries(enemy).filter(([k])=>k!=='terrain').map(([k,v])=>['def_'+k,String(v)]))});
       for(const type of Object.keys(army))city.army[type]=Math.max(0,(Number(city.army[type])||0)-army[type]);
       const battleUrl='./battle.html?'+params.toString();
-      // Persist a resumable battle URL before deducting troops, preventing duplicate dispatches.
-      localStorage.setItem(activeKey,JSON.stringify({battleId:'border-'+kingdom.id+'-'+day,kingdom:kingdom.id,day,url:battleUrl,startedAt:Date.now()}));
+      // Journal first: a reload between localStorage writes can safely finish the same dispatch.
+      if(localStorage.getItem(borderDispatchJournalKey))throw new Error('Əvvəlki sərhəd yürüşü bərpa olunur. Səhifəni yenilə.');
+      const activeRecord={battleId:'border-'+kingdom.id+'-'+day,kingdom:kingdom.id,day,url:battleUrl,startedAt:Date.now()};
+      localStorage.setItem(borderDispatchJournalKey,JSON.stringify({cityAfter:city,active:activeRecord}));
       localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(city));
+      localStorage.setItem(activeKey,JSON.stringify(activeRecord));
       localStorage.setItem('tvq_border_battle_kingdom',kingdom.id);
+      localStorage.removeItem(borderDispatchJournalKey);
       location.href=battleUrl;
      };
      try{
