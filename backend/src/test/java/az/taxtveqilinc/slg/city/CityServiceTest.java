@@ -39,4 +39,34 @@ class CityServiceTest {
         assertEquals(ironBefore, city.getIron());
         verify(repository).findByPlayerIdForUpdate(playerId);
     }
+
+    @Test
+    void buildingUpgradeDeductsServerCalculatedCostAndSchedulesCompletion() {
+        CityStateRepository repository = mock(CityStateRepository.class);
+        UUID playerId = UUID.randomUUID();
+        CityState city = new CityState(playerId, "Sərkərdə qalası");
+        city.beginKeepUpgrade(0, 0, 0, 0, 0, java.time.Instant.now().minusSeconds(1));
+        when(repository.findByPlayerIdForUpdate(playerId)).thenReturn(Optional.of(city));
+        CityService service = new CityService(repository);
+
+        long goldBefore = city.getGold();
+        long woodBefore = city.getWood();
+        long stoneBefore = city.getStone();
+        long foodBefore = city.getFood();
+        long ironBefore = city.getIron();
+
+        CityState result = service.startBuildingUpgrade(playerId, "woodcutter");
+
+        assertSame(city, result);
+        assertEquals(2, city.getKeepLevel());
+        assertEquals(1, city.getWoodcutterLevel(), "The building level changes only after its timer completes.");
+        assertNotNull(city.getWoodcutterUpgradeEndsAt());
+        assertTrue(city.getWoodcutterUpgradeEndsAt().isAfter(java.time.Instant.now()));
+        assertEquals(goldBefore - 200, city.getGold());
+        assertEquals(woodBefore - 500, city.getWood());
+        assertEquals(stoneBefore - 300, city.getStone());
+        assertEquals(foodBefore - 200, city.getFood());
+        assertEquals(ironBefore - 100, city.getIron());
+        verify(repository).findByPlayerIdForUpdate(playerId);
+    }
 }
