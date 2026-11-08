@@ -372,37 +372,44 @@ function loadCityAssetSource(source,label,x,z,targetWidth,rotation=0,onLoaded){
 function loadCityAsset(file,label,x,z,targetWidth,rotation=0,onLoaded){
  return loadCityAssetSource(cityAssetRoot+file,label,x,z,targetWidth,rotation,onLoaded);
 }
-// Detailed CC0 citadel replaces the entire central keep blockout after successful load.
-// The model is scaled to the existing footprint to preserve clearance for courtyard buildings.
-loadCityAssetSource('https://files.innerscene.com/library/castle-with-keep-1a75a9e1/be0d9411a3e3b580b2b5/castle-with-keep.glb','Baş qala',0,0,40,0,()=>{
- keepBlockoutMeshes.forEach(object=>{object.visible=false});
-});
-// Free GLB village kit structures replace matching procedural blockouts when loaded.
-const shurikenModelRoot='https://shuriken.studio/models/download/';
-// CC0 guard barracks with tiled roof, banners, spear rack and animated doors.
+// The citadel uses its detailed local Three.js blockout as a dependable fallback.
+// Remote model hosts that repeatedly failed in the player's browser are not requested.
+keepBlockoutMeshes.forEach(object=>{object.visible=true});
+// CC0 guard barracks remains an external GLB; the other village structures are built locally.
 loadCityAssetSource('https://cdn.3dassets.dev/assets/28764/v1/model.glb','Kazarma',-29,-29,18,0,()=>{barracksBlockout.visible=false});
-loadCityAssetSource(shurikenModelRoot+'4ce4b4fd-695b-4b5a-9f46-e1c0d929ae7b','Tövlə',29,-29,20,0,()=>{stableBlockout.visible=false});
-loadCityAssetSource(shurikenModelRoot+'e4cc3199-5cd1-421f-bda9-a2ab38cadac3','Dəmirçi',-30,26,15,0,()=>{smithBlockout.visible=false});
-loadCityAssetSource(shurikenModelRoot+'cfe66494-b598-4583-a502-9ceb49f07504','Kənd evi',-48,72,16,0);
-loadCityAssetSource(shurikenModelRoot+'b5a546a5-c105-42e9-a2c4-085499cc72c3','Meyxana',48,72,19,0);
-loadCityAssetSource(shurikenModelRoot+'204b547e-938f-41d5-8196-cec75e063f29','Qala darvazası',0,wallZ,19,0,()=>{
- scene.traverse(node=>{if(node.isMesh&&String(node.userData.label||'').startsWith('Darvaza'))node.visible=false});
-});
-// The authored archery set replaces the placeholder target boards; the windmill adds a distinct production landmark beyond the southern fields.
+// Locally-built medieval village buildings: no third-party download or CORS dependency.
+const cottageBlockout=roofHouse('Kənd evi',-48,72,16,13,8,mat(0xc4b18b),roof2);
+const tavernBlockout=roofHouse('Meyxana',48,72,19,15,10,mat(0x9b805f),roof);
+const millBlockout=roofHouse('Yel dəyirmanı',-72,72,18,16,11,plaster,roof2);
+const millHub=new THREE.Group();millHub.position.set(-72,13,63);scene.add(millHub);
+const millSailMat=mat(0x493728);
+for(let i=0;i<4;i++){const sail=new THREE.Mesh(new THREE.BoxGeometry(1.15,15,.35),millSailMat);sail.position.y=7.5;sail.rotation.z=i*Math.PI/2;millHub.add(sail)}
+const millAxle=new THREE.Mesh(new THREE.CylinderGeometry(.8,.8,3,12),metal);millAxle.rotation.z=Math.PI/2;millAxle.position.set(0,0,0);millHub.add(millAxle);
+// Water sawmill: timber workshop, covered log store and a large water wheel.
+const sawmillBlockout=roofHouse('Su mişarxanası',-26,68,20,15,9,wood,roof2);
+const waterWheel=new THREE.Group();waterWheel.position.set(-13,5,-1);waterWheel.rotation.y=Math.PI/2;sawmillBlockout.add(waterWheel);
+const wheelRim=new THREE.Mesh(new THREE.TorusGeometry(4.2,.38,8,24),wood);waterWheel.add(wheelRim);
+const wheelHub=new THREE.Mesh(new THREE.CylinderGeometry(.65,.65,1.2,12),metal);wheelHub.rotation.x=Math.PI/2;waterWheel.add(wheelHub);
+for(let i=0;i<12;i++){const a=i*Math.PI/6;const spoke=new THREE.Mesh(new THREE.BoxGeometry(.32,8,.3),wood);spoke.rotation.z=a;waterWheel.add(spoke);const paddle=new THREE.Mesh(new THREE.BoxGeometry(1.4,.45,.55),wood);paddle.position.set(Math.cos(a)*4.2,Math.sin(a)*4.2,0);paddle.rotation.z=a;waterWheel.add(paddle)}
+// Two separate canvas tents, banners and supply crates for the knight camp.
+function makeKnightTent(x,z,rotation=0){
+ const camp=new THREE.Group();camp.position.set(x,0,z);camp.rotation.y=rotation;scene.add(camp);
+ const canvas=mat(0x8d3430,.92),canvasLight=mat(0xb78b55,.92);
+ const body=new THREE.Mesh(new THREE.ConeGeometry(6.2,8,4),canvas);body.position.y=4;body.rotation.y=Math.PI/4;body.scale.set(1,1,1.15);body.castShadow=true;camp.add(body);
+ const entrance=new THREE.Mesh(new THREE.BoxGeometry(2.5,4,.18),wood);entrance.position.set(0,2,5.4);camp.add(entrance);
+ const ridge=new THREE.Mesh(new THREE.CylinderGeometry(.22,.22,11,8),wood);ridge.rotation.z=Math.PI/2;ridge.position.y=7.2;camp.add(ridge);
+ for(let i=0;i<2;i++){const crate=new THREE.Mesh(new THREE.BoxGeometry(2,1.8,2),wood);crate.position.set(i?7:-7,.9,4);crate.castShadow=true;camp.add(crate)}
+ const pole=new THREE.Mesh(new THREE.CylinderGeometry(.14,.18,8,7),metal);pole.position.set(7,4,-4);camp.add(pole);
+ const flag=new THREE.Mesh(new THREE.PlaneGeometry(2.5,1.6),canvasLight);flag.position.set(8.1,6.8,-4);flag.rotation.y=Math.PI/2;camp.add(flag);
+ return camp;
+}
+makeKnightTent(-40,-39,.18);makeKnightTent(-18,-41,-.12);
+// Existing archery blockout and target props remain active as a local range.
 const archeryTargets=[];
 for(let i=0;i<3;i++){
  const target=box('Ox hədəfi',24+i*6,2,45,2,4,.5,wood);archeryTargets.push(target);
  const ring=cylinder('Ox hədəfi',24+i*6,4.1,45,.9,.9,.25,roof,12);archeryTargets.push(ring);
 }
-loadCityAssetSource(shurikenModelRoot+'3fc176c1-463a-493c-aa0e-9387422ff5e9','Oxçuluq meydançası',30,45,19,0,()=>{
- archeryBlockout.visible=false;archeryTargets.forEach(target=>target.visible=false);
-});
-loadCityAssetSource(shurikenModelRoot+'8ad9b7fd-f461-4e00-90d9-5cc9a821c46d','Yel dəyirmanı',-72,72,22,.15);
-// Authored timber-production building replaces the generic resource warehouse when its GLB loads.
-loadCityAssetSource(shurikenModelRoot+'899d9a2e-b354-410c-897c-f7dec41199ca','Su mişarxanası',-26,68,20,0,()=>{warehouseBlockout.visible=false});
-// Two authored knight tents extend the barracks yard with a small field-camp silhouette.
-loadCityAssetSource(shurikenModelRoot+'b5b4593c-80f6-4724-a6b4-3bd88200004c','Cəngavər düşərgəsi',-40,-39,10,.18);
-loadCityAssetSource(shurikenModelRoot+'b5b4593c-80f6-4724-a6b4-3bd88200004c','Cəngavər düşərgəsi',-18,-41,10,-.12);
 // CC0 military compound: a complete outer training annex with barracks, armoury, stables and siege facilities.
 const militaryAnnexGround=new THREE.Mesh(new THREE.PlaneGeometry(60,62),mat(0x81765f));
 militaryAnnexGround.rotation.x=-Math.PI/2;militaryAnnexGround.position.set(94,.055,91);militaryAnnexGround.receiveShadow=true;scene.add(militaryAnnexGround);
