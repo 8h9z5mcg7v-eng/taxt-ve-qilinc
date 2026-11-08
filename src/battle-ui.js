@@ -68,12 +68,15 @@ function renderTerrain(terrain, wallDamage = 0, siege = {}) {
     const damage = Math.max(0, Math.min(100, Number(wallDamage) || 0));
     const gate = svgNode('g', { id: 'fortressGate' }, scene);
     const gateOpen = damage >= 100;
+    const gateWear = Math.max(0, Math.min(1, damage / 100));
     const leftGate = svgNode('path', {
       d: gateOpen ? 'M284 92 L273 96 L267 128 L280 130Z' : 'M284 92 L296 92 L296 130 L284 130Z',
+      transform: !gateOpen && damage >= 60 ? `rotate(${Math.round(gateWear * 13)} 284 92)` : '',
       fill: '#80552f', stroke: '#30251e', 'stroke-width': 2
     }, gate);
     const rightGate = svgNode('path', {
       d: gateOpen ? 'M308 92 L319 96 L325 128 L312 130Z' : 'M296 92 L308 92 L308 130 L296 130Z',
+      transform: !gateOpen && damage >= 60 ? `rotate(-${Math.round(gateWear * 13)} 308 92)` : '',
       fill: '#684326', stroke: '#30251e', 'stroke-width': 2
     }, gate);
     for (let y = 101; y <= 121; y += 10) {
@@ -458,6 +461,26 @@ function playCombatAnimation(attacker = {}, defender = {}, siege = {}, result = 
               { duration: 520, delay: 250 + index * 220 + hit * 35, iterations: 3, easing: 'ease-out' }
             ).onfinish = () => splinter.remove();
           }
+          // Masonry fragments and dust now react to every battering-ram strike.
+          for (let chunk = 0; chunk < 4; chunk++) {
+            const stone = document.createElementNS(svgNS, 'path');
+            stone.setAttribute('d', `M${impactX-5} 119 l6 -5 l7 4 l-3 7 l-8 0Z`);
+            stone.setAttribute('fill', ['#858579', '#aaa28f', '#66685f', '#b3aa96'][chunk]);
+            stone.setAttribute('stroke', '#393b35'); stone.setAttribute('stroke-width', '1');
+            field.appendChild(stone);
+            stone.animate(
+              [{ transform: 'translate(0px,0px) rotate(0deg)', opacity: 1 },
+               { transform: `translate(${(chunk-1.5)*15}px,${-4+chunk*5}px) rotate(${(chunk-1)*42}deg)`, opacity: 0 }],
+              { duration: 760, delay: 250 + index * 220 + chunk * 28, iterations: 3, easing: 'ease-out' }
+            ).onfinish = () => stone.remove();
+          }
+          const dust = document.createElementNS(svgNS, 'circle');
+          dust.setAttribute('cx', impactX); dust.setAttribute('cy', '116');
+          dust.setAttribute('r', '5'); dust.setAttribute('fill', '#c5b99d');
+          dust.setAttribute('opacity', '.7'); field.appendChild(dust);
+          dust.animate([{ r: 5, opacity: .7 }, { r: 24, opacity: 0 }],
+            { duration: 680, delay: 250 + index * 220, iterations: 3, easing: 'ease-out' }
+          ).onfinish = () => dust.remove();
         }
       } else if (index >= catapultShots && index < catapultShots + Math.min(2, siege.tower || 0)) {
         machine.animate(
