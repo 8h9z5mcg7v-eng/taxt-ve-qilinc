@@ -165,6 +165,20 @@ function refreshDefenseTowerModels(){
 for(let i=0;i<36;i++){const x=((i*47)%260)-130,z=((i*83)%260)-130;if(Math.abs(x)<62&&Math.abs(z)<62)continue;const patch=new THREE.Mesh(new THREE.CircleGeometry(3+(i%4),7),i%2?grass2:grass);patch.rotation.x=-Math.PI/2;patch.position.set(x,.015,z);scene.add(patch)}
 const roadmat=mat(0x9a8968);const road=new THREE.Mesh(new THREE.PlaneGeometry(13,120),roadmat);road.rotation.x=-Math.PI/2;road.position.set(0,.03,93);scene.add(road);
 const cross=new THREE.Mesh(new THREE.PlaneGeometry(120,11),roadmat);cross.rotation.x=-Math.PI/2;cross.position.set(0,.035,58);scene.add(cross);
+// Worn stone footpaths connect the keep to the inner workshops and gate.
+const pathMat=mat(0x81765f);
+function footpath(x,z,width,length,rotation=0){
+ const path=new THREE.Mesh(new THREE.PlaneGeometry(width,length),pathMat);
+ path.rotation.x=-Math.PI/2;path.rotation.z=rotation;path.position.set(x,.045,z);
+ path.receiveShadow=true;scene.add(path);
+ for(let i=0;i<Math.floor(length/5);i++){
+  const seam=new THREE.Mesh(new THREE.BoxGeometry(width*.92,.035,.12),stoneDark);
+  seam.position.set(x,.07,z-length/2+2.5+i*5);seam.rotation.y=rotation;scene.add(seam);
+ }
+}
+footpath(-23,-13,5,34,.42);footpath(23,-13,5,34,-.42);
+footpath(-22,29,5,32,-.4);footpath(22,29,5,32,.4);
+footpath(0,39,7,24,0);
 // Castle keep and curtain walls.
 box('Baş qala',0,0,0,34,30,32,stone);
 box('Baş qala',0,30,0,23,12,22,stoneDark);
@@ -248,7 +262,19 @@ box('Dəmirçi bacası',-36,10,33,3,10,3,stoneDark);
 for(let i=0;i<3;i++)roofHouse('Bazar köşkü',17+i*8,84,6,5,3,wood,roof);
 for(let i=0;i<5;i++){const t=new THREE.Mesh(new THREE.ConeGeometry(2.3,7,7),i%2?grass2:grass);t.position.set(-82+i*13,3,-72-(i%2)*12);t.castShadow=true;scene.add(t)}
 // Decorative rocks and field rows beyond the walls.
-for(let i=0;i<18;i++){const x=-120+(i%6)*12,z=112+Math.floor(i/6)*9;box('Əkin sahəsi',x,.1,z,7,.2,5,i%2?grass2:roadmat,false)}
+for(let i=0;i<18;i++){
+ const x=-120+(i%6)*12,z=112+Math.floor(i/6)*9;
+ box('Əkin sahəsi',x,.1,z,7,.2,5,i%2?grass2:roadmat,false);
+ // Furrows and short timber edging make the outer fields read as cultivated plots.
+ for(let row=0;row<3;row++){
+  const furrow=new THREE.Mesh(new THREE.BoxGeometry(5.8,.08,.16),mat(0x746044));
+  furrow.position.set(x,.25,z-1.25+row*1.25);furrow.receiveShadow=true;scene.add(furrow);
+ }
+ for(const side of [-1,1]){
+  const fence=new THREE.Mesh(new THREE.BoxGeometry(.22,.9,5.6),wood);
+  fence.position.set(x+side*3.6,.55,z);fence.castShadow=true;scene.add(fence);
+ }
+}
 // Banners, courtyard torches and small patrol squads add readable life to the blockout.
 function banner(x,z,color){
  const pole=new THREE.Mesh(new THREE.CylinderGeometry(.18,.22,11,8),metal);pole.position.set(x,5.5,z);pole.castShadow=true;scene.add(pole);
@@ -274,8 +300,20 @@ function makePatrol(x,z,armorColor){
 const patrols=[makePatrol(-13,16,0x6e7780),makePatrol(13,16,0x8b754c),makePatrol(-5,38,0x687c68),makePatrol(5,38,0x8b3434)];
 // Tree clusters beyond the settlement walls.
 function tree(x,z,scale=1){
- const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.55*scale,.8*scale,5*scale,7),wood);trunk.position.set(x,2.5*scale,z);trunk.castShadow=true;scene.add(trunk);
- for(let i=0;i<3;i++){const crown=new THREE.Mesh(new THREE.ConeGeometry((4.2-i*.65)*scale,6*scale,8),i%2?grass:grass2);crown.position.set(x,5.2*scale+i*3*scale,z);crown.castShadow=true;scene.add(crown)}
+ const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.48*scale,.82*scale,5.5*scale,7),wood);trunk.position.set(x,2.75*scale,z);trunk.castShadow=true;trunk.receiveShadow=true;scene.add(trunk);
+ const branchMat=mat(0x59412c);
+ for(const side of [-1,1]){
+  const branch=new THREE.Mesh(new THREE.CylinderGeometry(.16*scale,.24*scale,2.8*scale,6),branchMat);
+  branch.position.set(side*1.05*scale,4.1*scale,z);branch.rotation.z=side*.68;branch.castShadow=true;scene.add(branch);
+ }
+ // Layered rounded foliage gives the treeline a fuller silhouette than stacked cones.
+ const foliage=[[-1.35,5.8,.1,2.8], [1.25,6.2,-.35,2.7], [0,7.5,0,3.2], [-.35,9.2,.25,2.45], [1.1,8.6,.4,2.2]];
+ foliage.forEach(([ox,y,oz,r],i)=>{
+  const crown=new THREE.Mesh(new THREE.IcosahedronGeometry(r*scale,1),i%2?grass:grass2);
+  crown.position.set(x+ox*scale,y*scale,z+oz*scale);
+  crown.scale.set(1,.9+(i%2)*.12,1);
+  crown.castShadow=true;crown.receiveShadow=true;scene.add(crown);
+ });
 }
 for(let i=0;i<24;i++){const x=-125+(i%8)*15,z=-115+Math.floor(i/8)*17;if(Math.abs(x)<65&&Math.abs(z)<65)continue;tree(x,z,.75+(i%3)*.15)}
 const controls=new OrbitControls(camera,renderer.domElement);controls.target.set(0,10,12);controls.enableDamping=true;controls.dampingFactor=.07;controls.maxPolarAngle=Math.PI*.48;controls.minDistance=75;controls.maxDistance=330;
