@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { normalizeTrainingQueue, createTrainingJob, completeTrainingQueue } from './training.js';
 
 // Recover an interrupted border-army dispatch before this page reads city or battle state.
 const borderDispatchJournalKey='tvq_pending_border_dispatch_v1';
@@ -167,7 +168,7 @@ let resources={wood:Math.max(0,Number(savedCity.resources?.wood??1200)),stone:Ma
 const levels={...(savedCity.levels||{})};
 const wounded={infantry:0,spearman:0,archer:0,cavalry:0,knight:0,...(savedCity.wounded||{})};
 let treatmentEndsAt=Math.max(0,Number(savedCity.treatmentEndsAt)||0);
-let trainingQueue=Array.isArray(savedCity.trainingQueue)?savedCity.trainingQueue.filter(job=>job&&job.id&&troopTitlesSafe(job.type)&&Number(job.count)>0):[];
+let trainingQueue=normalizeTrainingQueue(savedCity.trainingQueue);
 function troopTitlesSafe(type){return ['infantry','spearman','archer','cavalry','knight'].includes(type)}
 const resourceNodes={wood:document.querySelector('#wood'),stone:document.querySelector('#stone'),gold:document.querySelector('#gold')};
 function refreshResources(){for(const key of Object.keys(resources))resourceNodes[key].textContent=resources[key].toLocaleString('en-US')}
@@ -253,7 +254,7 @@ async function withCityEconomyLock(action){
    for(const key of Object.keys(levels))delete levels[key];
    Object.assign(levels,latest.levels||{});
    treatmentEndsAt=Math.max(0,Number(latest.treatmentEndsAt)||0);
-   trainingQueue=Array.isArray(latest.trainingQueue)?latest.trainingQueue.filter(job=>job&&job.id&&troopTitlesSafe(job.type)&&Number(job.count)>0):[];
+   trainingQueue=normalizeTrainingQueue(latest.trainingQueue);
    refreshResources();updateArmyStatus();renderArmyInCity();refreshDefenseTowerModels();refreshWallModels();
   }catch{return}
   action();
@@ -364,12 +365,13 @@ document.querySelector('#train').addEventListener('click',()=>withCityEconomyLoc
  if(trainingQueue.length>=8){document.querySelector('#armyStatus').textContent='Təlim növbəsi doludur. Əvvəlki sifarişlərin tamamlanmasını gözlə.';return}
  const totalCost={wood:(cost.wood||0)*count,stone:(cost.stone||0)*count,gold:(cost.gold||0)*count};
  if(Object.keys(totalCost).some(k=>resources[k]<totalCost[k])){document.querySelector('#armyStatus').textContent='Resurs çatışmır — '+count+' '+troopTitles[type]+' hazırlamaq mümkün deyil.';return}
- const now=Date.now(),last=trainingQueue[trainingQueue.length-1],startedAt=Math.max(now,Number(last?.endsAt)||now),duration=count*3000;
+ const job=createTrainingJob({queue:trainingQueue,type,count,now:Date.now(),id:'train-'+Date.now()+'-'+Math.random().toString(36).slice(2,8)});
+ if(!job){document.querySelector('#armyStatus').textContent='Təlim növbəsi doludur və ya sifariş məlumatı yanlışdır.';return}
  for(const key of Object.keys(resources))resources[key]-=totalCost[key];
- trainingQueue.push({id:'train-'+now+'-'+Math.random().toString(36).slice(2,8),type,count,startedAt,endsAt:startedAt+duration,duration});
+ trainingQueue.push(job);
  refreshResources();if(!saveCity()){document.querySelector('#armyStatus').textContent='Təlim sifarişi yadda saxlanmadı. Yenidən yoxla.';return}updateArmyStatus();
 }));
-function processTraining(){withCityEconomyLock(()=>{let changed=false;const now=Date.now();while(trainingQueue.length&&Number(trainingQueue[0].endsAt)<=now){const job=trainingQueue.shift();if(!troopTitlesSafe(job.type))continue;army[job.type]=Math.max(0,Math.floor(Number(army[job.type])||0))+Math.max(1,Math.floor(Number(job.count)||1));changed=true;}if(changed){if(!saveCity())return;renderArmyInCity();}updateArmyStatus()})}
+function processTraining(){withCityEconomyLock(()=>{const result=completeTrainingQueue(trainingQueue,army,Date.now());if(result.completed.length){trainingQueue=result.queue;for(const type of Object.keys(army))army[type]=result.army[type]||0;if(!saveCity())return;renderArmyInCity();}updateArmyStatus()})}
 document.querySelector('#sendArmy').addEventListener('click',()=>{
  if(Object.values(army).every(v=>v===0)){document.querySelector('#armyStatus').textContent='Əvvəlcə kazarmada qoşun hazırla.';return}
  const params=new URLSearchParams();for(const [type,count] of Object.entries(army))params.set(type,String(count));
