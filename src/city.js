@@ -382,15 +382,15 @@ function loadCityAssetSource(source,label,x,z,targetWidth,rotation=0,onLoaded){
   };
  cityAssetLoader.load(source,loaded=>{
   if(settled){disposeLateModel(loaded);return}
-  settled=true;clearTimeout(timeout);
   const root=loaded?.scene;
   if(!root){retryOrFail(new Error('GLB daxilində səhnə yoxdur'));return}
-  if(loaded.animations?.length){const mixer=new THREE.AnimationMixer(root);loaded.animations.forEach(clip=>mixer.clipAction(clip).play());cityAnimationMixers.push(mixer)}
   root.updateMatrixWorld(true);
   let bounds=new THREE.Box3().setFromObject(root);
   const size=bounds.getSize(new THREE.Vector3());
   const width=Math.max(size.x,size.z);
   if(!Number.isFinite(width)||width<.01){retryOrFail(new Error('Modelin ölçüsü yanlışdır'));return}
+  settled=true;clearTimeout(timeout);
+  if(loaded.animations?.length){const mixer=new THREE.AnimationMixer(root);loaded.animations.forEach(clip=>mixer.clipAction(clip).play());cityAnimationMixers.push(mixer)}
   const scale=targetWidth/width;
   root.scale.setScalar(scale);
   root.rotation.y=rotation;
