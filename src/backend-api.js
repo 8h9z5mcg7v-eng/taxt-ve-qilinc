@@ -1,5 +1,7 @@
 const TOKEN_KEY = 'tvq_backend_access_token_v1';
-let apiBaseUrl = '';
+const API_URL_KEY = 'tvq_backend_api_url_v1';
+function sessionStore() { try { return globalThis.sessionStorage || null; } catch { return null; } }
+let apiBaseUrl = (() => { try { return sessionStore()?.getItem(API_URL_KEY) || ''; } catch { return ''; } })();
 
 export class ApiError extends Error {
   constructor(status, message, payload = null) {
@@ -14,6 +16,7 @@ export function configureApiBaseUrl(value) {
   const raw = String(value || '').trim().replace(/\/+$/, '');
   if (!raw) {
     apiBaseUrl = '';
+    sessionStore()?.removeItem(API_URL_KEY);
     return;
   }
   let parsed;
@@ -22,7 +25,10 @@ export function configureApiBaseUrl(value) {
     throw new TypeError('API ünvanı yalnız təhlükəsiz HTTP(S) ünvanı ola bilər.');
   }
   apiBaseUrl = raw;
+  sessionStore()?.setItem(API_URL_KEY, raw);
 }
+
+export function getConfiguredApiBaseUrl() { return apiBaseUrl; }
 
 export function isApiConfigured() {
   return Boolean(apiBaseUrl);
