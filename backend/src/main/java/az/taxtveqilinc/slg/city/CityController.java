@@ -16,11 +16,11 @@ public class CityController {
 
     public record CityResponse(UUID id, String cityName, int keepLevel,
                                long gold, long wood, long stone, long food, long iron,
-                               Instant createdAt) {
+                               Instant keepUpgradeEndsAt, Instant createdAt) {
         static CityResponse from(CityState city) {
             return new CityResponse(city.getId(), city.getCityName(), city.getKeepLevel(),
                 city.getGold(), city.getWood(), city.getStone(), city.getFood(), city.getIron(),
-                city.getCreatedAt());
+                city.getKeepUpgradeEndsAt(), city.getCreatedAt());
         }
     }
 
@@ -28,5 +28,11 @@ public class CityController {
     public CityResponse getMyCity(Authentication authentication) {
         UUID playerId = (UUID) authentication.getPrincipal();
         return CityResponse.from(cities.getForPlayer(playerId));
+    }
+
+    @PostMapping("/keep/upgrade")
+    public CityResponse upgradeKeep(Authentication authentication) {
+        UUID playerId = (UUID) authentication.getPrincipal();
+        return CityResponse.from(cities.startKeepUpgrade(playerId));
     }
 }
