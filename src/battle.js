@@ -26,7 +26,7 @@ function calculatePower(army, defending, formation, opponents, commander = null,
           ? 1.18 + (commanderLevel - 1) * 0.01
           : 1.03 + (commanderLevel - 1) * 0.005)
       : 1;
-    const level = key => Math.max(1, Math.min(10, Math.floor(Number(buildings[key]) || 1)));
+    const level = key => Math.max(1, Math.min(10, Math.floor(Number((defending ? defendingBuildings : buildings)[key]) || 1)));
     const buildingBonus = !defending ? (type === 'infantry' || type === 'spearman' ? 1 + (level('barracks') - 1) * 0.025 : type === 'archer' ? 1 + (level('archery') - 1) * 0.03 : type === 'cavalry' || type === 'knight' ? 1 + (level('stable') - 1) * 0.03 : 1) : (1 + (level('tower') - 1) * 0.025) * (type === 'infantry' || type === 'spearman' ? 1 + (level('barracks') - 1) * 0.02 : type === 'archer' ? 1 + (level('archery') - 1) * 0.025 : type === 'cavalry' || type === 'knight' ? 1 + (level('stable') - 1) * 0.02 : 1);
     total += count * base * formationBonus * counterBonus * generalBonus * buildingBonus;
   }
