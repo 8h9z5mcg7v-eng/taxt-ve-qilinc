@@ -23,7 +23,8 @@ Bu yoxlama siyahısı iPhone Safari-də GLB modellərini ilkin süzgəcdən keç
 - Yaxın, orta və uzaq məsafələr üçün LOD variantları hazırlanmalıdır.
 - Eyni tip ağac, bayraq, daş və dekorlar instancing ilə yerləşdirilməlidir.
 - Yalnız əsas obyektlər real-time kölgə alsın.
-- Kompakt/mobil görünüşdə uzaqdan yüklənən GLB mesh-ləri kölgə yaratmasın və kölgə qəbul etməsin; əsas yerli qala/şəhər kölgələri ayrıca vizual sınaqdan keçirilsin.
+- Kompakt/mobil görünüşdə real-time kölgə xəritəsi söndürülür; uzaqdan yüklənən GLB mesh-ləri də kölgə yaratmır və qəbul etmir. Masaüstündə kölgələr aktiv qalır.
+- Mobil kölgəsiz görünüşdə işıqlandırma və obyektlərin oxunaqlılığı real cihazda ayrıca vizual yoxlanmalıdır.
 - PBR teksturalar mümkün qədər paylaşılmalı və sıxılmalıdır.
 
 ## Cari məhdudiyyət
