@@ -87,7 +87,8 @@ public class CityState {
         }
         double produced = perHour * multiplier * (elapsedSeconds / 3600.0) + getRemainder(resource);
         long wholeUnits = (long) Math.floor(produced);
-        long updated = Math.min(RESOURCE_CAP, current + wholeUnits);
+        long increment = Math.min(RESOURCE_CAP - current, wholeUnits);
+        long updated = current + increment;
         setRemainder(resource, updated >= RESOURCE_CAP ? 0 : produced - wholeUnits);
         return updated;
     }
