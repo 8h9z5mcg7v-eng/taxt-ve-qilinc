@@ -6,15 +6,13 @@ const host = document.querySelector('#stage');
 const hint = document.querySelector('#hint');
 const status = document.querySelector('#status');
 const fileInput = document.querySelector('#file');
-const VIEWPORT_FOOTER = 92;
-
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(42, innerWidth / (innerHeight - VIEWPORT_FOOTER), 0.05, 5000);
+const camera = new THREE.PerspectiveCamera(42, innerWidth / Math.max(1, host.clientHeight), 0.05, 5000);
 camera.position.set(8, 7, 10);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
-renderer.setSize(innerWidth, innerHeight - VIEWPORT_FOOTER);
+renderer.setSize(host.clientWidth, host.clientHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.15;
@@ -50,6 +48,7 @@ controls.maxDistance = 600;
 
 let current = null;
 let activeUrl = null;
+let loadGeneration = 0;
 let mixer = null;
 const clock = new THREE.Clock();
 let initialCamera = null;
@@ -119,10 +118,26 @@ function inspectModel(root) {
 }
 
 function disposeObject(object) {
+  const disposedGeometries = new Set();
+  const disposedMaterials = new Set();
+  const disposedTextures = new Set();
   object.traverse(node => {
     if (!node.isMesh) return;
-    node.geometry?.dispose();
-    for (const material of (Array.isArray(node.material) ? node.material : [node.material])) material?.dispose();
+    if (node.geometry && !disposedGeometries.has(node.geometry)) {
+      disposedGeometries.add(node.geometry);
+      node.geometry.dispose();
+    }
+    for (const material of (Array.isArray(node.material) ? node.material : [node.material])) {
+      if (!material || disposedMaterials.has(material)) continue;
+      disposedMaterials.add(material);
+      for (const value of Object.values(material)) {
+        if (value?.isTexture && !disposedTextures.has(value)) {
+          disposedTextures.add(value);
+          value.dispose();
+        }
+      }
+      material.dispose();
+    }
   });
   scene.remove(object);
 }
@@ -150,6 +165,7 @@ fileInput.addEventListener('change', () => {
   const file = fileInput.files?.[0];
   if (!file) return;
 
+  const generation = ++loadGeneration;
   if (activeUrl) URL.revokeObjectURL(activeUrl);
   activeUrl = URL.createObjectURL(file);
   status.textContent = 'Yüklənir: ' + file.name;
@@ -158,6 +174,10 @@ fileInput.addEventListener('change', () => {
   new GLTFLoader().load(
     activeUrl,
     gltf => {
+      if (generation !== loadGeneration) {
+        disposeObject(gltf.scene);
+        return;
+      }
       if (current) disposeObject(current);
       current = gltf.scene;
       scene.add(current);
@@ -188,6 +208,7 @@ fileInput.addEventListener('change', () => {
       if (xhr.total) status.textContent = 'Yüklənir… ' + Math.round(xhr.loaded / xhr.total * 100) + '%';
     },
     error => {
+      if (generation !== loadGeneration) return;
       console.error(error);
       hint.style.display = 'block';
       status.textContent = 'Model açıla bilmədi. Tək fayllı GLB formatını yoxla.';
@@ -196,10 +217,11 @@ fileInput.addEventListener('change', () => {
 });
 
 function resize() {
-  const height = innerHeight - VIEWPORT_FOOTER;
-  camera.aspect = innerWidth / height;
+  const width = host.clientWidth;
+  const height = host.clientHeight;
+  camera.aspect = width / Math.max(1, height);
   camera.updateProjectionMatrix();
-  renderer.setSize(innerWidth, height);
+  renderer.setSize(width, height);
   renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
 }
 

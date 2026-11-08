@@ -31,6 +31,9 @@ detailsToggle.addEventListener('click',()=>{
 });
 const cityAssetErrorList=document.createElement('div');
 cityAssetErrorList.id='assetErrorList';
+cityAssetErrorList.setAttribute('role','region');
+cityAssetErrorList.setAttribute('aria-label','3D model yüklənmə xətaları');
+cityAssetErrorList.setAttribute('aria-live','polite');
 cityAssetErrorList.style.cssText='display:none;position:fixed;top:174px;right:10px;z-index:20;width:min(310px,calc(100vw - 20px));max-height:42vh;overflow:auto;padding:10px 12px;border:1px solid #b77b55;border-radius:9px;background:#17231df5;color:#f1dfbd;font:11px/1.45 system-ui;white-space:pre-wrap;pointer-events:auto';
 document.body.append(cityAssetErrorList);
 function appendCityOverlay(panel){cityOverlayDock.append(panel);}
@@ -38,13 +41,23 @@ const cityAssetStatus={total:0,loaded:0,failed:0};
 const cityAssetFailures=[];
 const cityAssetStatusPanel=document.createElement('div');
 cityAssetStatusPanel.id='assetStatus';
+cityAssetStatusPanel.setAttribute('role','button');
+cityAssetStatusPanel.setAttribute('tabindex','0');
+cityAssetStatusPanel.setAttribute('aria-controls','assetErrorList');
+cityAssetStatusPanel.setAttribute('aria-expanded','false');
+cityAssetStatusPanel.setAttribute('aria-label','3D modellərin yüklənmə vəziyyəti və xəta siyahısı');
 cityAssetStatusPanel.textContent='GLB modellər hazırlanır…';
 cityAssetStatusPanel.style.cssText='position:fixed;top:132px;right:10px;z-index:6;max-width:210px;padding:7px 10px;border:1px solid #8b7958;border-radius:8px;background:#17231ddd;color:#f1dfbd;font:11px/1.35 system-ui;pointer-events:auto;cursor:pointer;user-select:none';
 document.body.append(cityAssetStatusPanel);
-cityAssetStatusPanel.addEventListener('click',()=>{
+function toggleCityAssetErrors(){
  const open=cityAssetErrorList.style.display!=='block';
  cityAssetErrorList.style.display=open?'block':'none';
+ cityAssetStatusPanel.setAttribute('aria-expanded',String(open));
  if(open){cityAssetErrorList.textContent=cityAssetFailures.length?cityAssetFailures.map((item,i)=>(i+1)+'. '+item.label+' — '+item.reason+'\\n'+item.source).join('\\n\\n'):'Hazırda qeydə alınmış model xətası yoxdur.';}
+}
+cityAssetStatusPanel.addEventListener('click',toggleCityAssetErrors);
+cityAssetStatusPanel.addEventListener('keydown',event=>{
+ if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleCityAssetErrors();}
 });
 function refreshCityAssetStatus(){
  const done=cityAssetStatus.loaded+cityAssetStatus.failed;
@@ -58,8 +71,8 @@ scene.fog=new THREE.Fog(0x879b98,170,340);
 const camera=new THREE.PerspectiveCamera(36,innerWidth/innerHeight,.1,800);
 camera.position.set(150,165,175);
 const compactCityViewport=innerWidth<700;
-const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
-renderer.setPixelRatio(Math.min(devicePixelRatio,compactCityViewport?1.25:1.5));
+const renderer=new THREE.WebGLRenderer({antialias:!compactCityViewport,powerPreference:compactCityViewport?'low-power':'high-performance'});
+renderer.setPixelRatio(Math.min(devicePixelRatio,compactCityViewport?1.15:1.5));
 renderer.setSize(innerWidth,innerHeight);
 renderer.shadowMap.enabled=true;
 renderer.shadowMap.type=THREE.PCFSoftShadowMap;
@@ -68,9 +81,13 @@ renderer.toneMapping=THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure=1.15;
 host.appendChild(renderer.domElement);
 scene.add(new THREE.HemisphereLight(0xdce9ef,0x4b4935,2.0));
-const sun=new THREE.DirectionalLight(0xffdfb0,3.1);sun.position.set(-90,150,80);sun.castShadow=true;sun.shadow.mapSize.set(compactCityViewport?1024:2048,compactCityViewport?1024:2048);sun.shadow.camera.left=-130;sun.shadow.camera.right=130;sun.shadow.camera.top=130;sun.shadow.camera.bottom=-130;scene.add(sun);
+const sun=new THREE.DirectionalLight(0xffdfb0,3.1);sun.position.set(-90,150,80);sun.castShadow=true;sun.shadow.mapSize.set(compactCityViewport?512:2048,compactCityViewport?512:2048);sun.shadow.camera.left=-130;sun.shadow.camera.right=130;sun.shadow.camera.top=130;sun.shadow.camera.bottom=-130;scene.add(sun);
 const fill=new THREE.DirectionalLight(0x9ab9df,1.0);fill.position.set(100,60,-100);scene.add(fill);
 const mat=(c,r=.88)=>new THREE.MeshStandardMaterial({color:c,roughness:r});
+const buildingMaterials={
+ foundation:mat(0x69675d),timber:mat(0x493322),woodLight:mat(0x886443),
+ glass:new THREE.MeshStandardMaterial({color:0x344a4c,roughness:.24,metalness:.12,emissive:0x18292b})
+};
 const grass=mat(0x586b45),grass2=mat(0x65774b),stone=mat(0x77796f),stoneDark=mat(0x4c514d),roof=mat(0x684535),roof2=mat(0x76503a),wood=mat(0x65472e),plaster=mat(0xc1ad83),dark=mat(0x302c27),metal=mat(0x555c5b),water=mat(0x477b83,.35);
 function makeGroundTexture(){
  const canvas=document.createElement('canvas');canvas.width=512;canvas.height=512;
@@ -95,7 +112,14 @@ function makeGroundTexture(){
 }
 const groundMaterial=new THREE.MeshStandardMaterial({map:makeGroundTexture(),roughness:1});
 const ground=new THREE.Mesh(new THREE.PlaneGeometry(330,330,1,1),groundMaterial);ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
-function box(name,x,y,z,w,h,d,material,select=true){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);m.position.set(x,y+h/2,z);m.castShadow=true;m.receiveShadow=true;m.userData.label=name;if(select)pickables.push(m);scene.add(m);return m}
+const cityBoxGeometryCache=new Map();
+function sharedBoxGeometry(width,height,depth){
+ const key=[width,height,depth].join('|');
+ let geometry=cityBoxGeometryCache.get(key);
+ if(!geometry){geometry=new THREE.BoxGeometry(width,height,depth);cityBoxGeometryCache.set(key,geometry)}
+ return geometry;
+}
+function box(name,x,y,z,w,h,d,material,select=true){const m=new THREE.Mesh(sharedBoxGeometry(w,h,d),material);m.position.set(x,y+h/2,z);m.castShadow=true;m.receiveShadow=true;m.userData.label=name;if(select)pickables.push(m);scene.add(m);return m}
 const pickables=[];
 function cylinder(name,x,y,z,r1,r2,h,material,segments=8){const m=new THREE.Mesh(new THREE.CylinderGeometry(r1,r2,h,segments),material);m.position.set(x,y+h/2,z);m.castShadow=true;m.receiveShadow=true;m.userData.label=name;pickables.push(m);scene.add(m);return m}
 function roofHouse(name,x,z,w,d,h,wall=plaster,top=roof){
@@ -104,57 +128,57 @@ function roofHouse(name,x,z,w,d,h,wall=plaster,top=roof){
   const mesh=new THREE.Mesh(geometry,material);mesh.position.set(px,py,pz);mesh.rotation.set(0,ry,rz);
   mesh.castShadow=true;mesh.receiveShadow=true;mesh.userData.label=name;group.add(mesh);pickables.push(mesh);return mesh;
  };
- const foundation=mat(0x69675d),timber=mat(0x493322),woodLight=mat(0x886443),glass=new THREE.MeshStandardMaterial({color:0x344a4c,roughness:.24,metalness:.12,emissive:0x18292b});
- add(new THREE.BoxGeometry(w+.9,.8,d+.9),foundation,0,.4,0);
- add(new THREE.BoxGeometry(w,h,d),wall,0,.8+h/2,0);
+ const {foundation,timber,woodLight,glass}=buildingMaterials;
+ add(sharedBoxGeometry(w+.9,.8,d+.9),foundation,0,.4,0);
+ add(sharedBoxGeometry(w,h,d),wall,0,.8+h/2,0);
  const roofRise=Math.max(3.4,Math.min(6.5,w*.27)),angle=Math.atan2(roofRise,w/2),slope=Math.hypot(w/2,roofRise);
- add(new THREE.BoxGeometry(slope+.9,.65,d+1.5),top,-w/4,.8+h+roofRise/2,0,-angle);
- add(new THREE.BoxGeometry(slope+.9,.65,d+1.5),top,w/4,.8+h+roofRise/2,0,angle);
+ add(sharedBoxGeometry(slope+.9,.65,d+1.5),top,-w/4,.8+h+roofRise/2,0,-angle);
+ add(sharedBoxGeometry(slope+.9,.65,d+1.5),top,w/4,.8+h+roofRise/2,0,angle);
  // Triangular gable ends, with exposed timber framing.
  for(const side of [-1,1]){
   const shape=new THREE.Shape();shape.moveTo(-w/2,0);shape.lineTo(w/2,0);shape.lineTo(0,roofRise);shape.closePath();
   const gable=new THREE.Mesh(new THREE.ShapeGeometry(shape),wall);gable.position.set(0,.8+h,side*(d/2-.08));gable.castShadow=true;gable.receiveShadow=true;gable.userData.label=name;group.add(gable);pickables.push(gable);
-  add(new THREE.BoxGeometry(.42,roofRise+.6,.42),timber,-w/2,.8+h+roofRise/2,side*(d/2+.04));
-  add(new THREE.BoxGeometry(.42,roofRise+.6,.42),timber,w/2,.8+h+roofRise/2,side*(d/2+.04));
-  add(new THREE.BoxGeometry(w+.5,.42,.42),timber,0,.8+h,side*(d/2+.04));
-  add(new THREE.BoxGeometry(.34,roofRise,.34),timber,0,.8+h+roofRise/2,side*(d/2+.05));
+  add(sharedBoxGeometry(.42,roofRise+.6,.42),timber,-w/2,.8+h+roofRise/2,side*(d/2+.04));
+  add(sharedBoxGeometry(.42,roofRise+.6,.42),timber,w/2,.8+h+roofRise/2,side*(d/2+.04));
+  add(sharedBoxGeometry(w+.5,.42,.42),timber,0,.8+h,side*(d/2+.04));
+  add(sharedBoxGeometry(.34,roofRise,.34),timber,0,.8+h+roofRise/2,side*(d/2+.05));
  }
  // Roof ridge and eaves make each building read as a crafted medieval structure.
  add(new THREE.CylinderGeometry(.22,.22,d+1.8,8),woodLight,0,.8+h+roofRise,0,Math.PI/2);
  for(const side of [-1,1]){
-  add(new THREE.BoxGeometry(.38,.4,d+1.6),timber,side*(w/2+.12),.8+h,0);
+  add(sharedBoxGeometry(.38,.4,d+1.6),timber,side*(w/2+.12),.8+h,0);
  }
  // Door, stone threshold and iron-bound door leaf.
- add(new THREE.BoxGeometry(w*.22,h*.43,.2),timber,0,.8+h*.215,d/2+.12);
- add(new THREE.BoxGeometry(w*.16,h*.37,.12),woodLight,0,.8+h*.185,d/2+.24);
- add(new THREE.BoxGeometry(w*.25,.35,.65),foundation,0,.3,d/2+.35);
+ add(sharedBoxGeometry(w*.22,h*.43,.2),timber,0,.8+h*.215,d/2+.12);
+ add(sharedBoxGeometry(w*.16,h*.37,.12),woodLight,0,.8+h*.185,d/2+.24);
+ add(sharedBoxGeometry(w*.25,.35,.65),foundation,0,.3,d/2+.35);
  // Recessed-looking windows with dark frames and warm glazing.
  const windowCount=Math.max(1,Math.floor(w/7));
  for(let i=0;i<windowCount;i++){
   const wx=(i-(windowCount-1)/2)*Math.min(6,w*.55);
   for(const side of [-1,1]){
    const wz=side*(d/2+.13);
-   add(new THREE.BoxGeometry(1.45,2.05,.16),timber,wx,.8+h*.62,wz);
-   add(new THREE.BoxGeometry(.86,1.38,.08),glass,wx,.8+h*.62,wz+Math.sign(side)*.11);
-   add(new THREE.BoxGeometry(1.8,.18,.28),woodLight,wx,.8+h*.62+1.12,wz);
-   add(new THREE.BoxGeometry(.18,2.2,.28),woodLight,wx-0.86,.8+h*.62,wz);
-   add(new THREE.BoxGeometry(.18,2.2,.28),woodLight,wx+0.86,.8+h*.62,wz);
+   add(sharedBoxGeometry(1.45,2.05,.16),timber,wx,.8+h*.62,wz);
+   add(sharedBoxGeometry(.86,1.38,.08),glass,wx,.8+h*.62,wz+Math.sign(side)*.11);
+   add(sharedBoxGeometry(1.8,.18,.28),woodLight,wx,.8+h*.62+1.12,wz);
+   add(sharedBoxGeometry(.18,2.2,.28),woodLight,wx-0.86,.8+h*.62,wz);
+   add(sharedBoxGeometry(.18,2.2,.28),woodLight,wx+0.86,.8+h*.62,wz);
   }
  }
  // Visible roof tile courses: restrained rows, not a single smooth primitive.
  for(let row=0;row<3;row++){
   const offset=(row-1)*.22;
   for(const side of [-1,1]){
-   const tileRail=add(new THREE.BoxGeometry(.13,.12,d+.85),woodLight,side*(w*.18+row*.01),.8+h+roofRise*(.72-row*.2),offset,side*angle);
+   const tileRail=add(sharedBoxGeometry(.13,.12,d+.85),woodLight,side*(w*.18+row*.01),.8+h+roofRise*(.72-row*.2),offset,side*angle);
    tileRail.material=top;
   }
  }
  // Small chimney with a dark opening and stone cap.
  if(h>=8){
   const chimneyX=w*.28;
-  add(new THREE.BoxGeometry(1.45,3.5,1.45),foundation,chimneyX,.8+h+roofRise*.72,-d*.18);
-  add(new THREE.BoxGeometry(1.7,.35,1.7),stoneDark,chimneyX,.8+h+roofRise*.72+1.9,-d*.18);
-  add(new THREE.BoxGeometry(.55,.08,.08),dark,chimneyX,.8+h+roofRise*.72+2.1,-d*.18-.74);
+  add(sharedBoxGeometry(1.45,3.5,1.45),foundation,chimneyX,.8+h+roofRise*.72,-d*.18);
+  add(sharedBoxGeometry(1.7,.35,1.7),stoneDark,chimneyX,.8+h+roofRise*.72+1.9,-d*.18);
+  add(sharedBoxGeometry(.55,.08,.08),dark,chimneyX,.8+h+roofRise*.72+2.1,-d*.18-.74);
  }
  return group;
 }
@@ -336,20 +360,42 @@ const cityAssetRoot='https://raw.githubusercontent.com/anishthite/cc0-models-Pol
 function loadCityAssetSource(source,label,x,z,targetWidth,rotation=0,onLoaded){
  cityAssetStatus.total++;refreshCityAssetStatus();
  const loadAttempt=(attempt=0)=>{
+  let settled=false;
+  const timeout=setTimeout(()=>retryOrFail(new Error('Model 25 saniyə ərzində cavab vermədi')),25000);
+  const disposeLateModel=loaded=>{
+   loaded?.scene?.traverse(node=>{
+    if(!node.isMesh)return;
+    node.geometry?.dispose?.();
+    const materials=Array.isArray(node.material)?node.material:[node.material];
+    materials.filter(Boolean).forEach(material=>{
+     Object.values(material).forEach(value=>{if(value?.isTexture)value.dispose()});
+     material.dispose?.();
+    });
+   });
+  };
   const retryOrFail=error=>{
+   if(settled)return;
+   settled=true;clearTimeout(timeout);
    console.warn('3D model yüklənmədi:',label,error);
    if(attempt<2){const wait=800*Math.pow(2,attempt);cityAssetStatusPanel.textContent=label+' yenidən yüklənir…';setTimeout(()=>loadAttempt(attempt+1),wait);return}
    cityAssetStatus.failed++;cityAssetFailures.push({label,source,reason:String(error?.message||error?.type||error?.target?.statusText||error?.target?.status||'Yükləmə xətası')});refreshCityAssetStatus();
   };
  cityAssetLoader.load(source,loaded=>{
+  if(settled){disposeLateModel(loaded);return}
   const root=loaded?.scene;
   if(!root){retryOrFail(new Error('GLB daxilində səhnə yoxdur'));return}
-  if(loaded.animations?.length){const mixer=new THREE.AnimationMixer(root);loaded.animations.forEach(clip=>mixer.clipAction(clip).play());cityAnimationMixers.push(mixer)}
   root.updateMatrixWorld(true);
   let bounds=new THREE.Box3().setFromObject(root);
   const size=bounds.getSize(new THREE.Vector3());
   const width=Math.max(size.x,size.z);
-  if(!Number.isFinite(width)||width<.01){retryOrFail(new Error('Modelin ölçüsü yanlışdır'));return}
+  // Reject corrupt, empty, or wildly disproportionate models before they can
+  // enter the scene; otherwise a bad vertical bound can bury the city or break framing.
+  const dimensions=[size.x,size.y,size.z];
+  if(!dimensions.every(value=>Number.isFinite(value)&&value>=.01&&value<=10000)||!Number.isFinite(width)||size.y>width*8){
+   retryOrFail(new Error('Modelin ölçüləri boş, həddən artıq böyük və ya proporsiyasızdır'));return
+  }
+  settled=true;clearTimeout(timeout);
+  if(loaded.animations?.length){const mixer=new THREE.AnimationMixer(root);loaded.animations.forEach(clip=>mixer.clipAction(clip).play());cityAnimationMixers.push(mixer)}
   const scale=targetWidth/width;
   root.scale.setScalar(scale);
   root.rotation.y=rotation;
@@ -372,9 +418,13 @@ function loadCityAssetSource(source,label,x,z,targetWidth,rotation=0,onLoaded){
 function loadCityAsset(file,label,x,z,targetWidth,rotation=0,onLoaded){
  return loadCityAssetSource(cityAssetRoot+file,label,x,z,targetWidth,rotation,onLoaded);
 }
-// The citadel uses its detailed local Three.js blockout as a dependable fallback.
-// Remote model hosts that repeatedly failed in the player's browser are not requested.
+// CC0 authored citadel. Keep the procedural version visible until the GLB is fully loaded;
+// if the external host, CORS, or network fails, the fallback remains intact.
 keepBlockoutMeshes.forEach(object=>{object.visible=true});
+const authoredCitadelUrl='https://files.innerscene.com/library/castle-with-keep-1a75a9e1/be0d9411a3e3b580b2b5/castle-with-keep.glb';
+loadCityAssetSource(authoredCitadelUrl,'Baş qala — CC0 daş qala',0,0,70,0,()=>{
+ keepBlockoutMeshes.forEach(object=>{object.visible=false});
+});
 // Kazarma yerli, procedural 3D modeldir; xarici serverdən asılı deyil.
 // Locally-built medieval village buildings: no third-party download or CORS dependency.
 const cottageBlockout=roofHouse('Kənd evi',-48,72,16,13,8,mat(0xc4b18b),roof2);
@@ -460,9 +510,15 @@ function torch(x,z){
  const light=new THREE.PointLight(0xff9b42,1.1,13);light.position.set(x,3.5,z);scene.add(light);
 }
 torch(-9,44);torch(9,44);torch(-8,-45);torch(8,-45);
+const patrolMaterialCache=new Map();
+function getPatrolMaterials(armorColor){
+ const key=Number(armorColor).toString(16);
+ if(!patrolMaterialCache.has(key))patrolMaterialCache.set(key,{armor:mat(armorColor,.55),skin:mat(0xb98b68),cloak:mat(0x6b302b)});
+ return patrolMaterialCache.get(key);
+}
 function makePatrol(x,z,armorColor){
  const group=new THREE.Group();group.position.set(x,0,z);group.userData.baseX=x;
- const armor=mat(armorColor,.55),skin=mat(0xb98b68),cloak=mat(0x6b302b);
+ const {armor,skin,cloak}=getPatrolMaterials(armorColor);
  const body=new THREE.Mesh(new THREE.CylinderGeometry(.75,.95,2.7,8),armor);body.position.y=3.1;body.castShadow=true;group.add(body);
  const head=new THREE.Mesh(new THREE.SphereGeometry(.72,10,8),skin);head.position.y=5.1;head.castShadow=true;group.add(head);
  const helmet=new THREE.Mesh(new THREE.ConeGeometry(.85,1.25,8),metal);helmet.position.y=6.05;helmet.castShadow=true;group.add(helmet);
@@ -471,20 +527,25 @@ function makePatrol(x,z,armorColor){
  scene.add(group);return group;
 }
 const patrols=[makePatrol(-13,16,0x6e7780),makePatrol(13,16,0x8b754c),makePatrol(-5,38,0x687c68),makePatrol(5,38,0x8b3434)];
-// Tree clusters beyond the settlement walls.
+// Reuse tree geometry as well as materials to reduce mobile scene allocations.
+const treeBranchMat=mat(0x59412c);
+const treeGeometries={
+ trunk:new THREE.CylinderGeometry(.48,.82,5.5,7),
+ branch:new THREE.CylinderGeometry(.16,.24,2.8,6),
+ foliage:[2.8,2.7,3.2,2.45,2.2].map(radius=>new THREE.IcosahedronGeometry(radius,1))
+};
+const treeFoliageLayout=[[-1.35,5.8,.1], [1.25,6.2,-.35], [0,7.5,0], [-.35,9.2,.25], [1.1,8.6,.4]];
 function tree(x,z,scale=1){
- const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.48*scale,.82*scale,5.5*scale,7),wood);trunk.position.set(x,2.75*scale,z);trunk.castShadow=true;trunk.receiveShadow=true;scene.add(trunk);
- const branchMat=mat(0x59412c);
+ const trunk=new THREE.Mesh(treeGeometries.trunk,wood);trunk.position.set(x,2.75*scale,z);trunk.scale.setScalar(scale);trunk.castShadow=true;trunk.receiveShadow=true;scene.add(trunk);
  for(const side of [-1,1]){
-  const branch=new THREE.Mesh(new THREE.CylinderGeometry(.16*scale,.24*scale,2.8*scale,6),branchMat);
-  branch.position.set(side*1.05*scale,4.1*scale,z);branch.rotation.z=side*.68;branch.castShadow=true;scene.add(branch);
+  const branch=new THREE.Mesh(treeGeometries.branch,treeBranchMat);
+  branch.position.set(x+side*1.05*scale,4.1*scale,z);branch.rotation.z=side*.68;branch.scale.setScalar(scale);branch.castShadow=true;scene.add(branch);
  }
  // Layered rounded foliage gives the treeline a fuller silhouette than stacked cones.
- const foliage=[[-1.35,5.8,.1,2.8], [1.25,6.2,-.35,2.7], [0,7.5,0,3.2], [-.35,9.2,.25,2.45], [1.1,8.6,.4,2.2]];
- foliage.forEach(([ox,y,oz,r],i)=>{
-  const crown=new THREE.Mesh(new THREE.IcosahedronGeometry(r*scale,1),i%2?grass:grass2);
+ treeFoliageLayout.forEach(([ox,y,oz],i)=>{
+  const crown=new THREE.Mesh(treeGeometries.foliage[i],i%2?grass:grass2);
   crown.position.set(x+ox*scale,y*scale,z+oz*scale);
-  crown.scale.set(1,.9+(i%2)*.12,1);
+  crown.scale.set(scale,scale*(.9+(i%2)*.12),scale);
   crown.castShadow=true;crown.receiveShadow=true;scene.add(crown);
  });
 }
@@ -874,6 +935,6 @@ collectOfflineTerritoryIncome();
 saveCity();
 try{const world=JSON.parse(localStorage.getItem('tvq_world_state_v1')||'{}');if(world.redFortress){info.innerHTML=world.redFortress.captured?'<b>🏆 Qırmızı Qala fəth edildi!</b>Qələbə tarixi: '+new Date(world.redFortress.updatedAt).toLocaleString('az-AZ')+'.':'<b>⚔ Hücum başa çatdı</b>Düşmən qalası müdafiə olunur. Sağ qalan düşmən: '+world.redFortress.remainingDefenders+'. Ordunu yenidən hazırlaya bilərsən.';}}catch{}
 document.querySelector('#home').addEventListener('click',()=>{camera.position.set(150,165,175);controls.target.set(0,10,12);controls.update()});
-addEventListener('resize',()=>{const compact=innerWidth<700;camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,compact?1.25:1.5));sun.shadow.mapSize.set(compact?1024:2048,compact?1024:2048);sun.shadow.needsUpdate=true});
+addEventListener('resize',()=>{const compact=innerWidth<700;camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,compact?1.15:1.5));sun.shadow.mapSize.set(compact?512:2048,compact?512:2048);sun.shadow.needsUpdate=true});
 const patrolClock=new THREE.Clock();
 renderer.setAnimationLoop(()=>{const delta=patrolClock.getDelta(),t=patrolClock.elapsedTime;cityAnimationMixers.forEach(mixer=>mixer.update(delta));patrols.forEach((p,i)=>{p.position.x=p.userData.baseX+Math.sin(t*.7+i)*1.4;p.rotation.y=Math.sin(t*.55+i)*.22});controls.update();renderer.render(scene,camera)});
