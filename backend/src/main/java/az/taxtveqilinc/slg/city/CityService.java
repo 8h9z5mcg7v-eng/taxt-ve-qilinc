@@ -47,6 +47,9 @@ public class CityService {
             throw new IllegalArgumentException("Bu binanın təkmilləşdirilməsi artıq davam edir.");
 
         int target = currentLevel + 1;
+        if (target > city.getKeepLevel()) {
+            throw new IllegalArgumentException("Bu binanın növbəti səviyyəsi üçün əvvəlcə Baş Qalanı yüksəlt.");
+        }
         long gold = 100L * target;
         long wood = 250L * target;
         long stone = 150L * target;
