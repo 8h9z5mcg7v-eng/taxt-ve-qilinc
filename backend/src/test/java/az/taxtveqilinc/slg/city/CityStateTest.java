@@ -74,4 +74,23 @@ class CityStateTest {
         assertEquals(1020, city.getGold());
         assertEquals(start.plusSeconds(3600), city.getLastResourceUpdateAt());
     }
+    @Test
+    void productionBonusStartsOnlyAfterKeepUpgradeCompletesWhileOffline() {
+        CityState city = new CityState(UUID.randomUUID(), "Qala");
+        Instant start = city.getLastResourceUpdateAt();
+        Instant finish = start.plusSeconds(1800);
+        city.beginKeepUpgrade(0, 0, 0, 0, 0, finish);
+
+        city.accrueResources(start.plusSeconds(3600));
+
+        // 30 minutes at level 1 + 30 minutes at level 2 (10% production bonus).
+        assertEquals(1021, city.getGold());
+        assertEquals(1547, city.getWood());
+        assertEquals(1031, city.getStone());
+        assertEquals(2063, city.getFood());
+        assertEquals(512, city.getIron());
+        assertEquals(2, city.getKeepLevel());
+        assertNull(city.getKeepUpgradeEndsAt());
+    }
+
 }
