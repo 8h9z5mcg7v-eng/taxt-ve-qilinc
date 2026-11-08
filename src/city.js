@@ -57,7 +57,19 @@ function tower(x,z){
  const slits=[];
  for(let i=0;i<4;i++){const a=i*Math.PI/2;const slit=new THREE.Mesh(new THREE.BoxGeometry(.45,3.2,.5),dark);slit.position.set(Math.cos(a)*7.04,10,Math.sin(a)*7.04);slit.lookAt(Math.cos(a)*20,10,Math.sin(a)*20);group.add(slit);slits.push(slit)}
  const emplacements=[];
- for(let i=0;i<3;i++){const weapon=new THREE.Group();const x=-4+i*4;const base=new THREE.Mesh(new THREE.BoxGeometry(2.4,.8,2.1),wood);base.position.y=21.2;weapon.add(base);const arm=new THREE.Mesh(new THREE.BoxGeometry(.35,3.2,.45),metal);arm.position.set(0,22.7,0);weapon.add(arm);const stoneShot=new THREE.Mesh(new THREE.SphereGeometry(.75,8,7),stoneDark);stoneShot.position.set(0,24.2,0);weapon.add(stoneShot);weapon.position.x=x;weapon.visible=false;group.add(weapon);emplacements.push(weapon)}
+ // The roof is removed as the tower becomes a weapon platform. Each level
+ // after the first adds one visible catapult, matching the battle resolver.
+ for(let i=0;i<9;i++){
+  const angle=i*Math.PI*2/9,weapon=new THREE.Group();
+  const base=new THREE.Mesh(new THREE.BoxGeometry(1.55,.55,1.35),wood);base.position.y=20.9;base.castShadow=true;weapon.add(base);
+  for(const side of [-1,1]){const support=new THREE.Mesh(new THREE.BoxGeometry(.22,1.9,.24),wood);support.position.set(side*.48,22,0);support.castShadow=true;weapon.add(support)}
+  const axle=new THREE.Mesh(new THREE.CylinderGeometry(.16,.16,1.25,8),metal);axle.rotation.z=Math.PI/2;axle.position.y=22.5;weapon.add(axle);
+  const arm=new THREE.Mesh(new THREE.BoxGeometry(.28,3.1,.34),wood);arm.position.set(0,23.1,0);arm.rotation.z=-.12;arm.castShadow=true;weapon.add(arm);
+  const counterweight=new THREE.Mesh(new THREE.BoxGeometry(.8,.65,.7),stoneDark);counterweight.position.set(0,21.9,-.55);weapon.add(counterweight);
+  const sling=new THREE.Mesh(new THREE.SphereGeometry(.48,9,8),stoneDark);sling.position.set(0,24.9,.12);sling.castShadow=true;weapon.add(sling);
+  weapon.position.set(Math.cos(angle)*5.45,0,Math.sin(angle)*5.45);weapon.rotation.y=-angle;
+  weapon.visible=false;group.add(weapon);emplacements.push(weapon);
+ }
  group.userData.merlons=merlons;group.userData.emplacements=emplacements;group.userData.cap=cap;
  scene.add(group);defenseTowerGroups.push(group);return group;
 }
@@ -66,9 +78,10 @@ function refreshDefenseTowerModels(){
   const level=Math.max(1,Math.min(10,Math.floor(Number(levels['Müdafiə qülləsi'])||1)));
   const height=1+(level-1)*.075;
   group.scale.set(1,height,1);
+  group.userData.cap.visible=level===1;
   group.userData.cap.scale.set(1,1+(level-1)*.045,1);
   group.userData.merlons.forEach((block,i)=>{block.visible=i<Math.min(12,6+level);});
-  group.userData.emplacements.forEach((weapon,i)=>{weapon.visible=level>=4+i*2;});
+  group.userData.emplacements.forEach((weapon,i)=>{weapon.visible=i<level-1;});
  }
 }
 // Textured-looking terrain patches, paths and crop plots.
@@ -206,7 +219,7 @@ let wallRepairInitialDamage=Math.max(0,Math.min(100,Math.floor(Number(savedCity.
 function troopTitlesSafe(type){return ['infantry','spearman','archer','cavalry','knight'].includes(type)}
 const resourceNodes={wood:document.querySelector('#wood'),stone:document.querySelector('#stone'),gold:document.querySelector('#gold')};
 function refreshResources(){for(const key of Object.keys(resources))resourceNodes[key].textContent=resources[key].toLocaleString('en-US')}
-function showBuilding(label){selectedBuilding=label;const level=levels[label]||1;const defenseNote=label==='Müdafiə qülləsi'?'<br>Hər səviyyə yüksəlişi qala müdafiəsinə 1 katapult əlavə edir. Hazırda: '+Math.max(0,level-1)+' katapult.':label.includes('qala divarı')?'<br>Divar səviyyəsi: '+level+'/10 · daha hündür daş divar və sıx mazğallar.':' ';info.innerHTML='<b>'+label+' · Səviyyə '+level+'</b>İnkişaf üçün düyməyə toxun. Növbəti səviyyə resurs tələb edir.'+defenseNote;}
+function showBuilding(label){selectedBuilding=label;const level=levels[label]||1;const defenseNote=label==='Müdafiə qülləsi'?'<br>Hər səviyyə yüksəlişi 1 katapult əlavə edir. Hazırda: '+Math.max(0,level-1)+' katapult · '+(level===1?'Dam örtüyü qorunur':'Döyüş platforması açıqdır')+'.':label.includes('qala divarı')?'<br>Divar səviyyəsi: '+level+'/10 · daha hündür daş divar və sıx mazğallar.':' ';info.innerHTML='<b>'+label+' · Səviyyə '+level+'</b>İnkişaf üçün düyməyə toxun. Növbəti səviyyə resurs tələb edir.'+defenseNote;}
 renderer.domElement.addEventListener('pointerup',e=>{const rect=renderer.domElement.getBoundingClientRect();pointer.x=((e.clientX-rect.left)/rect.width)*2-1;pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;raycaster.setFromCamera(pointer,camera);const hits=raycaster.intersectObjects(pickables,false);if(hits.length){const label=hits[0].object.userData.label||'Şəhər obyekti';showBuilding(label)}});
 document.querySelector('#upgrade').addEventListener('click',()=>withCityEconomyLock(()=>{if(!selectedBuilding){info.innerHTML='<b>Tikili seçilməyib</b>İnkişaf etdirmək üçün əvvəlcə şəhərdə binaya toxun.';return}const current=levels[selectedBuilding]||1;if(current>=10){info.innerHTML='<b>Maksimum səviyyə</b>'+selectedBuilding+' artıq 10-cu səviyyədədir.';return}const cost={wood:current*150,stone:current*100,gold:current*50};if(resources.wood<cost.wood||resources.stone<cost.stone||resources.gold<cost.gold){info.innerHTML='<b>Resurs çatışmır</b>Bu inkişaf üçün daha çox odun, daş və qızıl lazımdır.';return}resources.wood-=cost.wood;resources.stone-=cost.stone;resources.gold-=cost.gold;levels[selectedBuilding]=current+1;if(selectedBuilding==='Müdafiə qülləsi')refreshDefenseTowerModels();if(selectedBuilding.includes('qala divarı'))refreshWallModels();refreshResources();saveCity();info.innerHTML='<b>'+selectedBuilding+' · Səviyyə '+(current+1)+'</b>İnkişaf tamamlandı və yadda saxlanıldı. Xərc: '+cost.wood+' odun, '+cost.stone+' daş, '+cost.gold+' qızıl.'+(selectedBuilding==='Müdafiə qülləsi'?'<br>Qala müdafiəsi: '+current+' katapult hazırdır. Döyüş meydanında avtomatik tətbiq olunacaq.':'')}));
 refreshResources();
