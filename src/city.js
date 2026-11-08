@@ -19,6 +19,20 @@ function recoverBorderDispatch(){
 try{recoverBorderDispatch()}catch(error){console.error('Sərhəd yürüşü bərpa edilmədi:',error)}
 
 const host=document.querySelector('#scene');
+const cityAssetStatus={total:0,loaded:0,failed:0};
+const cityAssetStatusPanel=document.createElement('div');
+cityAssetStatusPanel.id='assetStatus';
+cityAssetStatusPanel.textContent='3D modellər hazırlanır…';
+cityAssetStatusPanel.style.cssText='position:fixed;top:132px;right:10px;z-index:6;max-width:210px;padding:7px 10px;border:1px solid #8b7958;border-radius:8px;background:#17231ddd;color:#f1dfbd;font:11px/1.35 system-ui;pointer-events:none';
+document.body.append(cityAssetStatusPanel);
+function refreshCityAssetStatus(){
+ const done=cityAssetStatus.loaded+cityAssetStatus.failed;
+ cityAssetStatusPanel.textContent='3D modellər: '+cityAssetStatus.loaded+' yükləndi'+(cityAssetStatus.failed?' · '+cityAssetStatus.failed+' xəta':'')+(cityAssetStatus.total>done?' · '+(cityAssetStatus.total-done)+' gözləyir':'');
+ if(cityAssetStatus.total>0&&done===cityAssetStatus.total){
+  cityAssetStatusPanel.style.borderColor=cityAssetStatus.failed?'#b77b55':'#82956c';
+  cityAssetStatusPanel.title=cityAssetStatus.failed?'Bəzi 3D modellər yüklənmədi; sadə maketlər saxlanıldı.':'Bütün çağırılmış 3D modellər yükləndi.';
+ }
+}
 const scene=new THREE.Scene();
 scene.background=new THREE.Color(0x879b98);
 scene.fog=new THREE.Fog(0x879b98,170,340);
@@ -300,6 +314,7 @@ const cityAssetLoader=new GLTFLoader();
 const cityAnimationMixers=[];
 const cityAssetRoot='https://raw.githubusercontent.com/anishthite/cc0-models-Polygonal-Mind/main/projects/medieval-fair/';
 function loadCityAssetSource(source,label,x,z,targetWidth,rotation=0,onLoaded){
+ cityAssetStatus.total++;refreshCityAssetStatus();
  cityAssetLoader.load(source,loaded=>{
   const root=loaded.scene;
   if(loaded.animations?.length){const mixer=new THREE.AnimationMixer(root);loaded.animations.forEach(clip=>mixer.clipAction(clip).play());cityAnimationMixers.push(mixer)}
@@ -322,7 +337,8 @@ function loadCityAssetSource(source,label,x,z,targetWidth,rotation=0,onLoaded){
   });
   root.userData.label=label;scene.add(root);
   if(onLoaded)onLoaded(root);
- },undefined,error=>console.warn('3D model yüklənmədi:',label,error));
+  cityAssetStatus.loaded++;refreshCityAssetStatus();
+ },undefined,error=>{cityAssetStatus.failed++;refreshCityAssetStatus();console.warn('3D model yüklənmədi:',label,error)});
 }
 function loadCityAsset(file,label,x,z,targetWidth,rotation=0,onLoaded){
  return loadCityAssetSource(cityAssetRoot+file,label,x,z,targetWidth,rotation,onLoaded);
