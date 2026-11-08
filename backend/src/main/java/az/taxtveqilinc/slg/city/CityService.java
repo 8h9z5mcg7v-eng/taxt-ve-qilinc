@@ -26,7 +26,6 @@ public class CityService {
             .orElseThrow(() -> new IllegalArgumentException("Oyunçu şəhəri tapılmadı."));
         Instant now = Instant.now();
         city.accrueResources(now);
-        city.accrueResources(now);
         city.completeKeepUpgradeIfReady(now);
         return city;
     }
@@ -36,6 +35,7 @@ public class CityService {
         CityState city = repository.findByPlayerIdForUpdate(playerId)
             .orElseThrow(() -> new IllegalArgumentException("Oyunçu şəhəri tapılmadı."));
         Instant now = Instant.now();
+        city.accrueResources(now);
         city.completeKeepUpgradeIfReady(now);
 
         if (city.getKeepUpgradeEndsAt() != null) {
