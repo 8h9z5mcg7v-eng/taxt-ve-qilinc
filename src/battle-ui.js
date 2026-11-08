@@ -665,6 +665,8 @@ document.getElementById('fight').addEventListener('click', async () => {
     try { priorWallDamage = Number(JSON.parse(localStorage.getItem('tvq_world_state_v1') || '{}').redFortress?.wallDamage) || 0; } catch {}
   } else if (isBorderBattle) {
     try { const diplomacy=JSON.parse(localStorage.getItem('tvq_diplomacy_v1')||'{}'); const kingdom=dispatched.get('kingdom')||localStorage.getItem('tvq_border_battle_kingdom'); priorWallDamage=Number(diplomacy.borderCampaigns?.[kingdom]?.wallDamage)||0; } catch {}
+  } else if (terrain === 'fortress') {
+    try { priorWallDamage=Math.max(0,Math.min(100,Number(JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}').wallDamage)||0)); } catch {}
   }
   let wallLevel = 1;
   // City wall upgrades protect the player's own fortress only; never apply them to enemy targets.
@@ -734,6 +736,7 @@ document.getElementById('fight').addEventListener('click', async () => {
   }
   const survivingDefender = result.remaining?.defender ?? defender;
   currentWallDamage = result.siege?.wallDamage || 0;
+  if(terrain==='fortress'&&!isWorldMapAttack&&!isBorderBattle){try{await updateCitySave(saved=>{saved.wallDamage=currentWallDamage;saved.wallRepairEndsAt=0})}catch(error){console.warn('Qala divarının zədəsi yadda saxlanmadı',error)}}
   renderBattlefield(survivingAttacker, survivingDefender, direction, terrain, currentWallDamage, siege);
   playCombatAnimation(attacker, defender, siege, result);
   const panel = document.getElementById('result');
