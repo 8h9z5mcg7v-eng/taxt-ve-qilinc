@@ -404,6 +404,19 @@ function playCombatAnimation(attacker = {}, defender = {}, siege = {}, result = 
     const targetY = 242 + (i % 3) * 17;
     launch(sourceX, 78, targetX, targetY, '#8f8b80', 260 + i * 210, 6);
   }
+  // Defensive towers fire coordinated arrow volleys; higher towers field more
+  // firing positions, independently of the heavy defensive catapults.
+  const towerVolleyCount = result.terrain === 'fortress'
+    ? Math.min(10, Math.max(1, Number(result.modifiers?.defenderBuildings?.tower) || 1)) : 0;
+  for (let wave = 0; wave < 2; wave++) {
+    for (let i = 0; i < towerVolleyCount; i++) {
+      const sourceX = 222 + (i % 5) * 38;
+      const sourceY = 61 + Math.floor(i / 5) * 8;
+      const targetX = 78 + ((i * 53 + wave * 31) % 440);
+      const targetY = 226 + ((i + wave) % 3) * 19;
+      launch(sourceX, sourceY, targetX, targetY, '#e8c879', 180 + wave * 760 + i * 72, 3);
+    }
+  }
   // Bring siege engines forward during the assault sequence.
   const siegeLayer = field.querySelector('#siegeMachines');
   if (siegeLayer) {
