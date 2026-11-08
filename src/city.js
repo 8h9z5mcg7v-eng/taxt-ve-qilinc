@@ -360,12 +360,29 @@ const cityAssetRoot='https://raw.githubusercontent.com/anishthite/cc0-models-Pol
 function loadCityAssetSource(source,label,x,z,targetWidth,rotation=0,onLoaded){
  cityAssetStatus.total++;refreshCityAssetStatus();
  const loadAttempt=(attempt=0)=>{
+  let settled=false;
+  const timeout=setTimeout(()=>retryOrFail(new Error('Model 25 saniyə ərzində cavab vermədi')),25000);
+  const disposeLateModel=loaded=>{
+   loaded?.scene?.traverse(node=>{
+    if(!node.isMesh)return;
+    node.geometry?.dispose?.();
+    const materials=Array.isArray(node.material)?node.material:[node.material];
+    materials.filter(Boolean).forEach(material=>{
+     Object.values(material).forEach(value=>{if(value?.isTexture)value.dispose()});
+     material.dispose?.();
+    });
+   });
+  };
   const retryOrFail=error=>{
+   if(settled)return;
+   settled=true;clearTimeout(timeout);
    console.warn('3D model yüklənmədi:',label,error);
    if(attempt<2){const wait=800*Math.pow(2,attempt);cityAssetStatusPanel.textContent=label+' yenidən yüklənir…';setTimeout(()=>loadAttempt(attempt+1),wait);return}
    cityAssetStatus.failed++;cityAssetFailures.push({label,source,reason:String(error?.message||error?.type||error?.target?.statusText||error?.target?.status||'Yükləmə xətası')});refreshCityAssetStatus();
   };
  cityAssetLoader.load(source,loaded=>{
+  if(settled){disposeLateModel(loaded);return}
+  settled=true;clearTimeout(timeout);
   const root=loaded?.scene;
   if(!root){retryOrFail(new Error('GLB daxilində səhnə yoxdur'));return}
   if(loaded.animations?.length){const mixer=new THREE.AnimationMixer(root);loaded.animations.forEach(clip=>mixer.clipAction(clip).play());cityAnimationMixers.push(mixer)}
