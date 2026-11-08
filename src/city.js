@@ -340,6 +340,9 @@ loadCityAssetSource(shurikenModelRoot+'3fc176c1-463a-493c-aa0e-9387422ff5e9','Ox
  archeryBlockout.visible=false;archeryTargets.forEach(target=>target.visible=false);
 });
 loadCityAssetSource(shurikenModelRoot+'8ad9b7fd-f461-4e00-90d9-5cc9a821c46d','Yel dəyirmanı',-72,72,22,.15);
+// Two authored knight tents extend the barracks yard with a small field-camp silhouette.
+loadCityAssetSource(shurikenModelRoot+'b5b4593c-80f6-4724-a6b4-3bd88200004c','Cəngavər düşərgəsi',-40,-39,10,.18);
+loadCityAssetSource(shurikenModelRoot+'b5b4593c-80f6-4724-a6b4-3bd88200004c','Cəngavər düşərgəsi',-18,-41,10,-.12);
 // The CC0 tavern replaces the bazaar blockout once the real GLB arrives.
 loadCityAsset('Tabern.glb','Orta əsr bazarı',27,68,20,0,()=>{bazarBlockout.visible=false});
 // Small authored props make the market square feel occupied.

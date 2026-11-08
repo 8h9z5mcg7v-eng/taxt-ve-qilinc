@@ -30,6 +30,7 @@ Aşağıdakı modellər `src/city.js` daxilində GLTFLoader ilə uzaq URL-dən �
 | Castle Gatehouse | https://shuriken.studio/models/buildings/castle-gatehouse | Free Model License; GLB, 0.4 MB, 6,190 tris | Darvaza maketi yüklənəndə gizlədilir; uzaqdan yükləmə kodu qoşulub |
 | Archery Range Set | https://shuriken.studio/models/props/archery-range-set | Free Model License; GLB, 0.5 MB, 7,544 tris | Ox hədəfləri və maket meydança uğurlu yüklənmədə gizlədilir; uzaqdan yükləmə kodu qoşulub |
 | Medieval Stone Windmill | https://shuriken.studio/models/buildings/medieval-stone-windmill | Free Model License; GLB, 0.3 MB, 4,638 tris | Əkin sahələrinin kənarında ayrıca istehsal binası kimi çağırılır |
+| Knights Tent Camp | https://shuriken.studio/models/props/knights-tent-camp | Free Model License; GLB, 0.2 MB, 2,388 tris | Kazarma həyətində iki kiçik cəngavər düşərgəsi kimi çağırılır |
 | Medieval Fair props | https://github.com/anishthite/cc0-models-Polygonal-Mind/tree/main/projects/medieval-fair | CC0; GLB | Bazar çadırı, araba, çəllək və fənər üçün uzaqdan yükləmə kodu qoşulub |
 
 ## İlkin kompozisiya qərarı
