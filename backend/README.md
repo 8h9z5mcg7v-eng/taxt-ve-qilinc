@@ -99,3 +99,14 @@ The city has four server-owned production buildings, each starting at level 1:
 Upgrade one with `POST /api/v1/city/buildings/{building}/upgrade`, using the Bearer token. The path key is case-insensitive. The server checks and deducts the costs; the building upgrade takes 20 seconds per target level in this development balance. Each building is capped at level 20 and cannot exceed the current keep level (upgrade the keep first). Target level N costs N×100 gold, N×250 wood, N×150 stone, N×100 food and N×50 iron. Each level above 1 increases that building's resource production by 25%.
 
 The city response includes each building level and its upgrade completion timestamp. Offline production is split at building and keep upgrade completion times so a new production bonus is applied only after the corresponding upgrade completes. These timings and prices are provisional. The next step is to expose these controls in the browser city UI and then tune the economy.
+
+
+## Browser client integration
+
+The browser-side API helper is in `src/backend-api.js`. It exposes registration, login, current-player, city-read, keep-upgrade and resource-building-upgrade calls. It sends JWTs as Bearer tokens and keeps the access token in `sessionStorage` (the browser tab session), not in the game's existing local-save data. A 401 response clears the expired token. The helper is not yet wired into `city.html`; the current public prototype continues to use its local browser save until the backend is deployed and explicitly connected.
+
+Before enabling it in the browser, configure the API base URL from the client bootstrap with `configureApiBaseUrl('https://your-api-host')`. Do not put passwords, database credentials or JWT signing secrets in browser code.
+
+CORS is restricted to the GitHub Pages origin `https://8h9z5mcg7v-eng.github.io` by default. Set `APP_CORS_ALLOWED_ORIGINS` on the backend to a comma-separated allowlist for any additional trusted web origins. Do not use a wildcard origin for an authenticated game API. The CORS policy allows only GET, POST and OPTIONS and the Authorization/Content-Type headers.
+
+The API helper has Node tests for URL validation, login/registration token handling, Bearer headers, city actions, invalid building names and expired-session handling. A real browser-to-server integration test still requires a running backend with MySQL and a configured JWT secret.
