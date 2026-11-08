@@ -947,4 +947,16 @@ function syncCityRenderLoop(){
  renderer.setAnimationLoop(renderCityFrame);
 }
 document.addEventListener('visibilitychange',syncCityRenderLoop);
+// Mobile browsers may evict a WebGL context under memory pressure or app switching.
+// Pause safely on loss and resume rendering after Three.js restores the context.
+renderer.domElement.addEventListener('webglcontextlost',event=>{
+ event.preventDefault();
+ renderer.setAnimationLoop(null);
+ patrolClock.stop();
+ cityAssetStatusPanel.textContent='3D qrafika müvəqqəti dayandı — bərpa gözlənilir';
+});
+renderer.domElement.addEventListener('webglcontextrestored',()=>{
+ cityAssetStatusPanel.textContent='3D qrafika bərpa edildi';
+ syncCityRenderLoop();
+});
 syncCityRenderLoop();
