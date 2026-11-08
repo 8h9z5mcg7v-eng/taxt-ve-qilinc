@@ -35,6 +35,9 @@ public class CityState {
     @Column(nullable = false)
     private long iron;
 
+    @Column
+    private Instant keepUpgradeEndsAt;
+
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -52,6 +55,23 @@ public class CityState {
         this.createdAt = Instant.now();
     }
 
+    public void beginKeepUpgrade(long goldCost, long woodCost, long stoneCost,
+                                 long foodCost, long ironCost, Instant finishAt) {
+        this.gold -= goldCost;
+        this.wood -= woodCost;
+        this.stone -= stoneCost;
+        this.food -= foodCost;
+        this.iron -= ironCost;
+        this.keepUpgradeEndsAt = finishAt;
+    }
+
+    public boolean completeKeepUpgradeIfReady(Instant now) {
+        if (keepUpgradeEndsAt == null || now.isBefore(keepUpgradeEndsAt)) return false;
+        keepLevel += 1;
+        keepUpgradeEndsAt = null;
+        return true;
+    }
+
     public UUID getId() { return id; }
     public UUID getPlayerId() { return playerId; }
     public String getCityName() { return cityName; }
@@ -61,5 +81,6 @@ public class CityState {
     public long getStone() { return stone; }
     public long getFood() { return food; }
     public long getIron() { return iron; }
+    public Instant getKeepUpgradeEndsAt() { return keepUpgradeEndsAt; }
     public Instant getCreatedAt() { return createdAt; }
 }
