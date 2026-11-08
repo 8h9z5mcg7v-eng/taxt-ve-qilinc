@@ -68,8 +68,20 @@ function renderTerrain(terrain, wallDamage = 0, siege = {}) {
       if (damage >= 22 && i === 2 || damage >= 48 && i === 4 || damage >= 72 && i === 0 || damage >= 88 && i === 5) continue;
       svgNode('rect', { x, y: 65, width: 14, height: 15, fill: '#99998a', stroke: '#282b27', 'stroke-width': 2 }, scene);
     }
+    const defenseTowerLevel = Math.max(1, Math.min(10, Math.floor(Number(siege.defenseTowerLevel) || 1)));
     svgNode('rect', { x: 270, y: 35, width: 58, height: 44, fill: '#858679', stroke: '#282b27', 'stroke-width': 4 }, scene);
     svgNode('path', { d: damage >= 82 ? 'M262 36 L280 22 L290 30 L299 8 L312 26 L336 36Z' : 'M262 36 L299 8 L336 36Z', fill: '#6f4032', stroke: '#282b27', 'stroke-width': 3 }, scene);
+    for (let levelMark = 0; levelMark < defenseTowerLevel; levelMark++) {
+      const crenelX = 274 + levelMark * 5.1;
+      svgNode('rect', { x: crenelX, y: 29, width: 3.5, height: 7, fill: defenseTowerLevel >= 5 ? '#c4a56c' : '#99998a', stroke: '#282b27', 'stroke-width': 0.8 }, scene);
+    }
+    if (defenseTowerLevel >= 5) {
+      svgNode('path', { d: 'M273 73 L325 73', stroke: '#c4a56c', 'stroke-width': 2.5 }, scene);
+      svgNode('path', { d: 'M270 43 L270 71 M328 43 L328 71', stroke: '#b9a078', 'stroke-width': 2 }, scene);
+    }
+    if (defenseTowerLevel >= 8) {
+      svgNode('path', { d: 'M299 9 L299 -13 L313 -9 L299 -4Z', fill: '#b94b3c', stroke: '#282b27', 'stroke-width': 1.2 }, scene);
+    }
     if (damage >= 42) {
       svgNode('path', { d: 'M297 13 L291 25 L301 31 L294 43 L304 51', fill: 'none', stroke: '#211e1a', 'stroke-width': 3.2, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, scene);
       svgNode('path', { d: 'M277 34 L284 40 L280 49', fill: 'none', stroke: '#211e1a', 'stroke-width': 2 }, scene);
@@ -219,10 +231,11 @@ function renderBattlefield(attacker, defender, direction, terrain = 'plains', wa
   }
   // Catapult throwing arms cock back, snap forward and release their stone.
   const catapultArms=field.querySelectorAll('#siegeMachines [id^="catapultArm"]');
+  const catapultShots = Math.max(1, Math.min(3, Number(siege.catapult) || 1));
   catapultArms.forEach((arm,index)=>{
     arm.animate(
       [{transform:'rotate(-8deg)'},{transform:'rotate(-58deg)'},{transform:'rotate(24deg)'},{transform:'rotate(-8deg)'}],
-      {duration:1120,delay:180+index*170,iterations:Math.max(1,Math.min(3,catapultShots)),easing:'cubic-bezier(.25,.7,.25,1)'}
+      {duration:1120,delay:180+index*170,iterations:catapultShots,easing:'cubic-bezier(.25,.7,.25,1)'}
     );
   });
   const attackLayer = document.getElementById('attackerUnits');
@@ -739,7 +752,8 @@ function playCombatAnimation(attacker = {}, defender = {}, siege = {}, result = 
 let currentWallDamage = 0;
 
 function refreshPreview() {
-  renderBattlefield(readArmy('a'), readArmy('d'), document.getElementById('direction').value, document.getElementById('terrain').value, currentWallDamage, { ram: Number(document.getElementById('ram').value) || 0, catapult: Number(document.getElementById('catapult').value) || 0, tower: Number(document.getElementById('tower').value) || 0, defenseCatapult: Number(document.getElementById('defenseCatapult')?.value) || 0 });
+  const previewCity = (() => { try { return JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1') || '{}'); } catch { return {}; } })();
+  renderBattlefield(readArmy('a'), readArmy('d'), document.getElementById('direction').value, document.getElementById('terrain').value, currentWallDamage, { ram: Number(document.getElementById('ram').value) || 0, catapult: Number(document.getElementById('catapult').value) || 0, tower: Number(document.getElementById('tower').value) || 0, defenseCatapult: Number(document.getElementById('defenseCatapult')?.value) || 0, defenseTowerLevel: Math.max(1, Math.min(10, Math.floor(Number(previewCity.levels?.['Müdafiə qülləsi']) || 1))) });
 }
 
 refreshPreview();
@@ -784,6 +798,7 @@ document.getElementById('fight').addEventListener('click', async () => {
   };
   const defenseCatapult = Math.max(0, Math.min(20, Math.floor(Number(document.getElementById('defenseCatapult')?.value) || 0)));
   siege.defenseCatapult = defenseCatapult;
+  siege.defenseTowerLevel = Math.max(1, Math.min(10, Math.floor(Number(localBuildings['Müdafiə qülləsi']) || 1)));
   document.getElementById('ram').value=String(siege.ram);
   document.getElementById('catapult').value=String(siege.catapult);
   document.getElementById('tower').value=String(siege.tower);
@@ -868,6 +883,7 @@ document.getElementById('fight').addEventListener('click', async () => {
   const survivingDefender = result.remaining?.defender ?? defender;
   currentWallDamage = result.siege?.wallDamage || 0;
   if(terrain==='fortress'&&!isWorldMapAttack&&!isBorderBattle){try{await updateCitySave(saved=>{saved.wallDamage=currentWallDamage;saved.wallRepairStartedAt=0;saved.wallRepairEndsAt=0;saved.wallRepairInitialDamage=0})}catch(error){console.warn('Qala divarının zədəsi yadda saxlanmadı',error)}}
+  siege.defenseTowerLevel = Math.max(1, Math.min(10, Math.floor(Number(defenderBuildings.tower || localBuildings['Müdafiə qülləsi']) || 1)));
   renderBattlefield(survivingAttacker, survivingDefender, direction, terrain, currentWallDamage, siege);
   playCombatAnimation(attacker, defender, siege, result);
   const panel = document.getElementById('result');
