@@ -108,6 +108,8 @@ export function resolveBattle({ attacker, defender, direction = 'south', tactic 
       `Mühasirə: qoçbaşı ${siegeEngines.ram}, katapult ${siegeEngines.catapult}, mühasirə qülləsi ${siegeEngines.tower}`,
       ...(defensiveCatapults ? [`Qala müdafiə katapultları: ${defensiveCatapults} · hücum gücünə zərər: ${defensiveStoneDamage}`] : []),
       ...(wallMax ? [`Divar səviyyəsi: ${safeWallLevel}/10 · zədə: ${Math.round(wallDamage)}/100 · ${wallBreached ? 'divar yarıldı' : 'divar hələ dayanır'}`] : []),
+      `Hücum tikililəri: Kazarma +${(Math.max(1,Math.min(10,Math.floor(Number(attackerBuildings.barracks)||1)))-1)*2.5}% piyada/nizəçi · Oxçuluq +${(Math.max(1,Math.min(10,Math.floor(Number(attackerBuildings.archery)||1)))-1)*3}% oxçu · Tövlə +${(Math.max(1,Math.min(10,Math.floor(Number(attackerBuildings.stable)||1)))-1)*3}% süvari/cəngavər`,
+      ...(safeTerrain === 'fortress' ? [`Qala müdafiə tikililəri: Qüllə +${(Math.max(1,Math.min(10,Math.floor(Number(defenderBuildings.tower)||1)))-1)*2.5}% · Kazarma +${(Math.max(1,Math.min(10,Math.floor(Number(defenderBuildings.barracks)||1)))-1)*2}% piyada/nizəçi · Oxçuluq +${(Math.max(1,Math.min(10,Math.floor(Number(defenderBuildings.archery)||1)))-1)*2.5}% oxçu · Tövlə +${(Math.max(1,Math.min(10,Math.floor(Number(defenderBuildings.stable)||1)))-1)*2}% süvari/cəngavər`] : []),
       `Hücum gücü: ${Math.round(attackPower)} · Müdafiə gücü: ${Math.round(defendPower)}`,
       winner === 'attacker' ? 'Hücum edən tərəf üstün gəldi.' : 'Müdafiə tərəfi qalib gəldi.'
     ]

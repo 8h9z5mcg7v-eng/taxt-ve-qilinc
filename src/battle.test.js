@@ -176,3 +176,12 @@ test('defender building bonuses do not affect attackers or open-field battles', 
  assert.equal(fortified.power.defender,plain.power.defender);
  assert.equal(fortified.power.attacker,plain.power.attacker);
 });
+
+
+test('battle log explains troop-building bonuses and fortress-only defence upgrades', () => {
+ const attack=resolveBattle({attacker:{infantry:10,archer:10,cavalry:10},defender:{infantry:10},attackerBuildings:{barracks:3,archery:4,stable:2},seed:111});
+ assert.ok(attack.log.some(line=>line.includes('Kazarma +5%')&&line.includes('Oxçuluq +9%')&&line.includes('Tövlə +3%')));
+ assert.ok(!attack.log.some(line=>line.includes('Qala müdafiə tikililəri')));
+ const defence=resolveBattle({attacker:{infantry:10},defender:{infantry:10},terrain:'fortress',defenderBuildings:{tower:2,barracks:3,archery:2,stable:4},seed:112});
+ assert.ok(defence.log.some(line=>line.includes('Qüllə +2.5%')&&line.includes('Kazarma +4%')&&line.includes('Oxçuluq +2.5%')&&line.includes('Tövlə +6%')));
+});
