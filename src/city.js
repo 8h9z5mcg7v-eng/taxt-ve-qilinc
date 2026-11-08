@@ -19,6 +19,10 @@ function recoverBorderDispatch(){
 try{recoverBorderDispatch()}catch(error){console.error('Sərhəd yürüşü bərpa edilmədi:',error)}
 
 const host=document.querySelector('#scene');
+const cityOverlayDock=document.createElement('div');
+cityOverlayDock.id='cityOverlayDock';
+document.body.append(cityOverlayDock);
+function appendCityOverlay(panel){cityOverlayDock.append(panel);}
 const cityAssetStatus={total:0,loaded:0,failed:0};
 const cityAssetStatusPanel=document.createElement('div');
 cityAssetStatusPanel.id='assetStatus';
@@ -497,7 +501,7 @@ function getTerritoryIncome(){
 }
 function renderTerritorySummary(){
  let panel=document.querySelector('#territorySummary');
- if(!panel){panel=document.createElement('section');panel.id='territorySummary';panel.style.cssText='position:absolute;left:12px;top:112px;z-index:4;max-width:min(340px,calc(100vw - 24px));padding:10px 12px;border:1px solid #a87942;border-radius:10px;background:#1d2b25eF;color:#f4e6c8;font:12px/1.5 system-ui;pointer-events:auto';document.body.append(panel)}
+ if(!panel){panel=document.createElement('section');panel.id='territorySummary';panel.style.cssText='position:absolute;left:12px;top:112px;z-index:4;max-width:min(340px,calc(100vw - 24px));padding:10px 12px;border:1px solid #a87942;border-radius:10px;background:#1d2b25eF;color:#f4e6c8;font:12px/1.5 system-ui;pointer-events:auto';appendCityOverlay(panel)}
  const data=getTerritoryIncome();
  panel.innerHTML='<b>🏴 Krallığın əraziləri</b><div>Nəzarətdə: '+(data.owned.length?data.owned.join(', '):'Hələ fəth edilmiş ərazi yoxdur')+'</div><div>Saatlıq gəlir: 🪵 '+data.rates.wood+' · 🪨 '+data.rates.stone+' · 🪙 '+data.rates.gold+'</div><small>Gəliri toplamaq üçün dünya xəritəsində fəth edilmiş məntəqəni seç.</small>';
 }
@@ -568,7 +572,7 @@ async function withCityEconomyLock(action){
 }
 function renderWallRepairPanel(){
  let panel=document.querySelector('#wallRepairPanel');
- if(!panel){panel=document.createElement('section');panel.id='wallRepairPanel';panel.style.cssText='position:absolute;left:12px;bottom:12px;z-index:8;width:min(310px,calc(100vw - 24px));padding:11px 13px;border:1px solid #a87942;border-radius:10px;background:#1d2b25f2;color:#f4e6c8;font:12px/1.5 system-ui;box-shadow:0 8px 24px #0008';document.body.append(panel)}
+ if(!panel){panel=document.createElement('section');panel.id='wallRepairPanel';panel.style.cssText='position:absolute;left:12px;bottom:12px;z-index:8;width:min(310px,calc(100vw - 24px));padding:11px 13px;border:1px solid #a87942;border-radius:10px;background:#1d2b25f2;color:#f4e6c8;font:12px/1.5 system-ui;box-shadow:0 8px 24px #0008';appendCityOverlay(panel)}
  const now=Date.now(),state=normalizeWallRepair(wallDamage,wallRepairStartedAt,wallRepairEndsAt,wallRepairInitialDamage,now);
  wallDamage=state.damage;wallRepairStartedAt=state.repairStartedAt;wallRepairEndsAt=state.repairEndsAt;wallRepairInitialDamage=state.repairInitialDamage;
  const quote=getWallRepairQuote(wallDamage),remaining=Math.max(0,wallRepairEndsAt-now);
@@ -648,7 +652,7 @@ document.querySelector('#recruitToggle').addEventListener('click',()=>recruit.cl
 function updateArmyStatus(){const active=trainingQueue[0];const remaining=active?Math.max(0,Number(active.endsAt)-Date.now()):0;const level=Math.max(1,Math.min(10,Math.floor(Number(levels['Kazarma'])||1)));document.querySelector('#armyStatus').textContent='Kazarma səviyyə '+level+' · təlim sürəti +'+((level-1)*5)+'% · Hazır qoşun: '+Object.entries(army).map(([k,v])=>troopTitles[k]+': '+v).join(' · ')+(active?' · 🛠 Hazırlanır: '+troopTitles[active.type]+' '+active.count+' ədəd · '+Math.ceil(remaining/1000)+' san.':'')+(trainingQueue.length>1?' · Növbədə '+(trainingQueue.length-1)+' sifariş':'')}
 function renderHospital(){
  let panel=document.querySelector('#hospitalPanel');
- if(!panel){panel=document.createElement('section');panel.id='hospitalPanel';panel.style.cssText='position:absolute;right:12px;top:112px;z-index:5;width:min(290px,calc(100vw - 24px));padding:11px 13px;border:1px solid #b58a55;border-radius:10px;background:#1d2b25ed;color:#f4e6c8;font:12px/1.5 system-ui;pointer-events:auto';document.body.append(panel)}
+ if(!panel){panel=document.createElement('section');panel.id='hospitalPanel';panel.style.cssText='position:absolute;right:12px;top:112px;z-index:5;width:min(290px,calc(100vw - 24px));padding:11px 13px;border:1px solid #b58a55;border-radius:10px;background:#1d2b25ed;color:#f4e6c8;font:12px/1.5 system-ui;pointer-events:auto';appendCityOverlay(panel)}
  const totalWounded=Object.values(wounded).reduce((sum,n)=>sum+Math.max(0,Number(n)||0),0);
  const active=treatmentEndsAt>0;
  panel.innerHTML='<b>✚ Şəfa evi · Yaralılar: '+totalWounded+'</b><div>'+Object.entries(wounded).filter(([,n])=>n>0).map(([type,n])=>troopTitles[type]+': '+n).join(' · ')+'</div><small>'+(active?'Müalicə davam edir · hər 30 saniyədə 1 əsgər bərpa olunur.':'Müalicə hər əsgər üçün 8 odun, 5 daş və 3 qızıl tələb edir. Hər 30 saniyədə 1 yaralı sağalır.')+'</small>';
@@ -719,7 +723,7 @@ function renderLastBattleReport(){
  try{report=JSON.parse(localStorage.getItem('tvq_last_battle_report_v1')||'null')}catch{}
  if(!report)return;
  let panel=document.getElementById('battleReportPanel');
- if(!panel){panel=document.createElement('section');panel.id='battleReportPanel';panel.style.cssText='position:absolute;right:12px;top:112px;z-index:9;width:min(330px,calc(100vw - 24px));max-height:42vh;overflow:auto;padding:12px;border:1px solid #b58a55;border-radius:10px;background:#17251ff2;color:#f4e6c8;font:12px/1.5 system-ui;box-shadow:0 8px 24px #0008';document.body.append(panel)}
+ if(!panel){panel=document.createElement('section');panel.id='battleReportPanel';panel.style.cssText='position:absolute;right:12px;top:112px;z-index:9;width:min(330px,calc(100vw - 24px));max-height:42vh;overflow:auto;padding:12px;border:1px solid #b58a55;border-radius:10px;background:#17251ff2;color:#f4e6c8;font:12px/1.5 system-ui;box-shadow:0 8px 24px #0008';appendCityOverlay(panel)}
  const labels={infantry:'Piyada',spearman:'Nizəçi',archer:'Oxçu',cavalry:'Süvari',knight:'Cəngavər'};
  const lines=(items)=>Object.entries(labels).map(([type,label])=>'<div>'+label+': '+Math.max(0,Math.floor(Number(items?.[type])||0))+'</div>').join('');
  const won=report.winner==='attacker';
@@ -731,7 +735,7 @@ function renderBattleHistory(){
  try{history=JSON.parse(localStorage.getItem('tvq_battle_history_v1')||'[]')}catch{}
  if(!Array.isArray(history))history=[];
  let panel=document.getElementById('battleHistoryPanel');
- if(!panel){panel=document.createElement('section');panel.id='battleHistoryPanel';panel.style.cssText='position:absolute;right:12px;top:calc(112px + min(42vh,330px) + 12px);z-index:8;width:min(330px,calc(100vw - 24px));max-height:30vh;overflow:auto;padding:12px;border:1px solid #806d4a;border-radius:10px;background:#17251fee;color:#f4e6c8;font:12px/1.5 system-ui;box-shadow:0 8px 24px #0008';document.body.append(panel)}
+ if(!panel){panel=document.createElement('section');panel.id='battleHistoryPanel';panel.style.cssText='position:absolute;right:12px;top:calc(112px + min(42vh,330px) + 12px);z-index:8;width:min(330px,calc(100vw - 24px));max-height:30vh;overflow:auto;padding:12px;border:1px solid #806d4a;border-radius:10px;background:#17251fee;color:#f4e6c8;font:12px/1.5 system-ui;box-shadow:0 8px 24px #0008';appendCityOverlay(panel)}
  if(!history.length){panel.innerHTML='<b>📚 Döyüş tarixçəsi</b><p>Hələ qeydə alınmış döyüş yoxdur.</p>';return}
  const totalLoss=(items)=>Object.values(items||{}).reduce((sum,n)=>sum+Math.max(0,Number(n)||0),0);
  const troopNames={infantry:'Piyada',spearman:'Nizəçi',archer:'Oxçu',cavalry:'Süvari',knight:'Cəngavər'};
@@ -764,7 +768,7 @@ function mountGeneralPanel(){
  if(!generals[state.id])state.id='alp';
  const level=Math.min(10,1+Math.floor(Math.max(0,Number(state.xp)||0)/100));
  let panel=document.getElementById('generalPanel');
- if(!panel){panel=document.createElement('section');panel.id='generalPanel';document.body.append(panel)}
+ if(!panel){panel=document.createElement('section');panel.id='generalPanel';appendCityOverlay(panel)}
  const totalXp=Math.max(0,Math.floor(Number(state.xp)||0)),levelProgress=level>=10?100:totalXp%100;
  panel.innerHTML='<details><summary>🛡 Sərkərdə · '+generals[state.id].name+' ▾</summary><div class="generalContent"><div style="margin:4px 0">Səviyyə <b>'+level+'/10</b> · Təcrübə <b>'+totalXp+'</b> XP</div><div style="font-size:10px;color:#d7c8a9">'+(level>=10?'Maksimum səviyyə əldə edilib':'Növbəti səviyyəyə '+(100-levelProgress)+' XP qalıb')+'</div><select id="generalSelect" style="width:100%"><option value="alp">Alp Arslan</option><option value="tomris">Tomris</option><option value="babek">Babək</option></select><div id="generalDesc" style="margin-top:7px;color:#e6d5b4"></div><div style="height:5px;background:#3b4034;border-radius:5px;margin-top:7px;overflow:hidden"><div style="height:100%;width:'+levelProgress+'%;background:#d1a85d"></div></div><small>Döyüşdən sonra təcrübə qazanır.</small></div></details>';
  const select=panel.querySelector('#generalSelect');select.value=state.id;
@@ -815,11 +819,11 @@ function processReturningArmyLocked(){
    return;
   }
   updateArmyStatus();renderArmyInCity();
-  if(!trips.length){panel?.remove();const note=document.createElement('div');note.id=panelId;note.textContent='🏰 Sağ qalan qoşunlar şəhərə qayıtdı və orduya qoşuldu.';note.style.cssText='position:absolute;left:12px;bottom:90px;z-index:8;padding:10px 13px;border:1px solid #b58a55;border-radius:9px;background:#1d2b25ed;color:#f4e6c8';document.body.append(note);return}
+  if(!trips.length){panel?.remove();const note=document.createElement('div');note.id=panelId;note.textContent='🏰 Sağ qalan qoşunlar şəhərə qayıtdı və orduya qoşuldu.';note.style.cssText='position:absolute;left:12px;bottom:90px;z-index:8;padding:10px 13px;border:1px solid #b58a55;border-radius:9px;background:#1d2b25ed;color:#f4e6c8';appendCityOverlay(note);return}
  }
  const next=trips.reduce((a,b)=>Number(a.arrivesAt)<Number(b.arrivesAt)?a:b);
  const left=Math.max(0,Number(next.arrivesAt)-Date.now());
- if(!panel){panel=document.createElement('section');panel.id=panelId;panel.style.cssText='position:absolute;left:12px;bottom:90px;z-index:8;padding:10px 13px;border:1px solid #b58a55;border-radius:9px;background:#1d2b25ed;color:#f4e6c8;font:12px/1.5 system-ui;pointer-events:none';document.body.append(panel)}
+ if(!panel){panel=document.createElement('section');panel.id=panelId;panel.style.cssText='position:absolute;left:12px;bottom:90px;z-index:8;padding:10px 13px;border:1px solid #b58a55;border-radius:9px;background:#1d2b25ed;color:#f4e6c8;font:12px/1.5 system-ui;pointer-events:none';appendCityOverlay(panel)}
  const total=trips.reduce((sum,t)=>sum+Object.values(t.army||{}).reduce((n,v)=>n+Math.max(0,Number(v)||0),0),0);
  panel.textContent='⚔ Qayıdan yürüşlər: '+trips.length+' · '+Math.ceil(left/1000)+' saniyə · sağ qalan qoşun: '+total;
 }
