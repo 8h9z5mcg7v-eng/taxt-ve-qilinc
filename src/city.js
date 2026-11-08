@@ -172,6 +172,8 @@ let treatmentEndsAt=Math.max(0,Number(savedCity.treatmentEndsAt)||0);
 let trainingQueue=normalizeTrainingQueue(savedCity.trainingQueue);
 let wallDamage=Math.max(0,Math.min(100,Math.floor(Number(savedCity.wallDamage)||0)));
 let wallRepairEndsAt=Math.max(0,Number(savedCity.wallRepairEndsAt)||0);
+let wallRepairStartedAt=Math.max(0,Number(savedCity.wallRepairStartedAt)||0);
+let wallRepairInitialDamage=Math.max(0,Math.min(100,Math.floor(Number(savedCity.wallRepairInitialDamage)||0)));
 function troopTitlesSafe(type){return ['infantry','spearman','archer','cavalry','knight'].includes(type)}
 const resourceNodes={wood:document.querySelector('#wood'),stone:document.querySelector('#stone'),gold:document.querySelector('#gold')};
 function refreshResources(){for(const key of Object.keys(resources))resourceNodes[key].textContent=resources[key].toLocaleString('en-US')}
@@ -240,7 +242,7 @@ function saveCity(){
   for(const key of Object.keys(wounded))wounded[key]=mergedWounded[key]??0;
   for(const key of Object.keys(levels))levels[key]=mergedLevels[key]??levels[key];
   treatmentEndsAt=mergedTreatment;
-  const next={...savedCity,...latest,resources:mergedResources,army:mergedArmy,levels:mergedLevels,wounded:mergedWounded,treatmentEndsAt,trainingQueue,wallDamage,wallRepairEndsAt};
+  const next={...savedCity,...latest,resources:mergedResources,army:mergedArmy,levels:mergedLevels,wounded:mergedWounded,treatmentEndsAt,trainingQueue,wallDamage,wallRepairStartedAt,wallRepairEndsAt,wallRepairInitialDamage};
   localStorage.setItem(SAVE_KEY,JSON.stringify(next));
   savedCity=next;
   return true;
@@ -260,6 +262,8 @@ async function withCityEconomyLock(action){
    trainingQueue=normalizeTrainingQueue(latest.trainingQueue);
    wallDamage=Math.max(0,Math.min(100,Math.floor(Number(latest.wallDamage)||0)));
    wallRepairEndsAt=Math.max(0,Number(latest.wallRepairEndsAt)||0);
+   wallRepairStartedAt=Math.max(0,Number(latest.wallRepairStartedAt)||0);
+   wallRepairInitialDamage=Math.max(0,Math.min(100,Math.floor(Number(latest.wallRepairInitialDamage)||0)));
    refreshResources();updateArmyStatus();renderArmyInCity();refreshDefenseTowerModels();refreshWallModels();
   }catch{return}
   action();
@@ -270,17 +274,33 @@ async function withCityEconomyLock(action){
 function renderWallRepairPanel(){
  let panel=document.querySelector('#wallRepairPanel');
  if(!panel){panel=document.createElement('section');panel.id='wallRepairPanel';panel.style.cssText='position:absolute;left:12px;bottom:12px;z-index:8;width:min(310px,calc(100vw - 24px));padding:11px 13px;border:1px solid #a87942;border-radius:10px;background:#1d2b25f2;color:#f4e6c8;font:12px/1.5 system-ui;box-shadow:0 8px 24px #0008';document.body.append(panel)}
- const state=normalizeWallRepair(wallDamage,wallRepairEndsAt,Date.now());wallDamage=state.damage;wallRepairEndsAt=state.repairEndsAt;
- const quote=getWallRepairQuote(wallDamage),remaining=Math.max(0,wallRepairEndsAt-Date.now());
- if(remaining>0){panel.innerHTML='<b>🧱 Qala divarlarının təmiri</b><div>Zədə: '+wallDamage+'/100 · Təmirə qalıb: '+Math.ceil(remaining/1000)+' saniyə</div><small>Təmir bitənədək divarlar zəif müdafiə olunur.</small>';return}
+ const now=Date.now(),state=normalizeWallRepair(wallDamage,wallRepairStartedAt,wallRepairEndsAt,wallRepairInitialDamage,now);
+ wallDamage=state.damage;wallRepairStartedAt=state.repairStartedAt;wallRepairEndsAt=state.repairEndsAt;wallRepairInitialDamage=state.repairInitialDamage;
+ const quote=getWallRepairQuote(wallDamage),remaining=Math.max(0,wallRepairEndsAt-now);
+ if(remaining>0){
+  const progress=Math.round(state.progress*100),minutes=Math.floor(remaining/60000),seconds=Math.ceil((remaining%60000)/1000);
+  const boost=getWallRepairSpeedupQuote(wallRepairEndsAt,now);
+  panel.innerHTML='<b>🧱 Qala divarlarının təmiri</b><div>Zədə: '+wallDamage+'/100 · Müdafiə bərpası: '+progress+'%</div><div style="height:7px;background:#463d30;border-radius:6px;overflow:hidden;margin:6px 0"><div style="height:100%;width:'+progress+'%;background:#8fc27a"></div></div><div>Qalan vaxt: '+minutes+' dəq. '+seconds+' san.</div><div>Divarların müdafiəsi təmir irəlilədikcə bərpa olunur.</div><button id="speedRepairWalls" style="margin-top:8px;width:100%;padding:8px;border:1px solid #c5a46a;border-radius:8px;background:#80612f;color:white;font-weight:700">25% sürətləndir · 🪙 '+boost.cost+'</button>';
+  panel.querySelector('#speedRepairWalls').addEventListener('click',()=>withCityEconomyLock(()=>{
+   const current=normalizeWallRepair(wallDamage,wallRepairStartedAt,wallRepairEndsAt,wallRepairInitialDamage,Date.now());
+   const offer=getWallRepairSpeedupQuote(current.repairEndsAt,Date.now());
+   if(resources.gold<offer.cost){panel.innerHTML='<b>Qızıl çatışmır</b><div>Sürətləndirmə üçün '+offer.cost+' qızıl lazımdır.</div>';return}
+   const result=applyWallRepairSpeedup(current.repairEndsAt,Date.now(),resources.gold);
+   if(!result.applied)return;
+   resources.gold-=result.cost;wallRepairStartedAt=Date.now();wallRepairInitialDamage=current.damage;wallRepairEndsAt=result.repairEndsAt;wallDamage=current.damage;
+   refreshResources();saveCity();renderWallRepairPanel();
+  }));
+  return;
+ }
  if(!wallDamage){panel.innerHTML='<b>🧱 Qala divarları</b><div>Divarlar tam möhkəmdir · 0/100 zədə</div>';return}
  panel.innerHTML='<b>🧱 Qala divarlarının təmiri</b><div>Zədə: '+wallDamage+'/100</div><div>Xərc: 🪵 '+quote.cost.wood+' · 🪨 '+quote.cost.stone+' · 🪙 '+quote.cost.gold+'</div><div>Təmir vaxtı: '+Math.ceil(quote.durationMs/60000)+' dəqiqə</div><button id="repairWalls" style="margin-top:8px;width:100%;padding:9px;border:1px solid #c5a46a;border-radius:8px;background:#76542c;color:white;font-weight:700">Divarları təmir et</button>';
  panel.querySelector('#repairWalls').addEventListener('click',()=>withCityEconomyLock(()=>{
-  const stateNow=normalizeWallRepair(wallDamage,wallRepairEndsAt,Date.now()),cost=getWallRepairQuote(stateNow.damage);
-  if(!stateNow.damage){renderWallRepairPanel();return}
+  const current=normalizeWallRepair(wallDamage,wallRepairStartedAt,wallRepairEndsAt,wallRepairInitialDamage,Date.now()),cost=getWallRepairQuote(current.damage);
+  if(!current.damage){renderWallRepairPanel();return}
   if(resources.wood<cost.cost.wood||resources.stone<cost.cost.stone||resources.gold<cost.cost.gold){panel.innerHTML='<b>Resurs çatışmır</b><div>Təmir üçün daha çox odun, daş və qızıl topla.</div>';return}
   resources.wood-=cost.cost.wood;resources.stone-=cost.cost.stone;resources.gold-=cost.cost.gold;
-  wallDamage=stateNow.damage;wallRepairEndsAt=Date.now()+cost.durationMs;refreshResources();saveCity();renderWallRepairPanel();
+  wallDamage=current.damage;wallRepairStartedAt=Date.now();wallRepairInitialDamage=current.damage;wallRepairEndsAt=wallRepairStartedAt+cost.durationMs;
+  refreshResources();saveCity();renderWallRepairPanel();
  }));
 }
 function collectOfflineTerritoryIncome(){
@@ -513,7 +533,7 @@ renderArmyInCity();
 processHospital();
 setInterval(processHospital,1000);
 renderWallRepairPanel();
-setInterval(()=>{const state=normalizeWallRepair(wallDamage,wallRepairEndsAt,Date.now());if(state.damage!==wallDamage||state.repairEndsAt!==wallRepairEndsAt){wallDamage=state.damage;wallRepairEndsAt=state.repairEndsAt;saveCity()}renderWallRepairPanel()},1000);
+setInterval(()=>{const state=normalizeWallRepair(wallDamage,wallRepairStartedAt,wallRepairEndsAt,wallRepairInitialDamage,Date.now());if(state.damage!==wallDamage||state.repairStartedAt!==wallRepairStartedAt||state.repairEndsAt!==wallRepairEndsAt||state.repairInitialDamage!==wallRepairInitialDamage){wallDamage=state.damage;wallRepairStartedAt=state.repairStartedAt;wallRepairEndsAt=state.repairEndsAt;wallRepairInitialDamage=state.repairInitialDamage;saveCity();refreshWallModels()}renderWallRepairPanel()},1000);
 processTraining();
 setInterval(processTraining,1000);
 processReturningArmy();

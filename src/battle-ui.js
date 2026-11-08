@@ -736,7 +736,7 @@ document.getElementById('fight').addEventListener('click', async () => {
   }
   const survivingDefender = result.remaining?.defender ?? defender;
   currentWallDamage = result.siege?.wallDamage || 0;
-  if(terrain==='fortress'&&!isWorldMapAttack&&!isBorderBattle){try{await updateCitySave(saved=>{saved.wallDamage=currentWallDamage;saved.wallRepairEndsAt=0})}catch(error){console.warn('Qala divarının zədəsi yadda saxlanmadı',error)}}
+  if(terrain==='fortress'&&!isWorldMapAttack&&!isBorderBattle){try{await updateCitySave(saved=>{saved.wallDamage=currentWallDamage;saved.wallRepairStartedAt=0;saved.wallRepairEndsAt=0;saved.wallRepairInitialDamage=0})}catch(error){console.warn('Qala divarının zədəsi yadda saxlanmadı',error)}}
   renderBattlefield(survivingAttacker, survivingDefender, direction, terrain, currentWallDamage, siege);
   playCombatAnimation(attacker, defender, siege, result);
   const panel = document.getElementById('result');
