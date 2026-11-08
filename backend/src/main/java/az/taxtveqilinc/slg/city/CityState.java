@@ -1,6 +1,7 @@
 package az.taxtveqilinc.slg.city;
 
 import jakarta.persistence.*;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -9,40 +10,26 @@ import java.util.UUID;
 public class CityState {
     public static final long RESOURCE_CAP = 100_000L;
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @Id @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
-
     @Column(nullable = false, unique = true)
     private UUID playerId;
-
     @Column(nullable = false, length = 48)
     private String cityName;
-
     @Column(nullable = false)
     private int keepLevel;
-
-    @Column(nullable = false)
-    private long gold;
-
-    @Column(nullable = false)
-    private long wood;
-
-    @Column(nullable = false)
-    private long stone;
-
-    @Column(nullable = false)
-    private long food;
-
-    @Column(nullable = false)
-    private long iron;
-
-    @Column(nullable = false)
-    private Instant lastResourceUpdateAt;
-
-    @Column
-    private Instant keepUpgradeEndsAt;
-
+    @Column(nullable = false) private long gold;
+    @Column(nullable = false) private long wood;
+    @Column(nullable = false) private long stone;
+    @Column(nullable = false) private long food;
+    @Column(nullable = false) private long iron;
+    @Column(nullable = false) private Instant lastResourceUpdateAt;
+    @Column(nullable = false) private double goldRemainder;
+    @Column(nullable = false) private double woodRemainder;
+    @Column(nullable = false) private double stoneRemainder;
+    @Column(nullable = false) private double foodRemainder;
+    @Column(nullable = false) private double ironRemainder;
+    @Column private Instant keepUpgradeEndsAt;
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -68,25 +55,49 @@ public class CityState {
             return;
         }
         if (!now.isAfter(lastResourceUpdateAt)) return;
-
-        long elapsedSeconds = java.time.Duration.between(lastResourceUpdateAt, now).getSeconds();
+        long elapsedSeconds = Duration.between(lastResourceUpdateAt, now).getSeconds();
         if (elapsedSeconds <= 0) return;
-
-        // Temporary development rates per hour at keep level 1; each keep level adds 10%.
         double multiplier = 1.0 + Math.max(0, keepLevel - 1) * 0.10;
-        gold = addProduction(gold, 20, elapsedSeconds, multiplier);
-        wood = addProduction(wood, 45, elapsedSeconds, multiplier);
-        stone = addProduction(stone, 30, elapsedSeconds, multiplier);
-        food = addProduction(food, 60, elapsedSeconds, multiplier);
-        iron = addProduction(iron, 12, elapsedSeconds, multiplier);
+        gold = addProduction(gold, 20, elapsedSeconds, multiplier, 0);
+        wood = addProduction(wood, 45, elapsedSeconds, multiplier, 1);
+        stone = addProduction(stone, 30, elapsedSeconds, multiplier, 2);
+        food = addProduction(food, 60, elapsedSeconds, multiplier, 3);
+        iron = addProduction(iron, 12, elapsedSeconds, multiplier, 4);
         lastResourceUpdateAt = now;
     }
 
-    private long addProduction(long current, long perHour, long elapsedSeconds, double multiplier) {
-        if (current >= RESOURCE_CAP) return RESOURCE_CAP;
-        double produced = perHour * multiplier * (elapsedSeconds / 3600.0);
+    private long addProduction(long current, long perHour, long elapsedSeconds, double multiplier, int resource) {
+        if (current >= RESOURCE_CAP) {
+            setRemainder(resource, 0);
+            return RESOURCE_CAP;
+        }
+        double produced = perHour * multiplier * (elapsedSeconds / 3600.0) + getRemainder(resource);
         long wholeUnits = (long) Math.floor(produced);
-        return Math.min(RESOURCE_CAP, current + wholeUnits);
+        long updated = Math.min(RESOURCE_CAP, current + wholeUnits);
+        setRemainder(resource, updated >= RESOURCE_CAP ? 0 : produced - wholeUnits);
+        return updated;
+    }
+
+    private double getRemainder(int resource) {
+        return switch (resource) {
+            case 0 -> goldRemainder;
+            case 1 -> woodRemainder;
+            case 2 -> stoneRemainder;
+            case 3 -> foodRemainder;
+            case 4 -> ironRemainder;
+            default -> throw new IllegalArgumentException("Unknown resource.");
+        };
+    }
+
+    private void setRemainder(int resource, double value) {
+        switch (resource) {
+            case 0 -> goldRemainder = value;
+            case 1 -> woodRemainder = value;
+            case 2 -> stoneRemainder = value;
+            case 3 -> foodRemainder = value;
+            case 4 -> ironRemainder = value;
+            default -> throw new IllegalArgumentException("Unknown resource.");
+        }
     }
 
     public void beginKeepUpgrade(long goldCost, long woodCost, long stoneCost,
