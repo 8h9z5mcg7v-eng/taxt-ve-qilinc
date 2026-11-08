@@ -352,8 +352,8 @@ document.querySelectorAll('.place').forEach(el=>el.addEventListener('click',()=>
  document.querySelector('#description').textContent=selected.description;
  marchButton.disabled=!!returnJourney||!selected.enemy||total===0;
  document.querySelector('#path').style.display='block';
- if(el.dataset.id==='enemy'&&fortressState.captured){showGarrisonControls();showTerritoryEconomy();}
- else document.querySelector('#garrisonControls')?.remove();
+ if(el.dataset.id==='enemy'){showFortressControls();}
+ else document.querySelector('#fortressControls')?.remove();
  if(el.dataset.id==='enemy'){
   let prep=document.querySelector('#attackPreparation');
   if(!prep){prep=document.createElement('div');prep.id='attackPreparation';prep.style.cssText='margin-top:12px;padding:12px;border:1px solid #8b7048;border-radius:10px;background:#202d29';document.querySelector('.panel').append(prep);}
