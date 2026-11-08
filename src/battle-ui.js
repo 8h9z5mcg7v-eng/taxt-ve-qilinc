@@ -726,7 +726,7 @@ document.getElementById('fight').addEventListener('click', async () => {
     }
   }
   if(isWorldMapAttack || isBorderBattle){
-   try{const key='tvq_general_v1';const current=JSON.parse(localStorage.getItem(key)||'{}');current.id=commanderId;current.xp=Math.max(0,Number(current.xp)||0)+25+(result.winner==='attacker'?25:0);localStorage.setItem(key,JSON.stringify(current));}
+   try{const key='tvq_general_v1';const current=JSON.parse(localStorage.getItem(key)||'{}');current.id=commanderId;current.battleXpClaims=current.battleXpClaims||{};if(!current.battleXpClaims[battleId]){current.xp=Math.max(0,Number(current.xp)||0)+25+(result.winner==='attacker'?25:0);current.battleXpClaims[battleId]=Date.now();localStorage.setItem(key,JSON.stringify(current));}}
    catch(error){console.warn('Sərkərdə təcrübəsi saxlanmadı',error)}
   }
   const survivingDefender = result.remaining?.defender ?? defender;
@@ -738,7 +738,7 @@ document.getElementById('fight').addEventListener('click', async () => {
   if(isWorldMapAttack){try{const worldKey='tvq_world_state_v1';const world=JSON.parse(localStorage.getItem(worldKey)||'{}');const previous=world.redFortress||{};const captured=result.winner==='attacker';const now=Date.now();world.redFortress={...previous,captured,updatedAt:now,wallDamage:result.siege?.wallDamage??previous.wallDamage??0,capturedAt:captured?now:(previous.capturedAt||null),garrison:captured?{infantry:0,spearman:0,archer:0,cavalry:0,knight:0}:survivingDefender,remainingDefenders:total(survivingDefender),lastBattle:{winner:result.winner,at:now,attackerLosses:result.losses?.attacker||{},defenderLosses:result.losses?.defender||{},survivingAttackers:total(survivingAttacker)}};localStorage.setItem(worldKey,JSON.stringify(world));
 const returnArmy=Object.fromEntries(['infantry','spearman','archer','cavalry','knight'].map(type=>[type,Math.max(0,Math.floor(Number(survivingAttacker[type])||0))]));
 const returnTotal=Object.values(returnArmy).reduce((sum,n)=>sum+n,0);
-const battleReport={id:'battle-'+now,winner:result.winner,at:now,captured,attackerLosses:{...(result.losses?.attacker||{})},defenderLosses:{...(result.losses?.defender||{})},survivingAttackers:{...returnArmy},survivingDefenders:{...(survivingDefender||{})},wallDamage:result.siege?.wallDamage??0,wallBreached:!!result.siege?.wallBreached,returnDuration:0};
+const battleReport={id:battleId,winner:result.winner,at:now,captured,attackerLosses:{...(result.losses?.attacker||{})},defenderLosses:{...(result.losses?.defender||{})},survivingAttackers:{...returnArmy},survivingDefenders:{...(survivingDefender||{})},wallDamage:result.siege?.wallDamage??0,wallBreached:!!result.siege?.wallBreached,returnDuration:0};
 
 const returnSpeed={infantry:1,spearman:.96,archer:1.04,cavalry:1.48,knight:1.22};
 const weightedSpeed=Object.entries(returnArmy).reduce((sum,[type,count])=>sum+count*returnSpeed[type],0)/Math.max(1,returnTotal);
@@ -751,7 +751,7 @@ try{
  history.unshift(battleReport);
  localStorage.setItem(historyKey,JSON.stringify(history.slice(0,20)));
 }catch(error){console.warn('Döyüş tarixçəsini saxlamaq mümkün olmadı',error)}
-if(returnTotal){const trip={id:'battle-'+now,startedAt:now,arrivesAt:now+returnDuration,duration:returnDuration,army:returnArmy,result:captured?'victory':'defeat'};const queueKey='tvq_return_journeys_v1';const queue=(()=>{try{const value=JSON.parse(localStorage.getItem(queueKey)||'[]');return Array.isArray(value)?value:[]}catch{return []}})();queue.push(trip);localStorage.setItem(queueKey,JSON.stringify(queue));}
+if(returnTotal){const trip={id:battleId,startedAt:now,arrivesAt:now+returnDuration,duration:returnDuration,army:returnArmy,result:captured?'victory':'defeat'};const queueKey='tvq_return_journeys_v1';const queue=(()=>{try{const value=JSON.parse(localStorage.getItem(queueKey)||'[]');return Array.isArray(value)?value:[]}catch{return []}})();if(!queue.some(item=>item.id===battleId)){queue.push(trip);localStorage.setItem(queueKey,JSON.stringify(queue));}}
 localStorage.removeItem('tvq_active_journey_v1');const outcome=document.createElement('p');outcome.style.cssText='margin-top:12px;color:#f0d69d;font-weight:700';outcome.textContent=captured?'Qırmızı Qala fəth edildi! Şəhərə qayıdaraq nəticəni gör.':'Hücum uğursuz oldu. Sağ qalan ordu şəhərə qaytarıldı.';panel.appendChild(outcome);const back=document.createElement('a');back.href='./city.html';back.textContent='Şəhərə qayıt';back.style.cssText='display:block;text-align:center;margin-top:10px;padding:12px;background:#76542c;border-radius:9px;color:white;text-decoration:none';panel.appendChild(back);}catch(error){console.warn('Döyüş nəticəsi saxlanmadı',error)}}
   if(isBorderBattle){
     const returnArmy=Object.fromEntries(troopIds.map(type=>[type,Math.max(0,Math.floor(Number(survivingAttacker[type])||0))]));
