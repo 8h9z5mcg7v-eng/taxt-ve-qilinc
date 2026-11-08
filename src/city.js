@@ -179,10 +179,45 @@ function footpath(x,z,width,length,rotation=0){
 footpath(-23,-13,5,34,.42);footpath(23,-13,5,34,-.42);
 footpath(-22,29,5,32,-.4);footpath(22,29,5,32,.4);
 footpath(0,39,7,24,0);
-// Castle keep and curtain walls.
+// Main keep: layered stonework, four defensive towers and a fortified entrance.
 box('Baş qala',0,0,0,34,30,32,stone);
 box('Baş qala',0,30,0,23,12,22,stoneDark);
-for(let i=-1;i<=1;i+=2){box('Qala mazğalı',i*9,40,0,2,8,2,stone);box('Qala mazğalı',0,40,i*9,2,8,2,stone)}
+box('Qala kürsüsü',0,1.1,0,36,2.2,34,stoneDark,false);
+// Recessed front entrance with timber gate, iron braces and a stone arch.
+box('Baş qala giriş qapısı',0,1.2,16.35,8.8,2.4,1.1,stoneDark);
+box('Baş qala giriş qapısı',0,6.4,16.65,7.1,10.4,.8,wood);
+for(let side=-1;side<=1;side+=2){
+ box('Qala qapısının dəmir bəndi',side*2.35,6.4,17.1,.28,9.4,.18,metal);
+ box('Qala qapısının dəmir bəndi',side*1.2,6.4,17.12,.18,9.4,.18,metal);
+}
+box('Qala qapısının üst tirı',0,11.5,17,8.2,.65,1.2,stoneDark,false);
+for(const y of [9.5,13.5,24.5,28.5]){
+ for(const x of [-8.5,8.5]){
+  box('Baş qala pəncərəsi',x,y,16.18,2.5,3.8,.45,stoneDark,false);
+  box('Baş qala pəncərəsi',x,y,16.43,1.45,2.7,.2,glass,false);
+  box('Baş qala pəncərə çərçivəsi',x,y-1.65,16.56,2.9,.28,.22,woodLight,false);
+ }
+}
+for(let i=-1;i<=1;i+=2){
+ box('Qala mazğalı',i*9,40,0,2,8,2,stone);
+ box('Qala mazğalı',0,40,i*9,2,8,2,stone);
+}
+// Four round corner towers give the keep a readable fortress silhouette.
+for(const [tx,tz] of [[-14,-13],[14,-13],[-14,13],[14,13]]){
+ const tower=cylinder('Baş qalanın müdafiə qülləsi',tx,0,tz,5.7,6.3,47,stone,12);
+ cylinder('Qüllə üst meydançası',tx,45.5,tz,6.1,6.1,2.8,stoneDark,12);
+ cylinder('Qüllə parapeti',tx,48.2,tz,5.9,5.9,1.1,stone,12);
+ const cap=new THREE.Mesh(new THREE.ConeGeometry(7.3,10,12),roof);
+ cap.position.set(tx,54,tz);cap.castShadow=true;cap.userData.label='Baş qalanın müdafiə qülləsi';pickables.push(cap);scene.add(cap);
+ for(let n=0;n<10;n++){
+  const a=n*Math.PI/5;
+  const merlon=box('Qüllə mazğalı',tx+Math.cos(a)*5.65,49.2,tz+Math.sin(a)*5.65,1.05,1.7,1.05,stoneDark,false);
+  merlon.rotation.y=a;
+ }
+ // Narrow arrow slits on the visible faces.
+ box('Qüllə ox mazğalı',tx,27,tz+5.82,.48,4,.2,dark,false);
+ box('Qüllə ox mazğalı',tx+5.82,27,tz,.2,4,.48,dark,false);
+}
 const keepRoof=new THREE.Mesh(new THREE.ConeGeometry(18,13,4),roof);keepRoof.position.set(0,51,0);keepRoof.rotation.y=Math.PI/4;keepRoof.castShadow=true;keepRoof.userData.label='Baş qala';pickables.push(keepRoof);scene.add(keepRoof);
 const wallZ=49,wallX=49;
 const wallSegments=[
