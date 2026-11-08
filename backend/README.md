@@ -47,7 +47,7 @@ Health: `GET /actuator/health`
 
 ## Security and production readiness
 - Passwords are stored as BCrypt hashes; plaintext passwords are never persisted.
-- JWT signing secret must be private, randomly generated and supplied through `JWT_SECRET_BASE64` in production. The checked-in default is development-only and must never be used in a public deployment.
+- JWT signing secret is mandatory: the application refuses to start if `JWT_SECRET_BASE64` is missing or invalid. Generate a private random secret of at least 32 bytes, Base64-encode it, and supply it through the environment. Never commit the real secret to GitHub or reuse it across environments.
 - HTTPS, email verification, refresh-token rotation/revocation, login rate limiting, account recovery and abuse protection are still required before public launch.
 - Never expose MySQL, Redis or RabbitMQ publicly in production.
 - Do not store authoritative resources, troops or battle outcomes in the browser. The server must validate every state-changing command.
