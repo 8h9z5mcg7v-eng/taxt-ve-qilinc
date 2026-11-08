@@ -9,7 +9,7 @@ class CityStateTest {
     @Test
     void keepUpgradeDeductsResourcesAndCompletesOnlyAfterDeadline() {
         CityState city = new CityState(UUID.randomUUID(), "Sərkərdə qalası");
-        Instant start = Instant.parse("2026-01-01T00:00:00Z");
+        Instant start = city.getLastResourceUpdateAt();
         Instant finish = start.plusSeconds(60);
 
         city.beginKeepUpgrade(1000, 1400, 1200, 800, 500, finish);
@@ -29,7 +29,7 @@ class CityStateTest {
     @Test
     void resourcesAccrueWhilePlayerIsOfflineAndRespectStorageCap() {
         CityState city = new CityState(UUID.randomUUID(), "Qala");
-        Instant start = Instant.parse("2026-01-01T00:00:00Z");
+        Instant start = city.getLastResourceUpdateAt();
 
         city.accrueResources(start.plusSeconds(3600));
 
@@ -50,7 +50,7 @@ class CityStateTest {
     @Test
     void fractionalProductionIsNotLostAcrossFrequentReads() {
         CityState city = new CityState(UUID.randomUUID(), "Qala");
-        Instant start = Instant.parse("2026-01-01T00:00:00Z");
+        Instant start = city.getLastResourceUpdateAt();
 
         for (int minute = 1; minute <= 60; minute++) {
             city.accrueResources(start.plusSeconds(minute * 60L));
@@ -66,7 +66,7 @@ class CityStateTest {
     @Test
     void backwardClockDoesNotReduceResourcesOrMoveTimestampBackwards() {
         CityState city = new CityState(UUID.randomUUID(), "Qala");
-        Instant start = Instant.parse("2026-01-01T00:00:00Z");
+        Instant start = city.getLastResourceUpdateAt();
 
         city.accrueResources(start.plusSeconds(3600));
         city.accrueResources(start.plusSeconds(1200));
