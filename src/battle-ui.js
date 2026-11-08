@@ -122,14 +122,17 @@ function renderTerrain(terrain, wallDamage = 0, siege = {}) {
       }
       svgNode('text', { x: 300, y: 148, 'text-anchor': 'middle', fill: '#ffe0a1', 'font-size': 11, 'font-weight': 700 }, scene, 'DİVAR YARILIB');
     }
-    const defensiveMachines = Math.min(3, Math.max(0, Number(siege.defenseCatapult) || 0));
+    const defensiveMachines = Math.min(9, Math.max(0, Number(siege.defenseCatapult) || 0));
     for (let i = 0; i < defensiveMachines; i++) {
-      const x = 238 + i * 62;
-      const weapon = svgNode('g', { transform: `translate(${x} 91)` }, scene);
-      svgNode('path', { d: 'M-13 12 L-9 -2 L9 -2 L13 12 M-17 -2 L17 -2 M0 -2 L0 -22', fill: 'none', stroke: '#4a3020', 'stroke-width': 3, 'stroke-linecap': 'round' }, weapon);
-      svgNode('path', { d: 'M-5 -22 L5 -22 L3 -16 L-3 -16Z', fill: '#a18a58', stroke: '#30251e', 'stroke-width': 1.5 }, weapon);
-      svgNode('circle', { cx: 0, cy: -25, r: 3.5, fill: '#77786d', stroke: '#292722', 'stroke-width': 1 }, weapon);
-      svgNode('text', { x: 0, y: 24, 'text-anchor': 'middle', fill: '#ffe0a1', 'font-size': 8, 'font-weight': 700, stroke: '#292722', 'stroke-width': 1, 'paint-order': 'stroke' }, weapon, 'MÜDAFİƏ');
+      const x = 222 + i * 21;
+      const weapon = svgNode('g', { id: `defensiveCatapult${i}`, transform: `translate(${x} 91)` }, scene);
+      svgNode('path', { d: 'M-10 12 L-8 -2 L8 -2 L10 12 M-13 -2 L13 -2 M-8 3 L8 3', fill: 'none', stroke: '#4a3020', 'stroke-width': 3, 'stroke-linecap': 'round' }, weapon);
+      const arm = svgNode('g', { id: `defensiveCatapultArm${i}`, transform: 'rotate(-8 0 -17)' }, weapon);
+      svgNode('path', { d: 'M0 5 L0 -25', fill: 'none', stroke: '#684326', 'stroke-width': 4, 'stroke-linecap': 'round' }, arm);
+      svgNode('path', { d: 'M-5 -25 L5 -25 L3 -19 L-3 -19Z', fill: '#a18a58', stroke: '#30251e', 'stroke-width': 1.5 }, arm);
+      svgNode('path', { d: 'M0 -25 Q-8 -33 -12 -25 M0 -25 Q8 -33 12 -25', fill: 'none', stroke: '#d1b27b', 'stroke-width': 1.5 }, arm);
+      svgNode('circle', { cx: 0, cy: -28, r: 3.2, fill: '#77786d', stroke: '#292722', 'stroke-width': 1 }, arm);
+      svgNode('text', { x: 0, y: 24, 'text-anchor': 'middle', fill: '#ffe0a1', 'font-size': 7, 'font-weight': 700, stroke: '#292722', 'stroke-width': 1, 'paint-order': 'stroke' }, weapon, 'MÜDAFİƏ');
     }
   }
   if ((siege.catapult || 0) > 0 || (siege.ram || 0) > 0 || (siege.tower || 0) > 0) {
@@ -397,12 +400,17 @@ function playCombatAnimation(attacker = {}, defender = {}, siege = {}, result = 
     launch(115 + i * 24, 210, 365 + i * 10, 158 + i * 12, '#e1a34b', i * 170, 5);
   }
   const fortressCounterShots = result.terrain === 'fortress'
-    ? Math.min(8, result.siege?.defensiveCatapults || 0) : 0;
+    ? Math.min(9, Math.max(0, Number(result.siege?.defensiveCatapults) || 0)) : 0;
   for (let i = 0; i < fortressCounterShots; i++) {
-    const sourceX = 230 + (i % 4) * 44;
-    const targetX = 92 + (i * 37) % 390;
+    const sourceX = 222 + i * 21;
+    const targetX = 92 + (i * 47) % 390;
     const targetY = 242 + (i % 3) * 17;
-    launch(sourceX, 78, targetX, targetY, '#8f8b80', 260 + i * 210, 6);
+    const arm = field.querySelector(`#defensiveCatapultArm${i}`);
+    if (arm) arm.animate(
+      [{ transform: 'rotate(-8deg)' }, { transform: 'rotate(32deg)' }, { transform: 'rotate(-8deg)' }],
+      { duration: 620, delay: 180 + i * 150, easing: 'cubic-bezier(.2,.8,.2,1)' }
+    );
+    launch(sourceX, 78, targetX, targetY, '#8f8b80', 260 + i * 150, 6);
   }
   // Defensive towers fire coordinated arrow volleys; higher towers field more
   // firing positions, independently of the heavy defensive catapults.
