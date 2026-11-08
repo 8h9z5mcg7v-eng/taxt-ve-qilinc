@@ -71,8 +71,8 @@ scene.fog=new THREE.Fog(0x879b98,170,340);
 const camera=new THREE.PerspectiveCamera(36,innerWidth/innerHeight,.1,800);
 camera.position.set(150,165,175);
 const compactCityViewport=innerWidth<700;
-const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
-renderer.setPixelRatio(Math.min(devicePixelRatio,compactCityViewport?1.25:1.5));
+const renderer=new THREE.WebGLRenderer({antialias:!compactCityViewport,powerPreference:compactCityViewport?'low-power':'high-performance'});
+renderer.setPixelRatio(Math.min(devicePixelRatio,compactCityViewport?1.15:1.5));
 renderer.setSize(innerWidth,innerHeight);
 renderer.shadowMap.enabled=true;
 renderer.shadowMap.type=THREE.PCFSoftShadowMap;
@@ -81,7 +81,7 @@ renderer.toneMapping=THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure=1.15;
 host.appendChild(renderer.domElement);
 scene.add(new THREE.HemisphereLight(0xdce9ef,0x4b4935,2.0));
-const sun=new THREE.DirectionalLight(0xffdfb0,3.1);sun.position.set(-90,150,80);sun.castShadow=true;sun.shadow.mapSize.set(compactCityViewport?1024:2048,compactCityViewport?1024:2048);sun.shadow.camera.left=-130;sun.shadow.camera.right=130;sun.shadow.camera.top=130;sun.shadow.camera.bottom=-130;scene.add(sun);
+const sun=new THREE.DirectionalLight(0xffdfb0,3.1);sun.position.set(-90,150,80);sun.castShadow=true;sun.shadow.mapSize.set(compactCityViewport?512:2048,compactCityViewport?512:2048);sun.shadow.camera.left=-130;sun.shadow.camera.right=130;sun.shadow.camera.top=130;sun.shadow.camera.bottom=-130;scene.add(sun);
 const fill=new THREE.DirectionalLight(0x9ab9df,1.0);fill.position.set(100,60,-100);scene.add(fill);
 const mat=(c,r=.88)=>new THREE.MeshStandardMaterial({color:c,roughness:r});
 const buildingMaterials={
@@ -898,6 +898,6 @@ collectOfflineTerritoryIncome();
 saveCity();
 try{const world=JSON.parse(localStorage.getItem('tvq_world_state_v1')||'{}');if(world.redFortress){info.innerHTML=world.redFortress.captured?'<b>🏆 Qırmızı Qala fəth edildi!</b>Qələbə tarixi: '+new Date(world.redFortress.updatedAt).toLocaleString('az-AZ')+'.':'<b>⚔ Hücum başa çatdı</b>Düşmən qalası müdafiə olunur. Sağ qalan düşmən: '+world.redFortress.remainingDefenders+'. Ordunu yenidən hazırlaya bilərsən.';}}catch{}
 document.querySelector('#home').addEventListener('click',()=>{camera.position.set(150,165,175);controls.target.set(0,10,12);controls.update()});
-addEventListener('resize',()=>{const compact=innerWidth<700;camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,compact?1.25:1.5));sun.shadow.mapSize.set(compact?1024:2048,compact?1024:2048);sun.shadow.needsUpdate=true});
+addEventListener('resize',()=>{const compact=innerWidth<700;camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,compact?1.15:1.5));sun.shadow.mapSize.set(compact?512:2048,compact?512:2048);sun.shadow.needsUpdate=true});
 const patrolClock=new THREE.Clock();
 renderer.setAnimationLoop(()=>{const delta=patrolClock.getDelta(),t=patrolClock.elapsedTime;cityAnimationMixers.forEach(mixer=>mixer.update(delta));patrols.forEach((p,i)=>{p.position.x=p.userData.baseX+Math.sin(t*.7+i)*1.4;p.rotation.y=Math.sin(t*.55+i)*.22});controls.update();renderer.render(scene,camera)});
