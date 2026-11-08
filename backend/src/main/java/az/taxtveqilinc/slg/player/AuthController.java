@@ -3,12 +3,14 @@ package az.taxtveqilinc.slg.player;
 import az.taxtveqilinc.slg.security.JwtService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import java.time.Instant;
+import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 @RestController
@@ -26,12 +28,22 @@ public class AuthController {
         @NotBlank @Email @Size(max = 190) String email,
         @NotBlank @Size(min = 3, max = 24) String nickname,
         @NotBlank @Size(min = 10, max = 72) String password
-    ) {}
+    ) {
+        @AssertTrue(message = "Şifrə UTF-8 formatında maksimum 72 bayt ola bilər.")
+        public boolean isPasswordWithinBcryptLimit() {
+            return password == null || password.getBytes(StandardCharsets.UTF_8).length <= 72;
+        }
+    }
 
     public record LoginRequest(
         @NotBlank @Email String email,
         @NotBlank @Size(min = 10, max = 72) String password
-    ) {}
+    ) {
+        @AssertTrue(message = "Şifrə UTF-8 formatında maksimum 72 bayt ola bilər.")
+        public boolean isPasswordWithinBcryptLimit() {
+            return password == null || password.getBytes(StandardCharsets.UTF_8).length <= 72;
+        }
+    }
 
     public record AuthResponse(UUID playerId, String nickname, String accessToken,
                                String tokenType, Instant createdAt) {}
