@@ -217,3 +217,24 @@ test('fortress wall damage progressively weakens defenders and a breach removes 
  assert.ok(intact.log.some(line=>line.includes('müdafiə bütövlüyü: 100%')));
  assert.ok(breached.log.some(line=>line.includes('müdafiə bütövlüyü: 60%')));
 });
+
+
+test('empty fortress garrison still takes defensive tower fire and damages walls', () => {
+  const result = resolveBattle({
+    attacker: { infantry: 40, archer: 20 },
+    defender: {},
+    terrain: 'fortress',
+    siege: { ram: 1, catapult: 1 },
+    defenseCatapult: 4,
+    wallLevel: 3,
+    priorWallDamage: 20,
+    seed: 21
+  });
+  assert.equal(result.winner, 'attacker');
+  assert.equal(result.siege.defensiveCatapults, 4);
+  assert.ok(result.siege.defensiveStoneDamage > 0);
+  assert.ok(result.siege.wallDamage > 20);
+  assert.ok(Object.values(result.losses.attacker).some(loss => loss > 0));
+  assert.equal(Object.values(result.losses.defender).reduce((sum, loss) => sum + loss, 0), 0);
+  assert.ok(Object.values(result.remaining.attacker).every(count => count >= 0));
+});

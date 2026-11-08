@@ -51,6 +51,29 @@ export function resolveBattle({ attacker, defender, direction = 'south', tactic 
   const defensiveCatapults = safeTerrain === 'fortress' ? siegeCount(defenseCatapult) : 0;
 
   if (!attackCount || !defendCount) {
+    if (attackCount && safeTerrain === 'fortress') {
+      const wallMax = 100;
+      const safeWallLevel = clamp(Math.floor(Number(wallLevel) || 1), 1, 10);
+      const wallDamageReduction = 1 - (safeWallLevel - 1) * 0.035;
+      const incomingWallDamage = (siegeEngines.ram * 18 + siegeEngines.catapult * 30) * wallDamageReduction;
+      const safePriorWallDamage = clamp(Number(priorWallDamage) || 0, 0, wallMax);
+      const wallDamageThisBattle = Math.min(incomingWallDamage, wallMax - safePriorWallDamage);
+      const wallDamage = safePriorWallDamage + wallDamageThisBattle;
+      const defensiveStoneDamage = defensiveCatapults * 12;
+      const lossRate = clamp(defensiveCatapults * 0.025, 0, 0.35);
+      const random = (Math.sin(seed * 9301 + 49297) * 233280) % 1;
+      const variance = 0.94 + Math.abs(random) * 0.12;
+      const attackerLosses = Object.fromEntries(Object.entries(attackArmy).map(([type, count]) => [type, Math.min(count, Math.round(count * lossRate * variance))]));
+      const remainingAttackers = Object.fromEntries(Object.keys(attackArmy).map(type => [type, attackArmy[type] - attackerLosses[type]]));
+      return {
+        winner: 'attacker', direction: safeDirection, tactic: safeTactic, defenderTactic: safeDefenderTactic, terrain: safeTerrain,
+        siege: { ...siegeEngines, defensiveCatapults, defensiveStoneDamage, wallMax, wallLevel: safeWallLevel, wallDamageBefore: safePriorWallDamage, wallDamageThisBattle, wallDamage, wallRemaining: wallMax - wallDamage, wallBreached: wallDamage >= wallMax },
+        power: { attacker: Math.max(1, armySize(attackArmy) * 10 - defensiveStoneDamage), defender: 0 },
+        remaining: { attacker: remainingAttackers, defender: defendArmy },
+        losses: { attacker: attackerLosses, defender: { ...defendArmy } },
+        log: ['Qalada müdafiəçi qarnizon yoxdur.', `Müdafiə qüllələrinin katapult zərbəsi: ${defensiveCatapults} · hücumçu itkisi: ${Object.values(attackerLosses).reduce((sum, count) => sum + count, 0)}`, `Divar zədəsi: +${Math.round(wallDamageThisBattle)}% · ümumi: ${Math.round(wallDamage)}% · ${wallDamage >= wallMax ? 'divar yarıldı' : 'divar hələ dayanır'}`]
+      };
+    }
     return { winner: attackCount ? 'attacker' : 'defender', direction: safeDirection, tactic: safeTactic, attacker: attackArmy, defender: defendArmy, log: ['Döyüş üçün hər iki tərəfdə qoşun olmalıdır.'] };
   }
 
