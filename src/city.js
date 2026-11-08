@@ -316,14 +316,20 @@ const cityAssetRoot='https://raw.githubusercontent.com/anishthite/cc0-models-Pol
 function loadCityAssetSource(source,label,x,z,targetWidth,rotation=0,onLoaded){
  cityAssetStatus.total++;refreshCityAssetStatus();
  const loadAttempt=(attempt=0)=>{
+  const retryOrFail=error=>{
+   console.warn('3D model yüklənmədi:',label,error);
+   if(attempt<2){const wait=800*Math.pow(2,attempt);cityAssetStatusPanel.textContent=label+' yenidən yüklənir…';setTimeout(()=>loadAttempt(attempt+1),wait);return}
+   cityAssetStatus.failed++;refreshCityAssetStatus();
+  };
  cityAssetLoader.load(source,loaded=>{
-  const root=loaded.scene;
+  const root=loaded?.scene;
+  if(!root){retryOrFail(new Error('GLB daxilində səhnə yoxdur'));return}
   if(loaded.animations?.length){const mixer=new THREE.AnimationMixer(root);loaded.animations.forEach(clip=>mixer.clipAction(clip).play());cityAnimationMixers.push(mixer)}
   root.updateMatrixWorld(true);
   let bounds=new THREE.Box3().setFromObject(root);
   const size=bounds.getSize(new THREE.Vector3());
   const width=Math.max(size.x,size.z);
-  if(!Number.isFinite(width)||width<.01){console.warn('Model ölçüsü yanlışdır:',label);return}
+  if(!Number.isFinite(width)||width<.01){retryOrFail(new Error('Modelin ölçüsü yanlışdır'));return}
   const scale=targetWidth/width;
   root.scale.setScalar(scale);
   root.rotation.y=rotation;
@@ -339,11 +345,7 @@ function loadCityAssetSource(source,label,x,z,targetWidth,rotation=0,onLoaded){
   root.userData.label=label;scene.add(root);
   if(onLoaded)onLoaded(root);
   cityAssetStatus.loaded++;refreshCityAssetStatus();
- },undefined,error=>{
-  console.warn('3D model yüklənmədi:',label,error);
-  if(attempt<2){const wait=800*Math.pow(2,attempt);cityAssetStatusPanel.textContent=label+' yenidən yüklənir…';setTimeout(()=>loadAttempt(attempt+1),wait);return}
-  cityAssetStatus.failed++;refreshCityAssetStatus();
- });
+ },undefined,retryOrFail);
  };
  loadAttempt();
 }
