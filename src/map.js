@@ -293,6 +293,8 @@ function showOutpostControls(id){
   showOutpostControls(id);
  });
 
+}
+
  // Fortress ownership, garrison management and timed enemy raids.
 const fortressWorldKey='tvq_world_state_v1';
 const emptyGarrison=()=>({infantry:0,spearman:0,archer:0,cavalry:0,knight:0});
