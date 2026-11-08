@@ -103,4 +103,38 @@ class CityServiceTest {
         assertEquals(ironBefore - 100, city.getIron());
         verify(repository).findByPlayerIdForUpdate(playerId);
     }
+
+    @Test
+    void buildingUpgradeWithInsufficientResourcesDoesNotSpendOrSchedule() {
+        CityStateRepository repository = mock(CityStateRepository.class);
+        UUID playerId = UUID.randomUUID();
+        CityState city = new CityState(playerId, "Sərkərdə qalası");
+        city.beginKeepUpgrade(0, 0, 0, 0, 0, java.time.Instant.now().minusSeconds(1));
+        city.deductBuildingUpgradeCost(0, 0, 0, 0, 500);
+        when(repository.findByPlayerIdForUpdate(playerId)).thenReturn(Optional.of(city));
+        CityService service = new CityService(repository);
+
+        long goldBefore = city.getGold();
+        long woodBefore = city.getWood();
+        long stoneBefore = city.getStone();
+        long foodBefore = city.getFood();
+        long ironBefore = city.getIron();
+
+        IllegalArgumentException error = assertThrows(
+            IllegalArgumentException.class,
+            () -> service.startBuildingUpgrade(playerId, "WOODCUTTER")
+        );
+
+        assertEquals("Binanı təkmilləşdirmək üçün resurslar kifayət etmir.", error.getMessage());
+        assertEquals(2, city.getKeepLevel());
+        assertEquals(1, city.getWoodcutterLevel());
+        assertNull(city.getWoodcutterUpgradeEndsAt());
+        assertEquals(goldBefore, city.getGold());
+        assertEquals(woodBefore, city.getWood());
+        assertEquals(stoneBefore, city.getStone());
+        assertEquals(foodBefore, city.getFood());
+        assertEquals(ironBefore, city.getIron());
+        verify(repository).findByPlayerIdForUpdate(playerId);
+    }
+
 }
