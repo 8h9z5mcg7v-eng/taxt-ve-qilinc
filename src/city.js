@@ -180,6 +180,8 @@ function footpath(x,z,width,length,rotation=0){
 footpath(-23,-13,5,34,.42);footpath(23,-13,5,34,-.42);
 footpath(-22,29,5,32,-.4);footpath(22,29,5,32,.4);
 footpath(0,39,7,24,0);
+// Keep the complete procedural citadel as a safe fallback until the authored castle GLB loads.
+const keepBlockoutStart=scene.children.length;
 // Main keep: layered stonework, four defensive towers and a fortified entrance.
 const keepGlass=mat(0x344a4c,.28),keepTrim=mat(0x886443);
 box('Baş qala',0,0,0,34,30,32,stone);
@@ -221,6 +223,7 @@ for(const [tx,tz] of [[-14,-13],[14,-13],[-14,13],[14,13]]){
  box('Qüllə ox mazğalı',tx+5.82,27,tz,.2,4,.48,dark,false);
 }
 const keepRoof=new THREE.Mesh(new THREE.ConeGeometry(18,13,4),roof);keepRoof.position.set(0,51,0);keepRoof.rotation.y=Math.PI/4;keepRoof.castShadow=true;keepRoof.userData.label='Baş qala';pickables.push(keepRoof);scene.add(keepRoof);
+const keepBlockoutMeshes=scene.children.slice(keepBlockoutStart);
 const wallZ=49,wallX=49;
 const wallSegments=[
  {label:'Şimal qala divarı',x:0,z:-wallZ,w:112,h:13,d:7,axis:'x'},
@@ -321,6 +324,11 @@ function loadCityAssetSource(source,label,x,z,targetWidth,rotation=0,onLoaded){
 function loadCityAsset(file,label,x,z,targetWidth,rotation=0,onLoaded){
  return loadCityAssetSource(cityAssetRoot+file,label,x,z,targetWidth,rotation,onLoaded);
 }
+// Detailed CC0 citadel replaces the entire central keep blockout after successful load.
+// The model is scaled to the existing footprint to preserve clearance for courtyard buildings.
+loadCityAssetSource('https://files.innerscene.com/library/castle-with-keep-1a75a9e1/be0d9411a3e3b580b2b5/castle-with-keep.glb','Baş qala',0,0,40,0,()=>{
+ keepBlockoutMeshes.forEach(object=>{object.visible=false});
+});
 // Free GLB village kit structures replace matching procedural blockouts when loaded.
 const shurikenModelRoot='https://shuriken.studio/models/download/';
 loadCityAssetSource(shurikenModelRoot+'4ce4b4fd-695b-4b5a-9f46-e1c0d929ae7b','Tövlə',29,-29,20,0,()=>{stableBlockout.visible=false});

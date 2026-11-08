@@ -51,6 +51,7 @@ Aşağıdakı modellər `src/city.js` daxilində GLTFLoader ilə uzaq URL-dən �
 - [x] Mənbə linkləri qeydə alınıb
 - [x] İlkin lisenziya qeydləri yoxlanıb
 - [ ] Aktivlər repozitoriyaya lokal yüklənib (hazırda bir hissəsi uzaq URL-dən çağırılır)
+- [ ] Castle with Keep GLB brauzerdə yüklənib və procedural fallback gizlədilməsi vizual təsdiqlənib
 - [ ] Material və tekstura keyfiyyəti yoxlanıb
 - [ ] Poliqon sayı və LOD yoxlanıb
 - [ ] GLB iPhone Safari-də açılıb
