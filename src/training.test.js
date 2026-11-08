@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeTrainingQueue, createTrainingJob, completeTrainingQueue } from './training.js';
+import { normalizeTrainingQueue, createTrainingJob, completeTrainingQueue, trainingDurationMs } from './training.js';
 
 test('training queue rejects malformed, duplicate and unsupported jobs',()=>{
  const queue=normalizeTrainingQueue([
@@ -44,4 +44,13 @@ test('new training jobs reject unsupported troops, invalid counts and duplicate 
  assert.equal(createTrainingJob({type:'dragon',count:2,now:0,id:'x'}),null);
  assert.equal(createTrainingJob({type:'infantry',count:501,now:0,id:'x'}),null);
  assert.equal(createTrainingJob({type:'infantry',count:1,now:0,id:'x',queue:[{id:'x',type:'archer',count:1,startedAt:0,endsAt:3000}]}),null);
+});
+
+test('barracks upgrades speed up troop training without changing queue order',()=>{
+ assert.equal(trainingDurationMs(10,1),30000);
+ assert.equal(trainingDurationMs(10,2),28500);
+ assert.equal(trainingDurationMs(10,10),16500);
+ const job=createTrainingJob({queue:[],type:'infantry',count:10,now:1000,id:'fast',barracksLevel:3});
+ assert.equal(job.duration,27000);
+ assert.equal(job.endsAt,28000);
 });

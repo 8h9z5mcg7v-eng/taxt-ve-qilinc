@@ -3,6 +3,13 @@ const MAX_QUEUE=8;
 const MAX_JOB_COUNT=500;
 const TRAINING_MS_PER_UNIT=3000;
 
+export function trainingDurationMs(count,barracksLevel=1){
+ const units=Math.max(1,Math.min(MAX_JOB_COUNT,Math.floor(Number(count)||1)));
+ const level=Math.max(1,Math.min(10,Math.floor(Number(barracksLevel)||1)));
+ const speedFactor=1-(level-1)*0.05;
+ return Math.max(units*1000,Math.round(units*TRAINING_MS_PER_UNIT*speedFactor));
+}
+
 export function normalizeTrainingQueue(value){
  if(!Array.isArray(value))return [];
  const seen=new Set(),queue=[];
@@ -20,14 +27,14 @@ export function normalizeTrainingQueue(value){
  return queue;
 }
 
-export function createTrainingJob({queue=[],type,count,now=Date.now(),id}={}){
+export function createTrainingJob({queue=[],type,count,now=Date.now(),id,barracksLevel=1}={}){
  const safeQueue=normalizeTrainingQueue(queue);
  const safeCount=Math.floor(Number(count));
  const start=Number(now);
  if(safeQueue.length>=MAX_QUEUE||!TROOP_TYPES.includes(type)||!Number.isFinite(safeCount)||safeCount<1||safeCount>MAX_JOB_COUNT||!Number.isFinite(start)||typeof id!=='string'||!id.trim())return null;
  if(safeQueue.some(job=>job.id===id))return null;
  const startedAt=Math.max(start,Number(safeQueue.at(-1)?.endsAt)||start);
- const duration=safeCount*TRAINING_MS_PER_UNIT;
+ const duration=trainingDurationMs(safeCount,barracksLevel);
  return {id,type,count:safeCount,startedAt,endsAt:startedAt+duration,duration};
 }
 

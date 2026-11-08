@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { normalizeTrainingQueue, createTrainingJob, completeTrainingQueue } from './training.js';
+import { normalizeTrainingQueue, createTrainingJob, completeTrainingQueue, trainingDurationMs } from './training.js';
 
 // Recover an interrupted border-army dispatch before this page reads city or battle state.
 const borderDispatchJournalKey='tvq_pending_border_dispatch_v1';
@@ -309,7 +309,7 @@ const troopCosts={infantry:{wood:10,gold:5},spearman:{wood:15,stone:5},archer:{w
 const troopTitles={infantry:'Piyada',spearman:'Nizəçi',archer:'Oxçu',cavalry:'Süvari',knight:'Cəngavər'};
 const recruit=document.querySelector('#recruit');
 document.querySelector('#recruitToggle').addEventListener('click',()=>recruit.classList.toggle('open'));
-function updateArmyStatus(){const active=trainingQueue[0];const remaining=active?Math.max(0,Number(active.endsAt)-Date.now()):0;document.querySelector('#armyStatus').textContent='Hazır qoşun: '+Object.entries(army).map(([k,v])=>troopTitles[k]+': '+v).join(' · ')+(active?' · 🛠 Hazırlanır: '+troopTitles[active.type]+' '+active.count+' ədəd · '+Math.ceil(remaining/1000)+' san.':'')+(trainingQueue.length>1?' · Növbədə '+(trainingQueue.length-1)+' sifariş':'')}
+function updateArmyStatus(){const active=trainingQueue[0];const remaining=active?Math.max(0,Number(active.endsAt)-Date.now()):0;const level=Math.max(1,Math.min(10,Math.floor(Number(levels['Kazarma'])||1)));document.querySelector('#armyStatus').textContent='Kazarma səviyyə '+level+' · təlim sürəti +'+((level-1)*5)+'% · Hazır qoşun: '+Object.entries(army).map(([k,v])=>troopTitles[k]+': '+v).join(' · ')+(active?' · 🛠 Hazırlanır: '+troopTitles[active.type]+' '+active.count+' ədəd · '+Math.ceil(remaining/1000)+' san.':'')+(trainingQueue.length>1?' · Növbədə '+(trainingQueue.length-1)+' sifariş':'')}
 function renderHospital(){
  let panel=document.querySelector('#hospitalPanel');
  if(!panel){panel=document.createElement('section');panel.id='hospitalPanel';panel.style.cssText='position:absolute;right:12px;top:112px;z-index:5;width:min(290px,calc(100vw - 24px));padding:11px 13px;border:1px solid #b58a55;border-radius:10px;background:#1d2b25ed;color:#f4e6c8;font:12px/1.5 system-ui;pointer-events:auto';document.body.append(panel)}
@@ -365,7 +365,8 @@ document.querySelector('#train').addEventListener('click',()=>withCityEconomyLoc
  if(trainingQueue.length>=8){document.querySelector('#armyStatus').textContent='Təlim növbəsi doludur. Əvvəlki sifarişlərin tamamlanmasını gözlə.';return}
  const totalCost={wood:(cost.wood||0)*count,stone:(cost.stone||0)*count,gold:(cost.gold||0)*count};
  if(Object.keys(totalCost).some(k=>resources[k]<totalCost[k])){document.querySelector('#armyStatus').textContent='Resurs çatışmır — '+count+' '+troopTitles[type]+' hazırlamaq mümkün deyil.';return}
- const job=createTrainingJob({queue:trainingQueue,type,count,now:Date.now(),id:'train-'+Date.now()+'-'+Math.random().toString(36).slice(2,8)});
+ const barracksLevel=Math.max(1,Math.min(10,Math.floor(Number(levels['Kazarma'])||1)));
+ const job=createTrainingJob({queue:trainingQueue,type,count,now:Date.now(),barracksLevel,id:'train-'+Date.now()+'-'+Math.random().toString(36).slice(2,8)});
  if(!job){document.querySelector('#armyStatus').textContent='Təlim növbəsi doludur və ya sifariş məlumatı yanlışdır.';return}
  for(const key of Object.keys(resources))resources[key]-=totalCost[key];
  trainingQueue.push(job);
