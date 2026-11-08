@@ -23,6 +23,10 @@ spring:
     port: ${RABBITMQ_PORT:5672}
     username: ${RABBITMQ_USER:game}
     password: ${RABBITMQ_PASSWORD:change-me}
+app:
+  jwt:
+    secret-base64: ${JWT_SECRET_BASE64:VGhpc0lzRGV2ZWxvcG1lbnRPbmx5U2VjcmV0S2V5Rm9yVGF4dFZlUWlsaW5j}
+    expiration-minutes: ${JWT_EXPIRATION_MINUTES:60}
 server:
   port: ${PORT:8080}
 management:
