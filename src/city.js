@@ -180,6 +180,7 @@ footpath(-23,-13,5,34,.42);footpath(23,-13,5,34,-.42);
 footpath(-22,29,5,32,-.4);footpath(22,29,5,32,.4);
 footpath(0,39,7,24,0);
 // Main keep: layered stonework, four defensive towers and a fortified entrance.
+const keepGlass=mat(0x344a4c,.28),keepTrim=mat(0x886443);
 box('Baş qala',0,0,0,34,30,32,stone);
 box('Baş qala',0,30,0,23,12,22,stoneDark);
 box('Qala kürsüsü',0,1.1,0,36,2.2,34,stoneDark,false);
@@ -194,8 +195,8 @@ box('Qala qapısının üst tirı',0,11.5,17,8.2,.65,1.2,stoneDark,false);
 for(const y of [9.5,13.5,24.5,28.5]){
  for(const x of [-8.5,8.5]){
   box('Baş qala pəncərəsi',x,y,16.18,2.5,3.8,.45,stoneDark,false);
-  box('Baş qala pəncərəsi',x,y,16.43,1.45,2.7,.2,glass,false);
-  box('Baş qala pəncərə çərçivəsi',x,y-1.65,16.56,2.9,.28,.22,woodLight,false);
+  box('Baş qala pəncərəsi',x,y,16.43,1.45,2.7,.2,keepGlass,false);
+  box('Baş qala pəncərə çərçivəsi',x,y-1.65,16.56,2.9,.28,.22,keepTrim,false);
  }
 }
 for(let i=-1;i<=1;i+=2){
