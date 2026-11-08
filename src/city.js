@@ -388,7 +388,12 @@ function loadCityAssetSource(source,label,x,z,targetWidth,rotation=0,onLoaded){
   let bounds=new THREE.Box3().setFromObject(root);
   const size=bounds.getSize(new THREE.Vector3());
   const width=Math.max(size.x,size.z);
-  if(!Number.isFinite(width)||width<.01){retryOrFail(new Error('Modelin ölçüsü yanlışdır'));return}
+  // Reject corrupt, empty, or wildly disproportionate models before they can
+  // enter the scene; otherwise a bad vertical bound can bury the city or break framing.
+  const dimensions=[size.x,size.y,size.z];
+  if(!dimensions.every(value=>Number.isFinite(value)&&value>=.01&&value<=10000)||!Number.isFinite(width)||size.y>width*8){
+   retryOrFail(new Error('Modelin ölçüləri boş, həddən artıq böyük və ya proporsiyasızdır'));return
+  }
   settled=true;clearTimeout(timeout);
   if(loaded.animations?.length){const mixer=new THREE.AnimationMixer(root);loaded.animations.forEach(clip=>mixer.clipAction(clip).play());cityAnimationMixers.push(mixer)}
   const scale=targetWidth/width;
