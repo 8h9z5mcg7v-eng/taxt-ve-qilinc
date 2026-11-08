@@ -18,6 +18,24 @@ button{border:1px solid #a88c5a;background:#8d7042;color:white;border-radius:10p
 #status{font-size:11px;color:#c9d0d0;flex:1;line-height:1.35;min-width:0}#file{display:none}
 #hint{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);text-align:center;width:min(85%,340px);color:#d8d4ca}
 #hint strong{display:block;font-size:20px;margin-bottom:8px}#hint span{font-size:13px;color:#b8c1c4;line-height:1.5}
+
+/* 2026 model inspection HUD */
+:root{--gold:#d9b979}
+html,body{background:#111b18;color:#f5e8cb}
+#stage{inset:0 0 calc(102px + env(safe-area-inset-bottom));background:radial-gradient(ellipse at 50% 42%,#53634f 0%,#293a32 48%,#101b18 100%)}
+header{padding:calc(14px + env(safe-area-inset-top)) 14px 28px;background:linear-gradient(180deg,rgba(10,19,16,.98),rgba(13,25,21,.75) 65%,transparent)}
+h1{font-family:Georgia,serif;letter-spacing:.12em;color:#f8e9c9}
+header p{color:#ddc89f}
+#battleLink,#cityLink{background:linear-gradient(180deg,#987344,#594128);border-color:#d9b979;box-shadow:0 3px 9px #0006,inset 0 1px #ffffff2b}
+#panel{min-height:102px;padding:10px 11px calc(10px + env(safe-area-inset-bottom));background:linear-gradient(145deg,rgba(35,49,40,.99),rgba(13,23,21,.99));border-top:1px solid #b99a63;box-shadow:0 -8px 26px #0007;flex-wrap:wrap}
+button{background:linear-gradient(180deg,#b18b50,#70502c);border-color:#e0c48b;box-shadow:inset 0 1px #ffffff2c,0 3px 9px #0006}
+#reset{background:linear-gradient(180deg,#43564b,#26372f);border-color:#87916f}
+#status{color:#e3d6b9;font-variant-numeric:tabular-nums;flex-basis:100%;font-size:11px}
+#hint{padding:20px;border:1px solid rgba(218,188,127,.35);border-radius:14px;background:rgba(13,25,21,.5);backdrop-filter:blur(5px);box-shadow:0 10px 30px #0005}
+#hint strong{font-family:Georgia,serif;color:#f4d9a5;letter-spacing:.03em}
+#hint span{color:#d5cbb5}
+@media(max-width:430px){#stage{inset:0 0 calc(118px + env(safe-area-inset-bottom))}#panel{min-height:118px;gap:6px}button{padding:11px 12px;font-size:12px}#status{font-size:10px}}
+
 </style>
 </head>
 <body>
