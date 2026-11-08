@@ -55,3 +55,18 @@ Health: `GET /actuator/health`
 - Local Docker Compose is for development. Production hosting and its free-tier limits must be checked separately.
 - Redis and RabbitMQ dependencies/configuration are present, but gameplay queues and cache operations have not yet been implemented.
 - The current game client is Three.js in a browser. Unity is a possible later client; both should use the same versioned API contract.
+
+## Keep upgrade (server-authoritative)
+
+Start an upgrade: `POST /api/v1/city/keep/upgrade` with the player's Bearer token and no request body. The server calculates the next-level resource costs, checks the player's stored balances, deducts the resources and records the finish timestamp. The keep level changes only after that timestamp has passed; `GET /api/v1/city` finalizes a completed upgrade and returns the updated city state.
+
+Development balance for target level N:
+- Gold: 500 × N
+- Wood: 700 × N
+- Stone: 600 × N
+- Food: 400 × N
+- Iron: 250 × N
+- Duration: 30 × N seconds (temporary development timing)
+- Maximum keep level: 30
+
+The city row is pessimistically locked while a state-changing upgrade is processed to reduce concurrent double-spend races. This is an initial single-city implementation; building queues, production, speed-ups, migrations, economy balancing and load tests remain future work.
