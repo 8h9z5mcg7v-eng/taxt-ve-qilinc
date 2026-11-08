@@ -681,7 +681,8 @@ document.getElementById('fight').addEventListener('click', async () => {
   commander.id=commanderId;
   const localBuildings=(()=>{try{return JSON.parse(localStorage.getItem('taxt-ve-qilinc-city-v1')||'{}').levels||{}}catch{return {}}})();
   const attackerBuildings={barracks:Number(dispatched.get('barracksLevel'))||Number(localBuildings['Kazarma'])||1,archery:Number(dispatched.get('archeryLevel'))||Number(localBuildings['Oxçuluq meydançası'])||1,stable:Number(dispatched.get('stableLevel'))||Number(localBuildings['Tövlə'])||1};
-  const result = resolveBattle({ attacker, defender, direction, tactic, terrain, siege, defenseCatapult, wallLevel, priorWallDamage, commander, attackerBuildings, seed: Date.now() % 100000 });
+  const defenderBuildings=(terrain==='fortress'&&!isWorldMapAttack&&!isBorderBattle)?{tower:Number(localBuildings['Müdafiə qülləsi'])||1,barracks:Number(localBuildings['Kazarma'])||1,archery:Number(localBuildings['Oxçuluq meydançası'])||1,stable:Number(localBuildings['Tövlə'])||1}:{};
+  const result = resolveBattle({ attacker, defender, direction, tactic, terrain, siege, defenseCatapult, wallLevel, priorWallDamage, commander, attackerBuildings, defenderBuildings, seed: Date.now() % 100000 });
   if(isWorldMapAttack||isBorderBattle){
    try{
     const ledger=JSON.parse(localStorage.getItem('tvq_resolved_battles_v1')||'{}');

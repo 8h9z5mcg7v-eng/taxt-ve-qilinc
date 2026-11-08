@@ -154,3 +154,25 @@ test('building level modifiers are safely clamped', () => {
  assert.equal(r.modifiers.attackerBuildings.barracks,10);
  assert.equal(r.modifiers.attackerBuildings.archery,1);
 });
+
+
+test('fortress defence tower and matching buildings strengthen defending troops', () => {
+ const base={attacker:{infantry:40,archer:20,cavalry:15},defender:{infantry:20,archer:20,cavalry:20},terrain:'fortress',seed:77};
+ const plain=resolveBattle(base);
+ const tower=resolveBattle({...base,defenderBuildings:{tower:8}});
+ const barracks=resolveBattle({...base,defenderBuildings:{barracks:8}});
+ const archery=resolveBattle({...base,defenderBuildings:{archery:8}});
+ const stable=resolveBattle({...base,defenderBuildings:{stable:8}});
+ assert.ok(tower.power.defender>plain.power.defender);
+ assert.ok(barracks.power.defender>plain.power.defender);
+ assert.ok(archery.power.defender>plain.power.defender);
+ assert.ok(stable.power.defender>plain.power.defender);
+});
+
+test('defender building bonuses do not affect attackers or open-field battles', () => {
+ const input={attacker:{infantry:20},defender:{infantry:20},terrain:'plains',seed:91};
+ const plain=resolveBattle(input);
+ const fortified=resolveBattle({...input,defenderBuildings:{tower:10,barracks:10,archery:10,stable:10}});
+ assert.equal(fortified.power.defender,plain.power.defender);
+ assert.equal(fortified.power.attacker,plain.power.attacker);
+});

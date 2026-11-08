@@ -6,7 +6,7 @@ const DIRECTIONS = new Set(['north', 'east', 'south', 'west']);
 const TACTICS = new Set(['balanced', 'wedge', 'line', 'volley']);
 const TERRAIN = new Set(['plains', 'forest', 'hill', 'fortress']);
 
-function calculatePower(army, defending, formation, opponents, commander = null, buildings = {}) {
+function calculatePower(army, defending, formation, opponents, commander = null, buildings = {}, defendingBuildings = {}) {
   const enemyCount = Math.max(1, armySize(opponents));
   let total = 0;
   for (const [type, count] of Object.entries(createArmy(army))) {
@@ -27,7 +27,7 @@ function calculatePower(army, defending, formation, opponents, commander = null,
           : 1.03 + (commanderLevel - 1) * 0.005)
       : 1;
     const level = key => Math.max(1, Math.min(10, Math.floor(Number(buildings[key]) || 1)));
-    const buildingBonus = !defending ? (type === 'infantry' || type === 'spearman' ? 1 + (level('barracks') - 1) * 0.025 : type === 'archer' ? 1 + (level('archery') - 1) * 0.03 : type === 'cavalry' || type === 'knight' ? 1 + (level('stable') - 1) * 0.03 : 1) : 1;
+    const buildingBonus = !defending ? (type === 'infantry' || type === 'spearman' ? 1 + (level('barracks') - 1) * 0.025 : type === 'archer' ? 1 + (level('archery') - 1) * 0.03 : type === 'cavalry' || type === 'knight' ? 1 + (level('stable') - 1) * 0.03 : 1) : (1 + (level('tower') - 1) * 0.025) * (type === 'infantry' || type === 'spearman' ? 1 + (level('barracks') - 1) * 0.02 : type === 'archer' ? 1 + (level('archery') - 1) * 0.025 : type === 'cavalry' || type === 'knight' ? 1 + (level('stable') - 1) * 0.02 : 1);
     total += count * base * formationBonus * counterBonus * generalBonus * buildingBonus;
   }
   return total;
@@ -38,7 +38,7 @@ function calculatePower(army, defending, formation, opponents, commander = null,
  * direction: north | east | south | west
  * tactic: balanced | wedge | line | volley
  */
-export function resolveBattle({ attacker, defender, direction = 'south', tactic = 'balanced', defenderTactic = 'balanced', terrain = 'plains', siege = {}, defenseCatapult = 0, wallLevel = 1, priorWallDamage = 0, commander = null, attackerBuildings = {}, seed = 1 }) {
+export function resolveBattle({ attacker, defender, direction = 'south', tactic = 'balanced', defenderTactic = 'balanced', terrain = 'plains', siege = {}, defenseCatapult = 0, wallLevel = 1, priorWallDamage = 0, commander = null, attackerBuildings = {}, defenderBuildings = {}, seed = 1 }) {
   const attackArmy = createArmy(attacker);
   const defendArmy = createArmy(defender);
   const attackCount = armySize(attackArmy);
@@ -74,7 +74,7 @@ export function resolveBattle({ attacker, defender, direction = 'south', tactic 
   const siegeAttackBonus = wallMax > 0 ? siegeEngines.catapult * 14 + siegeEngines.tower * 10 + (wallBreached ? siegeEngines.ram * 6 : 0) : 0;
   const defensiveStoneDamage = defensiveCatapults * 12;
   const attackPower = Math.max(1, rawAttackPower * directionBonus * terrainAttackBonus * cavalryTerrainFactor + siegeAttackBonus - defensiveStoneDamage);
-  const defendPower = calculatePower(defendArmy, true, safeDefenderTactic, attackArmy) * (wallBreached ? 1 : terrainDefenseBonus * wallProtection);
+  const defendPower = calculatePower(defendArmy, true, safeDefenderTactic, attackArmy, null, {}, defenderBuildings) * (wallBreached ? 1 : terrainDefenseBonus * wallProtection);
   const ratio = attackPower / Math.max(1, defendPower);
   const attackerWins = ratio >= 1;
   const random = (Math.sin(seed * 9301 + 49297) * 233280) % 1;
@@ -92,7 +92,7 @@ export function resolveBattle({ attacker, defender, direction = 'south', tactic 
   return {
     winner, direction: safeDirection, tactic: safeTactic, defenderTactic: safeDefenderTactic, terrain: safeTerrain,
     siege: { ...siegeEngines, defensiveCatapults, defensiveStoneDamage, wallMax, wallLevel: safeWallLevel, wallLevelBonus, wallDamageReduction, wallDamage, wallRemaining, wallBreached, attackBonus: siegeAttackBonus },
-    modifiers: { direction: directionBonus, attackerTerrain: terrainAttackBonus * cavalryTerrainFactor, defenderTerrain: wallBreached ? 1 : terrainDefenseBonus * wallProtection, attackerBuildings: { barracks: Math.max(1,Math.min(10,Math.floor(Number(attackerBuildings.barracks)||1))), archery: Math.max(1,Math.min(10,Math.floor(Number(attackerBuildings.archery)||1))), stable: Math.max(1,Math.min(10,Math.floor(Number(attackerBuildings.stable)||1))) } },
+    modifiers: { direction: directionBonus, attackerTerrain: terrainAttackBonus * cavalryTerrainFactor, defenderTerrain: wallBreached ? 1 : terrainDefenseBonus * wallProtection, attackerBuildings: { barracks: Math.max(1,Math.min(10,Math.floor(Number(attackerBuildings.barracks)||1))), archery: Math.max(1,Math.min(10,Math.floor(Number(attackerBuildings.archery)||1))), stable: Math.max(1,Math.min(10,Math.floor(Number(attackerBuildings.stable)||1))) }, defenderBuildings: { tower: Math.max(1,Math.min(10,Math.floor(Number(defenderBuildings.tower)||1))), barracks: Math.max(1,Math.min(10,Math.floor(Number(defenderBuildings.barracks)||1))), archery: Math.max(1,Math.min(10,Math.floor(Number(defenderBuildings.archery)||1))), stable: Math.max(1,Math.min(10,Math.floor(Number(defenderBuildings.stable)||1))) } },
     power: { attacker: Math.round(attackPower), defender: Math.round(defendPower) },
     remaining: {
       attacker: Object.fromEntries(Object.keys(attackArmy).map(type => [type, attackArmy[type] - attackerLosses[type]])),
@@ -103,6 +103,7 @@ export function resolveBattle({ attacker, defender, direction = 'south', tactic 
       `Hücum istiqaməti: ${safeDirection}`,
       `Hücum taktikası: ${safeTactic}`,
       `Müdafiə taktikası: ${safeDefenderTactic}`,
+      ...(safeTerrain === 'fortress' ? [`Müdafiə qülləsi: ${Math.max(1,Math.min(10,Math.floor(Number(defenderBuildings.tower)||1)))}/10`] : []),
       `Ərazi: ${safeTerrain}`,
       `Mühasirə: qoçbaşı ${siegeEngines.ram}, katapult ${siegeEngines.catapult}, mühasirə qülləsi ${siegeEngines.tower}`,
       ...(defensiveCatapults ? [`Qala müdafiə katapultları: ${defensiveCatapults} · hücum gücünə zərər: ${defensiveStoneDamage}`] : []),
