@@ -24,7 +24,10 @@ public class CityService {
     public CityState getForPlayer(UUID playerId) {
         CityState city = repository.findByPlayerIdForUpdate(playerId)
             .orElseThrow(() -> new IllegalArgumentException("Oyunçu şəhəri tapılmadı."));
-        city.completeKeepUpgradeIfReady(Instant.now());
+        Instant now = Instant.now();
+        city.accrueResources(now);
+        city.accrueResources(now);
+        city.completeKeepUpgradeIfReady(now);
         return city;
     }
 
