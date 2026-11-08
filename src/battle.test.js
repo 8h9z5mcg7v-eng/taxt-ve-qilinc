@@ -137,3 +137,20 @@ test('general experience increases the specialist bonus without changing defence
   assert.ok(veteran.power.attacker > novice.power.attacker);
   assert.equal(veteran.power.defender, novice.power.defender);
 });
+
+
+test('building upgrades boost matching attacker troops only', () => {
+ const base={defender:{infantry:100},seed:31};
+ for (const [type,key] of [['infantry','barracks'],['archer','archery'],['cavalry','stable']]) {
+  const plain=resolveBattle({...base,attacker:{[type]:20}});
+  const upgraded=resolveBattle({...base,attacker:{[type]:20},attackerBuildings:{[key]:5}});
+  assert.ok(upgraded.power.attacker>plain.power.attacker);
+  assert.equal(upgraded.power.defender,plain.power.defender);
+ }
+});
+
+test('building level modifiers are safely clamped', () => {
+ const r=resolveBattle({attacker:{infantry:20},defender:{infantry:20},attackerBuildings:{barracks:99,archery:-5,stable:3},seed:32});
+ assert.equal(r.modifiers.attackerBuildings.barracks,10);
+ assert.equal(r.modifiers.attackerBuildings.archery,1);
+});

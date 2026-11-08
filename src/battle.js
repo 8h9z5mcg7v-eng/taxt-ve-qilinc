@@ -6,7 +6,7 @@ const DIRECTIONS = new Set(['north', 'east', 'south', 'west']);
 const TACTICS = new Set(['balanced', 'wedge', 'line', 'volley']);
 const TERRAIN = new Set(['plains', 'forest', 'hill', 'fortress']);
 
-function calculatePower(army, defending, formation, opponents, commander = null) {
+function calculatePower(army, defending, formation, opponents, commander = null, buildings = {}) {
   const enemyCount = Math.max(1, armySize(opponents));
   let total = 0;
   for (const [type, count] of Object.entries(createArmy(army))) {
@@ -26,7 +26,9 @@ function calculatePower(army, defending, formation, opponents, commander = null)
           ? 1.18 + (commanderLevel - 1) * 0.01
           : 1.03 + (commanderLevel - 1) * 0.005)
       : 1;
-    total += count * base * formationBonus * counterBonus * generalBonus;
+    const level = key => Math.max(1, Math.min(10, Math.floor(Number(buildings[key]) || 1)));
+    const buildingBonus = !defending ? (type === 'infantry' || type === 'spearman' ? 1 + (level('barracks') - 1) * 0.025 : type === 'archer' ? 1 + (level('archery') - 1) * 0.03 : type === 'cavalry' || type === 'knight' ? 1 + (level('stable') - 1) * 0.03 : 1) : 1;
+    total += count * base * formationBonus * counterBonus * generalBonus * buildingBonus;
   }
   return total;
 }
@@ -36,7 +38,7 @@ function calculatePower(army, defending, formation, opponents, commander = null)
  * direction: north | east | south | west
  * tactic: balanced | wedge | line | volley
  */
-export function resolveBattle({ attacker, defender, direction = 'south', tactic = 'balanced', defenderTactic = 'balanced', terrain = 'plains', siege = {}, defenseCatapult = 0, wallLevel = 1, priorWallDamage = 0, commander = null, seed = 1 }) {
+export function resolveBattle({ attacker, defender, direction = 'south', tactic = 'balanced', defenderTactic = 'balanced', terrain = 'plains', siege = {}, defenseCatapult = 0, wallLevel = 1, priorWallDamage = 0, commander = null, attackerBuildings = {}, seed = 1 }) {
   const attackArmy = createArmy(attacker);
   const defendArmy = createArmy(defender);
   const attackCount = armySize(attackArmy);
@@ -56,7 +58,7 @@ export function resolveBattle({ attacker, defender, direction = 'south', tactic 
   const terrainAttackBonus = safeTerrain === 'hill' ? 1.06 : 1;
   const terrainDefenseBonus = safeTerrain === 'forest' ? 1.12 : safeTerrain === 'hill' ? 1.18 : safeTerrain === 'fortress' ? 1.32 : 1;
   const cavalryPenalty = safeTerrain === 'forest' || safeTerrain === 'fortress' ? 0.88 : 1;
-  const rawAttackPower = calculatePower(attackArmy, false, safeTactic, defendArmy, commander);
+  const rawAttackPower = calculatePower(attackArmy, false, safeTactic, defendArmy, commander, attackerBuildings);
   const totalAttackers = Math.max(1, attackCount);
   const cavalryShare = attackArmy.cavalry / totalAttackers;
   const cavalryTerrainFactor = 1 - (1 - cavalryPenalty) * cavalryShare;
@@ -90,7 +92,7 @@ export function resolveBattle({ attacker, defender, direction = 'south', tactic 
   return {
     winner, direction: safeDirection, tactic: safeTactic, defenderTactic: safeDefenderTactic, terrain: safeTerrain,
     siege: { ...siegeEngines, defensiveCatapults, defensiveStoneDamage, wallMax, wallLevel: safeWallLevel, wallLevelBonus, wallDamageReduction, wallDamage, wallRemaining, wallBreached, attackBonus: siegeAttackBonus },
-    modifiers: { direction: directionBonus, attackerTerrain: terrainAttackBonus * cavalryTerrainFactor, defenderTerrain: wallBreached ? 1 : terrainDefenseBonus * wallProtection },
+    modifiers: { direction: directionBonus, attackerTerrain: terrainAttackBonus * cavalryTerrainFactor, defenderTerrain: wallBreached ? 1 : terrainDefenseBonus * wallProtection, attackerBuildings: { barracks: Math.max(1,Math.min(10,Math.floor(Number(attackerBuildings.barracks)||1))), archery: Math.max(1,Math.min(10,Math.floor(Number(attackerBuildings.archery)||1))), stable: Math.max(1,Math.min(10,Math.floor(Number(attackerBuildings.stable)||1))) } },
     power: { attacker: Math.round(attackPower), defender: Math.round(defendPower) },
     remaining: {
       attacker: Object.fromEntries(Object.keys(attackArmy).map(type => [type, attackArmy[type] - attackerLosses[type]])),
