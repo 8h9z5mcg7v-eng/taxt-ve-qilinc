@@ -167,6 +167,61 @@ function renderTerrain(terrain, wallDamage = 0, siege = {}) {
       }
       svgNode('text', { x: 300, y: 148, 'text-anchor': 'middle', fill: '#ffe0a1', 'font-size': 11, 'font-weight': 700 }, scene, 'DİVAR YARILIB');
     }
+    // Show each fortress wall as its own damageable side around the keep.
+    const sideDamageMap = siege.wallDamageBySide || {};
+    const sideLayout = {
+      north: { x1: 250, y1: 53, x2: 350, y2: 53, label: 'ŞİMAL', tx: 300, ty: 45, rubbleX: 292, rubbleY: 57 },
+      south: { x1: 250, y1: 157, x2: 350, y2: 157, label: 'CƏNUB', tx: 300, ty: 174, rubbleX: 292, rubbleY: 150 },
+      west: { x1: 202, y1: 78, x2: 202, y2: 128, label: 'QƏRB', tx: 188, ty: 105, rubbleX: 196, rubbleY: 108 },
+      east: { x1: 398, y1: 78, x2: 398, y2: 128, label: 'ŞƏRQ', tx: 412, ty: 105, rubbleX: 390, rubbleY: 108 }
+    };
+    for (const [side, pos] of Object.entries(sideLayout)) {
+      const sideDamage = Math.max(0, Math.min(100, Number(sideDamageMap[side]) || 0));
+      const isAttackedSide = siege.attackDirection === side;
+      const color = sideDamage >= 70 ? '#9b4938' : sideDamage >= 25 ? '#c18a4d' : '#a9a28f';
+      svgNode('path', {
+        d: `M${pos.x1} ${pos.y1} L${pos.x2} ${pos.y2}`,
+        fill: 'none', stroke: isAttackedSide ? '#f2c66d' : '#35372f',
+        'stroke-width': isAttackedSide ? 10 : 7, 'stroke-linecap': 'square', opacity: .95
+      }, scene);
+      svgNode('path', {
+        d: `M${pos.x1} ${pos.y1} L${pos.x2} ${pos.y2}`,
+        fill: 'none', stroke: color, 'stroke-width': Math.max(2, 6 - sideDamage * .035),
+        'stroke-linecap': 'square', opacity: .95
+      }, scene);
+      if (sideDamage >= 15) {
+        const crackCount = Math.min(5, Math.ceil(sideDamage / 20));
+        for (let crack = 0; crack < crackCount; crack++) {
+          const t = (crack + 1) / (crackCount + 1);
+          const cx = pos.x1 + (pos.x2 - pos.x1) * t;
+          const cy = pos.y1 + (pos.y2 - pos.y1) * t;
+          const dx = side === 'east' || side === 'west' ? 1 : 7;
+          const dy = side === 'east' || side === 'west' ? 7 : 1;
+          svgNode('path', {
+            d: `M${cx-dx} ${cy-dy} l${dx} ${dy} l${-dx/2} ${dy+3} l${dx+3} ${dy+2}`,
+            fill: 'none', stroke: '#211e1a', 'stroke-width': 2.2,
+            'stroke-linecap': 'round', 'stroke-linejoin': 'round'
+          }, scene);
+        }
+        const rubbleCount = Math.min(5, Math.floor(sideDamage / 20));
+        for (let stone = 0; stone < rubbleCount; stone++) {
+          const offset = (stone - (rubbleCount - 1) / 2) * 9;
+          const x = side === 'west' || side === 'east' ? pos.rubbleX + offset : pos.rubbleX + offset;
+          const y = side === 'north' || side === 'south' ? pos.rubbleY : pos.rubbleY + offset;
+          svgNode('path', {
+            d: `M${x} ${y} l4 -3 l6 3 l-2 5 l-7 0Z`,
+            fill: ['#77786d','#969184','#5e625d'][stone % 3],
+            stroke: '#393b35', 'stroke-width': .8
+          }, scene);
+        }
+      }
+      svgNode('text', {
+        x: pos.tx, y: pos.ty, 'text-anchor': 'middle',
+        fill: isAttackedSide ? '#ffe0a1' : '#d4c6a5',
+        'font-size': 8, 'font-weight': 700,
+        stroke: '#292722', 'stroke-width': 1.8, 'paint-order': 'stroke'
+      }, scene, `${pos.label} ${Math.round(sideDamage)}%`);
+    }
     const defensiveMachines = Math.min(9, Math.max(0, Number(siege.defenseCatapult) || 0));
     for (let i = 0; i < defensiveMachines; i++) {
       const x = 222 + i * 21;
@@ -902,6 +957,8 @@ document.getElementById('fight').addEventListener('click', async () => {
   currentWallDamage = result.siege?.wallDamage || 0;
   if(terrain==='fortress'&&!isWorldMapAttack&&!isBorderBattle){try{await updateCitySave(saved=>{saved.wallDamage=currentWallDamage;saved.wallDamageBySide={...(result.siege?.wallDamageBySide||{})};saved.wallRepairStartedAt=0;saved.wallRepairEndsAt=0;saved.wallRepairInitialDamage=0})}catch(error){console.warn('Qala divarının zədəsi yadda saxlanmadı',error)}}
   siege.defenseTowerLevel = Math.max(1, Math.min(10, Math.floor(Number(defenderBuildings.tower || localBuildings['Müdafiə qülləsi']) || 1)));
+  siege.wallDamageBySide = { ...(result.siege?.wallDamageBySide || {}) };
+  siege.attackDirection = direction;
   renderBattlefield(survivingAttacker, survivingDefender, direction, terrain, currentWallDamage, siege);
   playCombatAnimation(attacker, defender, siege, result);
   const panel = document.getElementById('result');
