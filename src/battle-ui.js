@@ -223,9 +223,18 @@ function renderTerrain(terrain, wallDamage = 0, siege = {}) {
       }, scene, `${pos.label} ${Math.round(sideDamage)}%`);
     }
     const defensiveMachines = Math.min(9, Math.max(0, Number(siege.defenseCatapult) || 0));
+    const defensePositions = [
+      { side: 'north', x: 244, y: 55, angle: 0 },
+      { side: 'east', x: 386, y: 83, angle: 90 },
+      { side: 'south', x: 244, y: 153, angle: 180 },
+      { side: 'west', x: 214, y: 83, angle: -90 }
+    ];
     for (let i = 0; i < defensiveMachines; i++) {
-      const x = 222 + i * 21;
-      const weapon = svgNode('g', { id: `defensiveCatapult${i}`, transform: `translate(${x} 91)` }, scene);
+      const base = defensePositions[i % defensePositions.length];
+      const offset = Math.floor(i / defensePositions.length) * 24;
+      const x = base.x + (base.side === 'north' || base.side === 'south' ? offset : 0);
+      const y = base.y + (base.side === 'east' || base.side === 'west' ? offset : 0);
+      const weapon = svgNode('g', { id: `defensiveCatapult${i}`, 'data-defense-side': base.side, transform: `translate(${x} ${y}) rotate(${base.angle})` }, scene);
       svgNode('path', { d: 'M-10 12 L-8 -2 L8 -2 L10 12 M-13 -2 L13 -2 M-8 3 L8 3', fill: 'none', stroke: '#4a3020', 'stroke-width': 3, 'stroke-linecap': 'round' }, weapon);
       const arm = svgNode('g', { id: `defensiveCatapultArm${i}`, transform: 'rotate(-8 0 -17)' }, weapon);
       svgNode('path', { d: 'M0 5 L0 -25', fill: 'none', stroke: '#684326', 'stroke-width': 4, 'stroke-linecap': 'round' }, arm);
@@ -279,10 +288,16 @@ function renderBattlefield(attacker, defender, direction, terrain = 'plains', wa
   if (terrain === 'fortress' && (defender.archer || 0) > 0) {
     const defenses = document.createElementNS(svgNS, 'g');
     defenses.setAttribute('id', 'fortressDefenses');
-    const guardCount = Math.min(4, Math.max(1, Math.ceil(defender.archer / 25)));
+    const guardCount = Math.min(8, Math.max(1, Math.ceil(defender.archer / 18)));
+    const guardPosts = [
+      { x: 240, y: 61, angle: 0 }, { x: 360, y: 61, angle: 0 },
+      { x: 385, y: 91, angle: 90 }, { x: 385, y: 123, angle: 90 },
+      { x: 360, y: 151, angle: 180 }, { x: 240, y: 151, angle: 180 },
+      { x: 215, y: 123, angle: -90 }, { x: 215, y: 91, angle: -90 }
+    ];
     for (let i = 0; i < guardCount; i++) {
-      const x = 226 + i * 49;
-      const guard = svgNode('g', { transform: `translate(${x} 75)` }, defenses);
+      const post = guardPosts[i];
+      const guard = svgNode('g', { 'data-guard-post': i, transform: `translate(${post.x} ${post.y}) rotate(${post.angle})` }, defenses);
       svgNode('path', { d: 'M-17 4 L-17 -12 L-10 -12 L-10 -19 L-3 -19 L-3 -12 L4 -12 L4 -19 L11 -19 L11 -12 L17 -12 L17 4Z', fill: '#8b8c80', stroke: '#292b26', 'stroke-width': 2 }, guard);
       svgNode('circle', { cx: 0, cy: -8, r: 5, fill: '#d9b58a', stroke: '#292b26', 'stroke-width': 1.5 }, guard);
       svgNode('path', { d: 'M-7 -3 L7 -3 L9 13 L-9 13Z', fill: '#b97861', stroke: '#292b26', 'stroke-width': 1.5 }, guard);
@@ -502,8 +517,15 @@ function playCombatAnimation(attacker = {}, defender = {}, siege = {}, result = 
   }
   const fortressCounterShots = result.terrain === 'fortress'
     ? Math.min(9, Math.max(0, Number(result.siege?.defensiveCatapults) || 0)) : 0;
+  const defenseFirePosts = [
+    { side: 'north', x: 244, y: 55 }, { side: 'east', x: 386, y: 83 },
+    { side: 'south', x: 244, y: 153 }, { side: 'west', x: 214, y: 83 }
+  ];
   for (let i = 0; i < fortressCounterShots; i++) {
-    const sourceX = 222 + i * 21;
+    const post = defenseFirePosts[i % defenseFirePosts.length];
+    const offset = Math.floor(i / defenseFirePosts.length) * 24;
+    const sourceX = post.x + (post.side === 'north' || post.side === 'south' ? offset : 0);
+    const sourceY = post.y + (post.side === 'east' || post.side === 'west' ? offset : 0);
     const targetX = 92 + (i * 47) % 390;
     const targetY = 242 + (i % 3) * 17;
     const arm = field.querySelector(`#defensiveCatapultArm${i}`);
@@ -511,7 +533,7 @@ function playCombatAnimation(attacker = {}, defender = {}, siege = {}, result = 
       [{ transform: 'rotate(-8deg)' }, { transform: 'rotate(32deg)' }, { transform: 'rotate(-8deg)' }],
       { duration: 620, delay: 180 + i * 150, easing: 'cubic-bezier(.2,.8,.2,1)' }
     );
-    launch(sourceX, 78, targetX, targetY, '#8f8b80', 260 + i * 150, 6);
+    launch(sourceX, sourceY, targetX, targetY, '#8f8b80', 260 + i * 150, 6);
   }
   // Defensive towers fire coordinated arrow volleys; higher towers field more
   // firing positions, independently of the heavy defensive catapults.
