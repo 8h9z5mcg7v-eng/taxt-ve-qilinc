@@ -1,5 +1,5 @@
 import {
-  configureApiBaseUrl, isApiConfigured, loginPlayer, registerPlayer,
+  configureApiBaseUrl, getConfiguredApiBaseUrl, isApiConfigured, loginPlayer, registerPlayer,
   getCurrentPlayer, ApiError
 } from './backend-api.js';
 
@@ -14,6 +14,7 @@ const password = $('#password');
 const submitButton = $('#submitButton');
 const notice = $('#notice');
 const apiUrl = $('#apiUrl');
+apiUrl.value = getConfiguredApiBaseUrl();
 let mode = 'login';
 
 function showNotice(message, kind = '') {
@@ -98,3 +99,4 @@ async function checkExistingSession() {
 }
 
 setMode('login');
+checkExistingSession();
