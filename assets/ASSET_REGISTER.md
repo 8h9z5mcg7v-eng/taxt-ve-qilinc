@@ -64,3 +64,5 @@ Aşağıdakı modellər `src/city.js` daxilində GLTFLoader ilə uzaq URL-dən �
 - Lisenziya qeydi olmayan aktiv qəbul edilmir.
 - Sadə low-poly/stilizə aktivlər final qrafika kimi təqdim edilmir.
 - Model yüklənməyibsə və real cihazda sınaqdan keçməyibsə, “inteqrasiya edildi” deyilmir.
+
+| Medieval Water Sawmill | https://shuriken.studio/models/buildings/medieval-water-sawmill | Free Model License; GLB, 0.4 MB, 7,588 tris, 16 parts | Resurs anbarının yerində taxta istehsalı binası; yüklənəndə prosedur anbar gizlədilir; model brauzerdə vizual yoxlanmayıb |

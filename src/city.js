@@ -292,7 +292,7 @@ roofHouse('Kazarma',-29,-29,18,15,10,plaster,roof2);
 const stableBlockout=roofHouse('Tövlə',29,-29,20,16,9,mat(0xa88e68),roof);
 const smithBlockout=roofHouse('Dəmirçi',-30,26,15,13,8,wood,roof2);
 const archeryBlockout=roofHouse('Oxçuluq meydançası',30,26,19,13,7,plaster,roof);
-roofHouse('Resurs anbarı',-26,68,18,13,8,wood,roof);
+const warehouseBlockout=roofHouse('Resurs anbarı',-26,68,18,13,8,wood,roof);
 const bazarBlockout=roofHouse('Bazar',27,68,20,12,7,plaster,roof2);
 // CC0 medieval GLB assets: load real authored meshes and keep the procedural fallback if a host is unavailable.
 const cityAssetLoader=new GLTFLoader();
@@ -348,6 +348,8 @@ loadCityAssetSource(shurikenModelRoot+'3fc176c1-463a-493c-aa0e-9387422ff5e9','Ox
  archeryBlockout.visible=false;archeryTargets.forEach(target=>target.visible=false);
 });
 loadCityAssetSource(shurikenModelRoot+'8ad9b7fd-f461-4e00-90d9-5cc9a821c46d','Yel dəyirmanı',-72,72,22,.15);
+// Authored timber-production building replaces the generic resource warehouse when its GLB loads.
+loadCityAssetSource(shurikenModelRoot+'899d9a2e-b354-410c-897c-f7dec41199ca','Su mişarxanası',-26,68,20,0,()=>{warehouseBlockout.visible=false});
 // Two authored knight tents extend the barracks yard with a small field-camp silhouette.
 loadCityAssetSource(shurikenModelRoot+'b5b4593c-80f6-4724-a6b4-3bd88200004c','Cəngavər düşərgəsi',-40,-39,10,.18);
 loadCityAssetSource(shurikenModelRoot+'b5b4593c-80f6-4724-a6b4-3bd88200004c','Cəngavər düşərgəsi',-18,-41,10,-.12);
