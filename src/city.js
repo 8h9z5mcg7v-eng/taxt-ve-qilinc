@@ -330,8 +330,6 @@ const warehouseBlockout=roofHouse('Resurs anbarı',-26,68,18,13,8,wood,roof);
 const bazarBlockout=roofHouse('Bazar',27,68,20,12,7,plaster,roof2);
 // CC0 medieval GLB assets: load real authored meshes and keep the procedural fallback if a host is unavailable.
 const cityAssetLoader=new GLTFLoader();
-cityAssetLoader.setCrossOrigin('anonymous');
-cityAssetLoader.setRequestHeader({});
 
 const cityAnimationMixers=[];
 const cityAssetRoot='https://raw.githubusercontent.com/anishthite/cc0-models-Polygonal-Mind/main/projects/medieval-fair/';
