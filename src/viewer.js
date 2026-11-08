@@ -6,15 +6,13 @@ const host = document.querySelector('#stage');
 const hint = document.querySelector('#hint');
 const status = document.querySelector('#status');
 const fileInput = document.querySelector('#file');
-const VIEWPORT_FOOTER = 92;
-
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(42, innerWidth / (innerHeight - VIEWPORT_FOOTER), 0.05, 5000);
+const camera = new THREE.PerspectiveCamera(42, innerWidth / Math.max(1, host.clientHeight), 0.05, 5000);
 camera.position.set(8, 7, 10);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
-renderer.setSize(innerWidth, innerHeight - VIEWPORT_FOOTER);
+renderer.setSize(host.clientWidth, host.clientHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.15;
@@ -196,10 +194,11 @@ fileInput.addEventListener('change', () => {
 });
 
 function resize() {
-  const height = innerHeight - VIEWPORT_FOOTER;
-  camera.aspect = innerWidth / height;
+  const width = host.clientWidth;
+  const height = host.clientHeight;
+  camera.aspect = width / Math.max(1, height);
   camera.updateProjectionMatrix();
-  renderer.setSize(innerWidth, height);
+  renderer.setSize(width, height);
   renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
 }
 
