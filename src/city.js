@@ -37,14 +37,91 @@ const sun=new THREE.DirectionalLight(0xffdfb0,3.1);sun.position.set(-90,150,80);
 const fill=new THREE.DirectionalLight(0x9ab9df,1.0);fill.position.set(100,60,-100);scene.add(fill);
 const mat=(c,r=.88)=>new THREE.MeshStandardMaterial({color:c,roughness:r});
 const grass=mat(0x586b45),grass2=mat(0x65774b),stone=mat(0x77796f),stoneDark=mat(0x4c514d),roof=mat(0x684535),roof2=mat(0x76503a),wood=mat(0x65472e),plaster=mat(0xc1ad83),dark=mat(0x302c27),metal=mat(0x555c5b),water=mat(0x477b83,.35);
-const ground=new THREE.Mesh(new THREE.PlaneGeometry(330,330),grass);ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
+function makeGroundTexture(){
+ const canvas=document.createElement('canvas');canvas.width=512;canvas.height=512;
+ const ctx=canvas.getContext('2d');const pixels=ctx.createImageData(512,512);
+ let seed=73129;const random=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296};
+ for(let i=0;i<pixels.data.length;i+=4){
+  const n=(random()-.5)*24,base=91+n;
+  pixels.data[i]=Math.max(0,Math.min(255,base*.92));
+  pixels.data[i+1]=Math.max(0,Math.min(255,base*1.08));
+  pixels.data[i+2]=Math.max(0,Math.min(255,base*.72));
+  pixels.data[i+3]=255;
+ }
+ ctx.putImageData(pixels,0,0);
+ for(let i=0;i<1800;i++){
+  const x=random()*512,y=random()*512,r=.4+random()*2.8;
+  ctx.fillStyle=random()>.5?'rgba(174,157,116,.16)':'rgba(35,48,32,.18)';
+  ctx.beginPath();ctx.ellipse(x,y,r,r*(.35+random()*.7),random()*Math.PI,0,Math.PI*2);ctx.fill();
+ }
+ const texture=new THREE.CanvasTexture(canvas);texture.wrapS=texture.wrapT=THREE.RepeatWrapping;
+ texture.repeat.set(24,24);texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
+ return texture;
+}
+const groundMaterial=new THREE.MeshStandardMaterial({map:makeGroundTexture(),roughness:1});
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(330,330,1,1),groundMaterial);ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
 function box(name,x,y,z,w,h,d,material,select=true){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);m.position.set(x,y+h/2,z);m.castShadow=true;m.receiveShadow=true;m.userData.label=name;if(select)pickables.push(m);scene.add(m);return m}
 const pickables=[];
 function cylinder(name,x,y,z,r1,r2,h,material,segments=8){const m=new THREE.Mesh(new THREE.CylinderGeometry(r1,r2,h,segments),material);m.position.set(x,y+h/2,z);m.castShadow=true;m.receiveShadow=true;m.userData.label=name;pickables.push(m);scene.add(m);return m}
 function roofHouse(name,x,z,w,d,h,wall=plaster,top=roof){
- box(name,x,0,z,w,h,d,wall);
- const r=new THREE.Mesh(new THREE.ConeGeometry(Math.max(w,d)*.72,h*.82,4),top);r.position.set(x,h+h*.36,z);r.rotation.y=Math.PI/4;r.castShadow=true;r.userData.label=name;pickables.push(r);scene.add(r);
- box(name,x,1.2,z+d/2+.04,w*.2,2.4,.12,dark);
+ const group=new THREE.Group();group.position.set(x,0,z);group.userData.label=name;scene.add(group);
+ const add=(geometry,material,px,py,pz,rz=0,ry=0)=>{
+  const mesh=new THREE.Mesh(geometry,material);mesh.position.set(px,py,pz);mesh.rotation.set(0,ry,rz);
+  mesh.castShadow=true;mesh.receiveShadow=true;mesh.userData.label=name;group.add(mesh);pickables.push(mesh);return mesh;
+ };
+ const foundation=mat(0x69675d),timber=mat(0x493322),woodLight=mat(0x886443),glass=new THREE.MeshStandardMaterial({color:0x344a4c,roughness:.24,metalness:.12,emissive:0x18292b});
+ add(new THREE.BoxGeometry(w+.9,.8,d+.9),foundation,0,.4,0);
+ add(new THREE.BoxGeometry(w,h,d),wall,0,.8+h/2,0);
+ const roofRise=Math.max(3.4,Math.min(6.5,w*.27)),angle=Math.atan2(roofRise,w/2),slope=Math.hypot(w/2,roofRise);
+ add(new THREE.BoxGeometry(slope+.9,.65,d+1.5),top,-w/4,.8+h+roofRise/2,0,-angle);
+ add(new THREE.BoxGeometry(slope+.9,.65,d+1.5),top,w/4,.8+h+roofRise/2,0,angle);
+ // Triangular gable ends, with exposed timber framing.
+ for(const side of [-1,1]){
+  const shape=new THREE.Shape();shape.moveTo(-w/2,0);shape.lineTo(w/2,0);shape.lineTo(0,roofRise);shape.closePath();
+  const gable=new THREE.Mesh(new THREE.ShapeGeometry(shape),wall);gable.position.set(0,.8+h,side*(d/2-.08));gable.castShadow=true;gable.receiveShadow=true;gable.userData.label=name;group.add(gable);pickables.push(gable);
+  add(new THREE.BoxGeometry(.42,roofRise+.6,.42),timber,-w/2,.8+h+roofRise/2,side*(d/2+.04));
+  add(new THREE.BoxGeometry(.42,roofRise+.6,.42),timber,w/2,.8+h+roofRise/2,side*(d/2+.04));
+  add(new THREE.BoxGeometry(w+.5,.42,.42),timber,0,.8+h,side*(d/2+.04));
+  add(new THREE.BoxGeometry(.34,roofRise,.34),timber,0,.8+h+roofRise/2,side*(d/2+.05));
+ }
+ // Roof ridge and eaves make each building read as a crafted medieval structure.
+ add(new THREE.CylinderGeometry(.22,.22,d+1.8,8),woodLight,0,.8+h+roofRise,0,Math.PI/2);
+ for(const side of [-1,1]){
+  add(new THREE.BoxGeometry(.38,.4,d+1.6),timber,side*(w/2+.12),.8+h,0);
+ }
+ // Door, stone threshold and iron-bound door leaf.
+ add(new THREE.BoxGeometry(w*.22,h*.43,.2),timber,0,.8+h*.215,d/2+.12);
+ add(new THREE.BoxGeometry(w*.16,h*.37,.12),woodLight,0,.8+h*.185,d/2+.24);
+ add(new THREE.BoxGeometry(w*.25,.35,.65),foundation,0,.3,d/2+.35);
+ // Recessed-looking windows with dark frames and warm glazing.
+ const windowCount=Math.max(1,Math.floor(w/7));
+ for(let i=0;i<windowCount;i++){
+  const wx=(i-(windowCount-1)/2)*Math.min(6,w*.55);
+  for(const side of [-1,1]){
+   const wz=side*(d/2+.13);
+   add(new THREE.BoxGeometry(1.45,2.05,.16),timber,wx,.8+h*.62,wz);
+   add(new THREE.BoxGeometry(.86,1.38,.08),glass,wx,.8+h*.62,wz+Math.sign(side)*.11);
+   add(new THREE.BoxGeometry(1.8,.18,.28),woodLight,wx,.8+h*.62+1.12,wz);
+   add(new THREE.BoxGeometry(.18,2.2,.28),woodLight,wx-0.86,.8+h*.62,wz);
+   add(new THREE.BoxGeometry(.18,2.2,.28),woodLight,wx+0.86,.8+h*.62,wz);
+  }
+ }
+ // Visible roof tile courses: restrained rows, not a single smooth primitive.
+ for(let row=0;row<3;row++){
+  const offset=(row-1)*.22;
+  for(const side of [-1,1]){
+   const tileRail=add(new THREE.BoxGeometry(.13,.12,d+.85),woodLight,side*(w*.18+row*.01),.8+h+roofRise*(.72-row*.2),offset,side*angle);
+   tileRail.material=top;
+  }
+ }
+ // Small chimney with a dark opening and stone cap.
+ if(h>=8){
+  const chimneyX=w*.28;
+  add(new THREE.BoxGeometry(1.45,3.5,1.45),foundation,chimneyX,.8+h+roofRise*.72,-d*.18);
+  add(new THREE.BoxGeometry(1.7,.35,1.7),stoneDark,chimneyX,.8+h+roofRise*.72+1.9,-d*.18);
+  add(new THREE.BoxGeometry(.55,.08,.08),dark,chimneyX,.8+h+roofRise*.72+2.1,-d*.18-.74);
+ }
+ return group;
 }
 const defenseTowerGroups=[];
 function tower(x,z){
