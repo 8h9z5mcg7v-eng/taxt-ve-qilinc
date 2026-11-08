@@ -31,6 +31,8 @@ Both return a short-lived JWT access token. Send it on protected requests as:
 
 Current player: `GET /api/v1/auth/me`
 
+Player city: `GET /api/v1/city` (requires the Bearer token). New accounts receive a level-1 starter city with initial gold, wood, stone, food and iron. Resource values are read from the server database; the browser must not be treated as authoritative.
+
 Health: `GET /actuator/health`
 
 ## Security and production readiness
