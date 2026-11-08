@@ -27,6 +27,37 @@ public class CityService {
         Instant now = Instant.now();
         city.accrueResources(now);
         city.completeKeepUpgradeIfReady(now);
+        city.completeBuildingUpgrades(now);
+        return city;
+    }
+
+
+    @Transactional
+    public CityState startBuildingUpgrade(UUID playerId, String building) {
+        CityState city = repository.findByPlayerIdForUpdate(playerId)
+            .orElseThrow(() -> new IllegalArgumentException("Oyunçu şəhəri tapılmadı."));
+        Instant now = Instant.now();
+        city.accrueResources(now);
+        city.completeKeepUpgradeIfReady(now);
+        city.completeBuildingUpgrades(now);
+
+        int currentLevel = city.getBuildingLevel(building);
+        if (currentLevel >= 20) throw new IllegalArgumentException("Bu bina maksimum səviyyəyə çatıb.");
+        if (city.getBuildingUpgradeEndsAt(building) != null)
+            throw new IllegalArgumentException("Bu binanın təkmilləşdirilməsi artıq davam edir.");
+
+        int target = currentLevel + 1;
+        long gold = 100L * target;
+        long wood = 250L * target;
+        long stone = 150L * target;
+        long food = 100L * target;
+        long iron = 50L * target;
+        if (city.getGold() < gold || city.getWood() < wood || city.getStone() < stone
+                || city.getFood() < food || city.getIron() < iron)
+            throw new IllegalArgumentException("Binanı təkmilləşdirmək üçün resurslar kifayət etmir.");
+
+        city.deductBuildingUpgradeCost(gold, wood, stone, food, iron);
+        city.startBuildingUpgrade(building, now.plus(Duration.ofSeconds(20L * target)));
         return city;
     }
 
@@ -37,6 +68,7 @@ public class CityService {
         Instant now = Instant.now();
         city.accrueResources(now);
         city.completeKeepUpgradeIfReady(now);
+        city.completeBuildingUpgrades(now);
 
         if (city.getKeepUpgradeEndsAt() != null) {
             throw new IllegalArgumentException("Qala təkmilləşdirilməsi artıq davam edir.");
