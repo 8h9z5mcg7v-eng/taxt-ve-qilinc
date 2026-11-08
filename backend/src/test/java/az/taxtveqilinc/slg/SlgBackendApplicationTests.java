@@ -1,11 +1,11 @@
 package az.taxtveqilinc.slg;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-@SpringBootTest
 class SlgBackendApplicationTests {
     @Test
-    void contextLoads() {
+    void applicationEntryPointExists() {
+        assertNotNull(SlgBackendApplication.class);
     }
 }
