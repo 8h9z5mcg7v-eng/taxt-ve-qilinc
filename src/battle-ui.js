@@ -139,10 +139,13 @@ function renderTerrain(terrain, wallDamage = 0, siege = {}) {
     for (let i = 0; i < catapults; i++) {
       const x = 52 + i * 48;
       const y = 255 + (i % 2) * 13;
-      const machine = svgNode('g', { transform: `translate(${x} ${y})` }, machines);
-      svgNode('path', { d: 'M-17 12 L0 -17 L18 12 M-12 5 L12 5 M0 -17 L0 -28', fill: 'none', stroke: '#4a3020', 'stroke-width': 5, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, machine);
-      svgNode('path', { d: 'M-4 -28 L4 -28 L3 -22 L-3 -22Z', fill: '#9a7544', stroke: '#30251e', 'stroke-width': 2 }, machine);
-      svgNode('circle', { cx: 0, cy: -30, r: 4, fill: '#292722' }, machine);
+      const machine = svgNode('g', { id: `attackingCatapult${i}`, transform: `translate(${x} ${y})` }, machines);
+      svgNode('path', { d: 'M-17 12 L0 -17 L18 12 M-12 5 L12 5', fill: 'none', stroke: '#4a3020', 'stroke-width': 5, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, machine);
+      const arm=svgNode('g',{id:`catapultArm${i}`,transform:'rotate(-8 0 -17)'},machine);
+      svgNode('path', { d: 'M0 5 L0 -34', fill:'none',stroke:'#684326','stroke-width':5,'stroke-linecap':'round' },arm);
+      svgNode('path', { d: 'M-5 -34 L5 -34 L3 -27 L-3 -27Z', fill: '#9a7544', stroke: '#30251e', 'stroke-width': 2 }, arm);
+      svgNode('path',{d:'M0 -34 Q-10 -42 -15 -34 M0 -34 Q10 -42 15 -34',fill:'none',stroke:'#d1b27b','stroke-width':1.8},arm);
+      svgNode('circle', { cx: 0, cy: -38, r: 4, fill: '#77786d', stroke:'#292722','stroke-width':1.2 }, arm);
     }
     const towers = Math.min(2, Math.max(0, Number(siege.tower) || 0));
     for (let i = 0; i < towers; i++) {
@@ -192,6 +195,14 @@ function renderBattlefield(attacker, defender, direction, terrain = 'plains', wa
       { duration: 430, delay: 250, iterations: Math.min(4, siege.ram), easing: 'ease-in-out' }
     );
   }
+  // Catapult throwing arms cock back, snap forward and release their stone.
+  const catapultArms=field.querySelectorAll('#siegeMachines [id^="catapultArm"]');
+  catapultArms.forEach((arm,index)=>{
+    arm.animate(
+      [{transform:'rotate(-8deg)'},{transform:'rotate(-58deg)'},{transform:'rotate(24deg)'},{transform:'rotate(-8deg)'}],
+      {duration:1120,delay:180+index*170,iterations:Math.max(1,Math.min(3,catapultShots)),easing:'cubic-bezier(.25,.7,.25,1)'}
+    );
+  });
   const attackLayer = document.getElementById('attackerUnits');
   const defendLayer = document.getElementById('defenderUnits');
   const arrowLayer = document.getElementById('attackArrow');
@@ -399,8 +410,8 @@ function playCombatAnimation(attacker = {}, defender = {}, siege = {}, result = 
     [...siegeLayer.children].forEach((machine, index) => {
       if (machine.id?.startsWith('batteringRam')) {
         machine.animate(
-          [{ transform: 'translate(0px,0px)' }, { transform: 'translate(0px,-16px)' }, { transform: 'translate(0px,0px)' }],
-          { duration: 360, delay: 250 + index * 220, iterations: 3, easing: 'ease-in-out' }
+          [{ transform: 'translate(0px,0px)' }, { transform: 'translate(0px,-8px)' }, { transform: 'translate(0px,7px)' }, { transform: 'translate(0px,0px)' }],
+          { duration: 520, delay: 250 + index * 220, iterations: 3, easing: 'cubic-bezier(.2,.8,.2,1)' }
         );
         if (result.terrain === 'fortress') {
           const gateImpact = document.createElementNS(svgNS, 'g');
