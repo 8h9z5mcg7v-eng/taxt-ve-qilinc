@@ -1,18 +1,37 @@
-name: Backend CI
+name: Backend and browser client CI
 on:
   push:
     branches: [main, slg-backend-foundation]
     paths:
       - "backend/**"
+      - "src/**"
+      - "package.json"
+      - "city.html"
+      - "auth.html"
       - ".github/workflows/backend-ci.yml"
   pull_request:
     paths:
       - "backend/**"
+      - "src/**"
+      - "package.json"
+      - "city.html"
+      - "auth.html"
       - ".github/workflows/backend-ci.yml"
   workflow_dispatch:
 
 jobs:
-  build:
+  browser-client:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Test browser client and syntax
+        run: npm test && npm run check
+
+  backend:
     runs-on: ubuntu-latest
     defaults:
       run:
