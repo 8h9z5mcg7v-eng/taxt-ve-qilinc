@@ -286,16 +286,16 @@ box('Darvaza',0,0,wallZ,19,12,9,stoneDark);
 box('Darvaza keçidi',0,0,wallZ+5,8,9,2,dark);
 // Courtyard buildings, deliberately separated around the keep.
 roofHouse('Kazarma',-29,-29,18,15,10,plaster,roof2);
-roofHouse('Tövlə',29,-29,20,16,9,mat(0xa88e68),roof);
-roofHouse('Dəmirçi',-30,26,15,13,8,wood,roof2);
+const stableBlockout=roofHouse('Tövlə',29,-29,20,16,9,mat(0xa88e68),roof);
+const smithBlockout=roofHouse('Dəmirçi',-30,26,15,13,8,wood,roof2);
 roofHouse('Oxçuluq meydançası',30,26,19,13,7,plaster,roof);
 roofHouse('Resurs anbarı',-26,68,18,13,8,wood,roof);
 const bazarBlockout=roofHouse('Bazar',27,68,20,12,7,plaster,roof2);
 // CC0 medieval GLB assets: load real authored meshes and keep the procedural fallback if a host is unavailable.
 const cityAssetLoader=new GLTFLoader();
 const cityAssetRoot='https://raw.githubusercontent.com/anishthite/cc0-models-Polygonal-Mind/main/projects/medieval-fair/';
-function loadCityAsset(file,label,x,z,targetWidth,rotation=0,onLoaded){
- cityAssetLoader.load(cityAssetRoot+file,loaded=>{
+function loadCityAssetSource(source,label,x,z,targetWidth,rotation=0,onLoaded){
+ cityAssetLoader.load(source,loaded=>{
   const root=loaded.scene;
   root.updateMatrixWorld(true);
   let bounds=new THREE.Box3().setFromObject(root);
@@ -318,6 +318,18 @@ function loadCityAsset(file,label,x,z,targetWidth,rotation=0,onLoaded){
   if(onLoaded)onLoaded(root);
  },undefined,error=>console.warn('3D model yüklənmədi:',label,error));
 }
+function loadCityAsset(file,label,x,z,targetWidth,rotation=0,onLoaded){
+ return loadCityAssetSource(cityAssetRoot+file,label,x,z,targetWidth,rotation,onLoaded);
+}
+// Free GLB village kit structures replace matching procedural blockouts when loaded.
+const shurikenModelRoot='https://shuriken.studio/models/download/';
+loadCityAssetSource(shurikenModelRoot+'4ce4b4fd-695b-4b5a-9f46-e1c0d929ae7b','Tövlə',29,-29,20,0,()=>{stableBlockout.visible=false});
+loadCityAssetSource(shurikenModelRoot+'e4cc3199-5cd1-421f-bda9-a2ab38cadac3','Dəmirçi',-30,26,15,0,()=>{smithBlockout.visible=false});
+loadCityAssetSource(shurikenModelRoot+'cfe66494-b598-4583-a502-9ceb49f07504','Kənd evi',-48,72,16,0);
+loadCityAssetSource(shurikenModelRoot+'b5a546a5-c105-42e9-a2c4-085499cc72c3','Meyxana',48,72,19,0);
+loadCityAssetSource(shurikenModelRoot+'204b547e-938f-41d5-8196-cec75e063f29','Qala darvazası',0,wallZ,19,0,()=>{
+ scene.traverse(node=>{if(node.isMesh&&String(node.userData.label||'').startsWith('Darvaza'))node.visible=false});
+});
 // The CC0 tavern replaces the bazaar blockout once the real GLB arrives.
 loadCityAsset('Tabern.glb','Orta əsr bazarı',27,68,20,0,()=>{bazarBlockout.visible=false});
 // Small authored props make the market square feel occupied.
