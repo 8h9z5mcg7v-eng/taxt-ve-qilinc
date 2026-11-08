@@ -29,20 +29,28 @@ detailsToggle.addEventListener('click',()=>{
  detailsToggle.setAttribute('aria-expanded',String(open));
  detailsToggle.textContent=open?'Məlumatları bağla':'Məlumatlar';
 });
+const cityAssetErrorList=document.createElement('div');
+cityAssetErrorList.id='assetErrorList';
+cityAssetErrorList.style.cssText='display:none;position:fixed;top:174px;right:10px;z-index:20;width:min(310px,calc(100vw - 20px));max-height:42vh;overflow:auto;padding:10px 12px;border:1px solid #b77b55;border-radius:9px;background:#17231df5;color:#f1dfbd;font:11px/1.45 system-ui;white-space:pre-wrap;pointer-events:auto';
+document.body.append(cityAssetErrorList);
+cityAssetStatusPanel.addEventListener('click',()=>{
+ const open=cityAssetErrorList.style.display!=='block';
+ cityAssetErrorList.style.display=open?'block':'none';
+ if(open){cityAssetErrorList.textContent=cityAssetFailures.length?cityAssetFailures.map((item,i)=>(i+1)+'. '+item.label+' — '+item.reason+'\\n'+item.source).join('\\n\\n'):'Hazırda qeydə alınmış model xətası yoxdur.';}
+});
 function appendCityOverlay(panel){cityOverlayDock.append(panel);}
 const cityAssetStatus={total:0,loaded:0,failed:0};
+const cityAssetFailures=[];
 const cityAssetStatusPanel=document.createElement('div');
 cityAssetStatusPanel.id='assetStatus';
 cityAssetStatusPanel.textContent='3D modellər hazırlanır…';
-cityAssetStatusPanel.style.cssText='position:fixed;top:132px;right:10px;z-index:6;max-width:210px;padding:7px 10px;border:1px solid #8b7958;border-radius:8px;background:#17231ddd;color:#f1dfbd;font:11px/1.35 system-ui;pointer-events:none';
+cityAssetStatusPanel.style.cssText='position:fixed;top:132px;right:10px;z-index:6;max-width:210px;padding:7px 10px;border:1px solid #8b7958;border-radius:8px;background:#17231ddd;color:#f1dfbd;font:11px/1.35 system-ui;pointer-events:auto;cursor:pointer;user-select:none';
 document.body.append(cityAssetStatusPanel);
 function refreshCityAssetStatus(){
  const done=cityAssetStatus.loaded+cityAssetStatus.failed;
  cityAssetStatusPanel.textContent='3D modellər: '+cityAssetStatus.loaded+' yükləndi'+(cityAssetStatus.failed?' · '+cityAssetStatus.failed+' xəta':'')+(cityAssetStatus.total>done?' · '+(cityAssetStatus.total-done)+' gözləyir':'');
- if(cityAssetStatus.total>0&&done===cityAssetStatus.total){
-  cityAssetStatusPanel.style.borderColor=cityAssetStatus.failed?'#b77b55':'#82956c';
-  cityAssetStatusPanel.title=cityAssetStatus.failed?'Bəzi 3D modellər yüklənmədi; sadə maketlər saxlanıldı.':'Bütün çağırılmış 3D modellər yükləndi.';
- }
+ cityAssetStatusPanel.title=cityAssetFailures.length?'Xəta siyahısını görmək üçün toxun.':'3D modellərin yüklənmə vəziyyəti';
+ if(cityAssetStatus.total>0&&done===cityAssetStatus.total)cityAssetStatusPanel.style.borderColor=cityAssetStatus.failed?'#b77b55':'#82956c';
 }
 const scene=new THREE.Scene();
 scene.background=new THREE.Color(0x879b98);
@@ -330,7 +338,7 @@ function loadCityAssetSource(source,label,x,z,targetWidth,rotation=0,onLoaded){
   const retryOrFail=error=>{
    console.warn('3D model yüklənmədi:',label,error);
    if(attempt<2){const wait=800*Math.pow(2,attempt);cityAssetStatusPanel.textContent=label+' yenidən yüklənir…';setTimeout(()=>loadAttempt(attempt+1),wait);return}
-   cityAssetStatus.failed++;refreshCityAssetStatus();
+   cityAssetStatus.failed++;cityAssetFailures.push({label,source,reason:String(error?.message||error?.type||error?.target?.statusText||error?.target?.status||'Yükləmə xətası')});refreshCityAssetStatus();
   };
  cityAssetLoader.load(source,loaded=>{
   const root=loaded?.scene;
