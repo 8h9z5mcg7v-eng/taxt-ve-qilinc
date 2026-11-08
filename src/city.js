@@ -396,9 +396,13 @@ function loadCityAssetSource(source,label,x,z,targetWidth,rotation=0,onLoaded){
 function loadCityAsset(file,label,x,z,targetWidth,rotation=0,onLoaded){
  return loadCityAssetSource(cityAssetRoot+file,label,x,z,targetWidth,rotation,onLoaded);
 }
-// The citadel uses its detailed local Three.js blockout as a dependable fallback.
-// Remote model hosts that repeatedly failed in the player's browser are not requested.
+// CC0 authored citadel. Keep the procedural version visible until the GLB is fully loaded;
+// if the external host, CORS, or network fails, the fallback remains intact.
 keepBlockoutMeshes.forEach(object=>{object.visible=true});
+const authoredCitadelUrl='https://files.innerscene.com/library/castle-with-keep-1a75a9e1/be0d9411a3e3b580b2b5/castle-with-keep.glb';
+loadCityAssetSource(authoredCitadelUrl,'Baş qala — CC0 daş qala',0,0,70,0,()=>{
+ keepBlockoutMeshes.forEach(object=>{object.visible=false});
+});
 // Kazarma yerli, procedural 3D modeldir; xarici serverdən asılı deyil.
 // Locally-built medieval village buildings: no third-party download or CORS dependency.
 const cottageBlockout=roofHouse('Kənd evi',-48,72,16,13,8,mat(0xc4b18b),roof2);
