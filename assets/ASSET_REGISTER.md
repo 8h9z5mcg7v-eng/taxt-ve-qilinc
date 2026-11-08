@@ -31,6 +31,7 @@ Aşağıdakı modellər `src/city.js` daxilində GLTFLoader ilə uzaq URL-dən �
 | Archery Range Set | https://shuriken.studio/models/props/archery-range-set | Free Model License; GLB, 0.5 MB, 7,544 tris | Ox hədəfləri və maket meydança uğurlu yüklənmədə gizlədilir; uzaqdan yükləmə kodu qoşulub |
 | Medieval Stone Windmill | https://shuriken.studio/models/buildings/medieval-stone-windmill | Free Model License; GLB, 0.3 MB, 4,638 tris | Əkin sahələrinin kənarında ayrıca istehsal binası kimi çağırılır |
 | Knights Tent Camp | https://shuriken.studio/models/props/knights-tent-camp | Free Model License; GLB, 0.2 MB, 2,388 tris | Kazarma həyətində iki kiçik cəngavər düşərgəsi kimi çağırılır |
+| Kingdom Military Camp | https://3dassets.dev/assets/medieval-rts-faction-buildings-kingdom-military-camp-f43ead3d | CC0 1.0; GLB 225.8 KB, 5,236 tris | Şəhər divarından kənarda ayrıca hərbi istehsal və təlim kompleksi kimi yüklənir; 54.9 × 9 × 56.365 m mənbə model, 49 m enə miqyaslanır; brauzerdə vizual uyğunluq yoxlanmayıb |
 | Medieval Fair props | https://github.com/anishthite/cc0-models-Polygonal-Mind/tree/main/projects/medieval-fair | CC0; GLB | Bazar çadırı, araba, çəllək və fənər üçün uzaqdan yükləmə kodu qoşulub |
 
 ## İlkin kompozisiya qərarı

@@ -351,6 +351,10 @@ loadCityAssetSource(shurikenModelRoot+'8ad9b7fd-f461-4e00-90d9-5cc9a821c46d','Ye
 // Two authored knight tents extend the barracks yard with a small field-camp silhouette.
 loadCityAssetSource(shurikenModelRoot+'b5b4593c-80f6-4724-a6b4-3bd88200004c','Cəngavər düşərgəsi',-40,-39,10,.18);
 loadCityAssetSource(shurikenModelRoot+'b5b4593c-80f6-4724-a6b4-3bd88200004c','Cəngavər düşərgəsi',-18,-41,10,-.12);
+// CC0 military compound: a complete outer training annex with barracks, armoury, stables and siege facilities.
+const militaryAnnexGround=new THREE.Mesh(new THREE.PlaneGeometry(60,62),mat(0x81765f));
+militaryAnnexGround.rotation.x=-Math.PI/2;militaryAnnexGround.position.set(94,.055,91);militaryAnnexGround.receiveShadow=true;scene.add(militaryAnnexGround);
+loadCityAssetSource('https://cdn.3dassets.dev/assets/25004/v1/model.glb','Kənar hərbi düşərgə',94,91,49,0);
 // The CC0 tavern replaces the bazaar blockout once the real GLB arrives.
 loadCityAsset('Tabern.glb','Orta əsr bazarı',27,68,20,0,()=>{bazarBlockout.visible=false});
 // Small authored props make the market square feel occupied.
