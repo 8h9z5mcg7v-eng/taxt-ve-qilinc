@@ -41,6 +41,40 @@ class CityServiceTest {
     }
 
     @Test
+    void sameBuildingCannotBeUpgradedTwiceAtTheSameTime() {
+        CityStateRepository repository = mock(CityStateRepository.class);
+        UUID playerId = UUID.randomUUID();
+        CityState city = new CityState(playerId, "Sərkərdə qalası");
+        city.beginKeepUpgrade(0, 0, 0, 0, 0, java.time.Instant.now().minusSeconds(1));
+        city.startBuildingUpgrade("WOODCUTTER", java.time.Instant.now().plusSeconds(300));
+        when(repository.findByPlayerIdForUpdate(playerId)).thenReturn(Optional.of(city));
+        CityService service = new CityService(repository);
+
+        long goldBefore = city.getGold();
+        long woodBefore = city.getWood();
+        long stoneBefore = city.getStone();
+        long foodBefore = city.getFood();
+        long ironBefore = city.getIron();
+        java.time.Instant finishBefore = city.getWoodcutterUpgradeEndsAt();
+
+        IllegalArgumentException error = assertThrows(
+            IllegalArgumentException.class,
+            () -> service.startBuildingUpgrade(playerId, "WOODCUTTER")
+        );
+
+        assertEquals("Bu binanın təkmilləşdirilməsi artıq davam edir.", error.getMessage());
+        assertEquals(2, city.getKeepLevel());
+        assertEquals(1, city.getWoodcutterLevel());
+        assertEquals(finishBefore, city.getWoodcutterUpgradeEndsAt());
+        assertEquals(goldBefore, city.getGold());
+        assertEquals(woodBefore, city.getWood());
+        assertEquals(stoneBefore, city.getStone());
+        assertEquals(foodBefore, city.getFood());
+        assertEquals(ironBefore, city.getIron());
+        verify(repository).findByPlayerIdForUpdate(playerId);
+    }
+
+    @Test
     void buildingUpgradeDeductsServerCalculatedCostAndSchedulesCompletion() {
         CityStateRepository repository = mock(CityStateRepository.class);
         UUID playerId = UUID.randomUUID();
