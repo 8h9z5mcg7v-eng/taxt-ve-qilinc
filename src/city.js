@@ -315,6 +315,7 @@ const cityAnimationMixers=[];
 const cityAssetRoot='https://raw.githubusercontent.com/anishthite/cc0-models-Polygonal-Mind/main/projects/medieval-fair/';
 function loadCityAssetSource(source,label,x,z,targetWidth,rotation=0,onLoaded){
  cityAssetStatus.total++;refreshCityAssetStatus();
+ const loadAttempt=(attempt=0)=>{
  cityAssetLoader.load(source,loaded=>{
   const root=loaded.scene;
   if(loaded.animations?.length){const mixer=new THREE.AnimationMixer(root);loaded.animations.forEach(clip=>mixer.clipAction(clip).play());cityAnimationMixers.push(mixer)}
@@ -338,7 +339,13 @@ function loadCityAssetSource(source,label,x,z,targetWidth,rotation=0,onLoaded){
   root.userData.label=label;scene.add(root);
   if(onLoaded)onLoaded(root);
   cityAssetStatus.loaded++;refreshCityAssetStatus();
- },undefined,error=>{cityAssetStatus.failed++;refreshCityAssetStatus();console.warn('3D model yüklənmədi:',label,error)});
+ },undefined,error=>{
+  console.warn('3D model yüklənmədi:',label,error);
+  if(attempt<2){const wait=800*Math.pow(2,attempt);cityAssetStatusPanel.textContent=label+' yenidən yüklənir…';setTimeout(()=>loadAttempt(attempt+1),wait);return}
+  cityAssetStatus.failed++;refreshCityAssetStatus();
+ });
+ };
+ loadAttempt();
 }
 function loadCityAsset(file,label,x,z,targetWidth,rotation=0,onLoaded){
  return loadCityAssetSource(cityAssetRoot+file,label,x,z,targetWidth,rotation,onLoaded);
