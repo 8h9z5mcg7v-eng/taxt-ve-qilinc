@@ -31,6 +31,9 @@ detailsToggle.addEventListener('click',()=>{
 });
 const cityAssetErrorList=document.createElement('div');
 cityAssetErrorList.id='assetErrorList';
+cityAssetErrorList.setAttribute('role','region');
+cityAssetErrorList.setAttribute('aria-label','3D model yüklənmə xətaları');
+cityAssetErrorList.setAttribute('aria-live','polite');
 cityAssetErrorList.style.cssText='display:none;position:fixed;top:174px;right:10px;z-index:20;width:min(310px,calc(100vw - 20px));max-height:42vh;overflow:auto;padding:10px 12px;border:1px solid #b77b55;border-radius:9px;background:#17231df5;color:#f1dfbd;font:11px/1.45 system-ui;white-space:pre-wrap;pointer-events:auto';
 document.body.append(cityAssetErrorList);
 function appendCityOverlay(panel){cityOverlayDock.append(panel);}
@@ -38,13 +41,23 @@ const cityAssetStatus={total:0,loaded:0,failed:0};
 const cityAssetFailures=[];
 const cityAssetStatusPanel=document.createElement('div');
 cityAssetStatusPanel.id='assetStatus';
+cityAssetStatusPanel.setAttribute('role','button');
+cityAssetStatusPanel.setAttribute('tabindex','0');
+cityAssetStatusPanel.setAttribute('aria-controls','assetErrorList');
+cityAssetStatusPanel.setAttribute('aria-expanded','false');
+cityAssetStatusPanel.setAttribute('aria-label','3D modellərin yüklənmə vəziyyəti və xəta siyahısı');
 cityAssetStatusPanel.textContent='GLB modellər hazırlanır…';
 cityAssetStatusPanel.style.cssText='position:fixed;top:132px;right:10px;z-index:6;max-width:210px;padding:7px 10px;border:1px solid #8b7958;border-radius:8px;background:#17231ddd;color:#f1dfbd;font:11px/1.35 system-ui;pointer-events:auto;cursor:pointer;user-select:none';
 document.body.append(cityAssetStatusPanel);
-cityAssetStatusPanel.addEventListener('click',()=>{
+function toggleCityAssetErrors(){
  const open=cityAssetErrorList.style.display!=='block';
  cityAssetErrorList.style.display=open?'block':'none';
+ cityAssetStatusPanel.setAttribute('aria-expanded',String(open));
  if(open){cityAssetErrorList.textContent=cityAssetFailures.length?cityAssetFailures.map((item,i)=>(i+1)+'. '+item.label+' — '+item.reason+'\\n'+item.source).join('\\n\\n'):'Hazırda qeydə alınmış model xətası yoxdur.';}
+}
+cityAssetStatusPanel.addEventListener('click',toggleCityAssetErrors);
+cityAssetStatusPanel.addEventListener('keydown',event=>{
+ if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleCityAssetErrors();}
 });
 function refreshCityAssetStatus(){
  const done=cityAssetStatus.loaded+cityAssetStatus.failed;
