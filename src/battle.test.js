@@ -238,3 +238,15 @@ test('empty fortress garrison still takes defensive tower fire and damages walls
   assert.equal(Object.values(result.losses.defender).reduce((sum, loss) => sum + loss, 0), 0);
   assert.ok(Object.values(result.remaining.attacker).every(count => count >= 0));
 });
+
+
+test('fortress siege damage is recorded on the side attacked', () => {
+ const base={attacker:{infantry:20},defender:{infantry:20},terrain:'fortress',siege:{ram:1},seed:123};
+ const north=resolveBattle({...base,direction:'north'});
+ assert.equal(north.siege.wallDamageBySide.north,18);
+ assert.equal(north.siege.wallDamageBySide.south,0);
+ const east=resolveBattle({...base,direction:'east',priorWallDamage:18,priorWallDamageBySide:north.siege.wallDamageBySide});
+ assert.equal(east.siege.wallDamageBySide.north,18);
+ assert.equal(east.siege.wallDamageBySide.east,18);
+ assert.equal(east.siege.sideDamageThisBattle,18);
+});

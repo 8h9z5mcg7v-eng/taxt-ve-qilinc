@@ -6,6 +6,16 @@ const DIRECTIONS = new Set(['north', 'east', 'south', 'west']);
 const TACTICS = new Set(['balanced', 'wedge', 'line', 'volley']);
 const TERRAIN = new Set(['plains', 'forest', 'hill', 'fortress']);
 
+function applyDirectionalWallDamage(direction, priorBySide = {}, legacyDamage = 0, incoming = 0) {
+  const sides = { north: 0, east: 0, south: 0, west: 0 };
+  for (const side of Object.keys(sides)) sides[side] = clamp(Number(priorBySide?.[side]) || 0, 0, 100);
+  if (!priorBySide || !Object.keys(priorBySide).length) sides[direction] = clamp(Number(legacyDamage) || 0, 0, 100);
+  const before = sides[direction];
+  const dealt = Math.min(Math.max(0, Number(incoming) || 0), 100 - before);
+  sides[direction] = before + dealt;
+  return { bySide: sides, sideDamageBefore: before, sideDamageThisBattle: dealt, sideDamage: sides[direction] };
+}
+
 function calculatePower(army, defending, formation, opponents, commander = null, buildings = {}, defendingBuildings = {}) {
   const enemyCount = Math.max(1, armySize(opponents));
   let total = 0;
@@ -38,7 +48,7 @@ function calculatePower(army, defending, formation, opponents, commander = null,
  * direction: north | east | south | west
  * tactic: balanced | wedge | line | volley
  */
-export function resolveBattle({ attacker, defender, direction = 'south', tactic = 'balanced', defenderTactic = 'balanced', terrain = 'plains', siege = {}, defenseCatapult = 0, wallLevel = 1, priorWallDamage = 0, commander = null, attackerBuildings = {}, defenderBuildings = {}, seed = 1 }) {
+export function resolveBattle({ attacker, defender, direction = 'south', tactic = 'balanced', defenderTactic = 'balanced', terrain = 'plains', siege = {}, defenseCatapult = 0, wallLevel = 1, priorWallDamage = 0, priorWallDamageBySide = {}, commander = null, attackerBuildings = {}, defenderBuildings = {}, seed = 1 }) {
   const attackArmy = createArmy(attacker);
   const defendArmy = createArmy(defender);
   const attackCount = armySize(attackArmy);
@@ -59,6 +69,7 @@ export function resolveBattle({ attacker, defender, direction = 'south', tactic 
       const safePriorWallDamage = clamp(Number(priorWallDamage) || 0, 0, wallMax);
       const wallDamageThisBattle = Math.min(incomingWallDamage, wallMax - safePriorWallDamage);
       const wallDamage = safePriorWallDamage + wallDamageThisBattle;
+      const directionalDamage = applyDirectionalWallDamage(safeDirection, priorWallDamageBySide, safePriorWallDamage, incomingWallDamage);
       const defensiveStoneDamage = defensiveCatapults * 12;
       const lossRate = clamp(defensiveCatapults * 0.025, 0, 0.35);
       const random = (Math.sin(seed * 9301 + 49297) * 233280) % 1;
@@ -67,7 +78,7 @@ export function resolveBattle({ attacker, defender, direction = 'south', tactic 
       const remainingAttackers = Object.fromEntries(Object.keys(attackArmy).map(type => [type, attackArmy[type] - attackerLosses[type]]));
       return {
         winner: 'attacker', direction: safeDirection, tactic: safeTactic, defenderTactic: safeDefenderTactic, terrain: safeTerrain,
-        siege: { ...siegeEngines, defensiveCatapults, defensiveStoneDamage, wallMax, wallLevel: safeWallLevel, wallDamageBefore: safePriorWallDamage, wallDamageThisBattle, wallDamage, wallRemaining: wallMax - wallDamage, wallBreached: wallDamage >= wallMax },
+        siege: { ...siegeEngines, defensiveCatapults, defensiveStoneDamage, wallMax, wallLevel: safeWallLevel, wallDamageBefore: safePriorWallDamage, wallDamageThisBattle, wallDamage, wallDamageBySide: directionalDamage.bySide, sideDamageBefore: directionalDamage.sideDamageBefore, sideDamageThisBattle: directionalDamage.sideDamageThisBattle, sideDamage: directionalDamage.sideDamage, wallRemaining: wallMax - wallDamage, wallBreached: wallDamage >= wallMax },
         power: { attacker: Math.max(1, armySize(attackArmy) * 10 - defensiveStoneDamage), defender: 0 },
         remaining: { attacker: remainingAttackers, defender: defendArmy },
         losses: { attacker: attackerLosses, defender: { ...defendArmy } },
@@ -94,6 +105,7 @@ export function resolveBattle({ attacker, defender, direction = 'south', tactic 
   const wallDamage = Math.min(wallMax, safePriorWallDamage + incomingWallDamage);
   const wallRemaining = Math.max(0, wallMax - wallDamage);
   const wallBreached = wallMax > 0 && wallRemaining === 0;
+  const directionalDamage = applyDirectionalWallDamage(safeDirection, priorWallDamageBySide, safePriorWallDamage, incomingWallDamage);
   const wallLevelBonus = 1 + (safeWallLevel - 1) * 0.045;
   const wallIntegrityFactor = wallMax > 0 ? 1 - (wallDamage / wallMax) * 0.4 : 1;
   const wallProtection = wallMax > 0 ? ((((1 + (wallRemaining / wallMax) * 0.32) / 1.32) * wallLevelBonus) / (1 + siegeEngines.tower * 0.16)) * wallIntegrityFactor : 1;
@@ -117,7 +129,7 @@ export function resolveBattle({ attacker, defender, direction = 'south', tactic 
 
   return {
     winner, direction: safeDirection, tactic: safeTactic, defenderTactic: safeDefenderTactic, terrain: safeTerrain,
-    siege: { ...siegeEngines, defensiveCatapults, defensiveStoneDamage, wallMax, wallLevel: safeWallLevel, wallLevelBonus, wallDamageReduction, wallDamageBefore: safePriorWallDamage, wallDamageThisBattle, wallDamage, wallRemaining, wallBreached, attackBonus: siegeAttackBonus },
+    siege: { ...siegeEngines, defensiveCatapults, defensiveStoneDamage, wallMax, wallLevel: safeWallLevel, wallLevelBonus, wallDamageReduction, wallDamageBefore: safePriorWallDamage, wallDamageThisBattle, wallDamage, wallDamageBySide: directionalDamage.bySide, sideDamageBefore: directionalDamage.sideDamageBefore, sideDamageThisBattle: directionalDamage.sideDamageThisBattle, sideDamage: directionalDamage.sideDamage, wallRemaining, wallBreached, attackBonus: siegeAttackBonus },
     modifiers: { direction: directionBonus, attackerTerrain: terrainAttackBonus * cavalryTerrainFactor, defenderTerrain: wallBreached ? 1 : terrainDefenseBonus * wallProtection, attackerBuildings: { barracks: Math.max(1,Math.min(10,Math.floor(Number(attackerBuildings.barracks)||1))), archery: Math.max(1,Math.min(10,Math.floor(Number(attackerBuildings.archery)||1))), stable: Math.max(1,Math.min(10,Math.floor(Number(attackerBuildings.stable)||1))) }, defenderBuildings: { tower: Math.max(1,Math.min(10,Math.floor(Number(defenderBuildings.tower)||1))), barracks: Math.max(1,Math.min(10,Math.floor(Number(defenderBuildings.barracks)||1))), archery: Math.max(1,Math.min(10,Math.floor(Number(defenderBuildings.archery)||1))), stable: Math.max(1,Math.min(10,Math.floor(Number(defenderBuildings.stable)||1))) } },
     power: { attacker: Math.round(attackPower), defender: Math.round(defendPower) },
     remaining: {
