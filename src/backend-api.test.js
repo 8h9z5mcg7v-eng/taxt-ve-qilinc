@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  ApiError, configureApiBaseUrl, getAccessToken, getCurrentPlayer,
+  ApiError, configureApiBaseUrl, getConfiguredApiBaseUrl, getAccessToken, getCurrentPlayer,
   getPlayerCity, isApiConfigured, loginPlayer, logout, registerPlayer,
   upgradeBuilding, upgradeKeep
 } from './backend-api.js';
@@ -23,9 +23,13 @@ test('API base URL validates protocol and removes trailing slash', () => {
   configureApiBaseUrl('https://example.test///');
   assert.equal(isApiConfigured(), true);
   assert.throws(() => configureApiBaseUrl('javascript:alert(1)'), TypeError);
+  assert.throws(() => configureApiBaseUrl('http://example.test'), TypeError);
+  assert.doesNotThrow(() => configureApiBaseUrl('http://localhost:8080'));
   assert.throws(() => configureApiBaseUrl('https://user:pass@example.test'), TypeError);
+  assert.equal(getConfiguredApiBaseUrl(), 'http://localhost:8080');
   configureApiBaseUrl('');
   assert.equal(isApiConfigured(), false);
+  assert.equal(getConfiguredApiBaseUrl(), '');
 });
 
 test('login stores access token in session storage and sends JSON credentials', async () => {
@@ -133,6 +137,21 @@ test('logout removes only the backend session token', () => {
   try {
     logout();
     assert.equal(getAccessToken(), null);
+  } finally {
+    if (oldStorage === undefined) delete globalThis.sessionStorage; else globalThis.sessionStorage = oldStorage;
+  }
+});
+
+test('backend URL is retained in tab session storage for the city page', () => {
+  const oldStorage = globalThis.sessionStorage;
+  const storage = memoryStorage();
+  globalThis.sessionStorage = storage;
+  try {
+    configureApiBaseUrl('https://api.example.test/');
+    assert.equal(storage.getItem('tvq_backend_api_url_v1'), 'https://api.example.test');
+    assert.equal(getConfiguredApiBaseUrl(), 'https://api.example.test');
+    configureApiBaseUrl('');
+    assert.equal(storage.getItem('tvq_backend_api_url_v1'), null);
   } finally {
     if (oldStorage === undefined) delete globalThis.sessionStorage; else globalThis.sessionStorage = oldStorage;
   }
