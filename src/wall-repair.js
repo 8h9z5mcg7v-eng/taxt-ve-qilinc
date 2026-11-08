@@ -23,3 +23,9 @@ export function applyWallRepairSpeedup(repairEndsAt, now = Date.now(), goldAvail
   if (!quote.remainingMs || goldAvailable < quote.cost) return { applied: false, cost: quote.cost, repairEndsAt: Math.max(now, Number(repairEndsAt) || 0) };
   return { applied: true, cost: quote.cost, repairEndsAt: now + Math.max(1000, Math.ceil(quote.remainingMs * 0.75)) };
 }
+
+export function getWallDamageVisuals(damage, crenelCount = 15) {
+  const points = Math.max(0, Math.min(100, Number(damage) || 0));
+  const count = Math.max(1, Math.floor(Number(crenelCount) || 15));
+  return { crackCount: Math.ceil(points / 20), rubbleCount: Math.floor(points / 13), fallenCrenels: Math.floor((points / 100) * Math.min(10, count)), breachVisible: points >= 85 };
+}

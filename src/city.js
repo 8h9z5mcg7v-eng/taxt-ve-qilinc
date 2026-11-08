@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { normalizeTrainingQueue, createTrainingJob, completeTrainingQueue, trainingDurationMs } from './training.js';
-import { normalizeWallRepair, getWallRepairQuote } from './wall-repair.js';
+import { normalizeWallRepair, getWallRepairQuote, getWallDamageVisuals } from './wall-repair.js';
 
 // Recover an interrupted border-army dispatch before this page reads city or battle state.
 const borderDispatchJournalKey='tvq_pending_border_dispatch_v1';
@@ -102,21 +102,26 @@ for(const wall of wallSegments){
   block.userData.wallSegment=wall.label;crenels.push(block);
  }
  const cracks=[],rubble=[];
+ const wallLength=wall.axis==='x'?wall.w:wall.d;
  for(let k=0;k<5;k++){
-  const along=-wall.w/2+18+k*wall.w/7;
+  const along=-wallLength/2+18+k*wallLength/7;
   const x=wall.axis==='x'?along:wall.x+(wall.x<0?3.56:-3.56);
   const z=wall.axis==='x'?wall.z+(wall.z<0?3.56:-3.56):along;
   const crack=new THREE.Mesh(new THREE.BoxGeometry(wall.axis==='x'?1.25:.13,5.5,wall.axis==='x'?.13:1.25),crackMaterial);
   crack.position.set(x,6.2,z);crack.rotation.z=(k%2?-.24:.2);crack.visible=false;scene.add(crack);cracks.push(crack);
  }
  for(let k=0;k<8;k++){
-  const along=-wall.w/2+12+k*wall.w/9;
+  const along=-wallLength/2+12+k*wallLength/9;
   const x=wall.axis==='x'?along:wall.x+(wall.x<0?5:-5);
   const z=wall.axis==='x'?wall.z+(wall.z<0?5:-5):along;
   const stoneChunk=new THREE.Mesh(new THREE.DodecahedronGeometry(1.1+(k%3)*.35,0),rubbleMaterial);
   stoneChunk.position.set(x,.65+(k%2)*.2,z);stoneChunk.rotation.set(k*.7,k*.4,k*.25);stoneChunk.visible=false;stoneChunk.castShadow=true;scene.add(stoneChunk);rubble.push(stoneChunk);
  }
- wallBattlements.push({label:wall.label,base,crenels,cracks,rubble});
+ const breachMaterial=mat(0x292923,.98);
+ const breach=new THREE.Mesh(new THREE.BoxGeometry(wall.axis==='x'?15:.5,9,wall.axis==='x'?.5:15),breachMaterial);
+ breach.position.set(wall.axis==='x'?0:wall.x+(wall.x<0?3.58:-3.58),5.2,wall.axis==='x'?wall.z+(wall.z<0?3.58:-3.58):0);
+ breach.visible=false;breach.castShadow=true;scene.add(breach);
+ wallBattlements.push({label:wall.label,base,crenels,cracks,rubble,breach});
 }
 function refreshWallModels(){
  const damage=Math.max(0,Math.min(100,Number(wallDamage)||0));
@@ -124,14 +129,15 @@ function refreshWallModels(){
   const level=Math.max(1,Math.min(10,Math.floor(Number(levels[wall.label])||1)));
   const scale=1+(level-1)*.055;
   wall.base.scale.y=scale;wall.base.position.y=13*(scale-1)/2;
+  const visuals=getWallDamageVisuals(damage,wall.crenels.length);
   wall.crenels.forEach((block,i)=>{
-   block.visible=i<Math.min(wall.crenels.length,8+level*2);
+   const order=(i*7)%wall.crenels.length;
+   block.visible=i<Math.min(wall.crenels.length,8+level*2)&&order>=visuals.fallenCrenels;
    block.position.y=13*scale+1.5;
   });
-  const crackCount=Math.ceil(damage/20);
-  wall.cracks.forEach((crack,i)=>{crack.visible=i<crackCount;});
-  const rubbleCount=Math.floor(damage/13);
-  wall.rubble.forEach((piece,i)=>{piece.visible=i<rubbleCount;});
+  wall.cracks.forEach((crack,i)=>{crack.visible=i<visuals.crackCount;});
+  wall.rubble.forEach((piece,i)=>{piece.visible=i<visuals.rubbleCount;});
+  wall.breach.visible=visuals.breachVisible;
  }
 }
 for(const [x,z] of [[-wallX,-wallZ],[wallX,-wallZ],[-wallX,wallZ],[wallX,wallZ]])tower(x,z);
