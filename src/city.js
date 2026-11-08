@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { normalizeTrainingQueue, createTrainingJob, completeTrainingQueue, trainingDurationMs } from './training.js';
 import { normalizeWallRepair, getWallRepairQuote, getWallDamageVisuals } from './wall-repair.js';
 
@@ -289,7 +290,40 @@ roofHouse('Tövlə',29,-29,20,16,9,mat(0xa88e68),roof);
 roofHouse('Dəmirçi',-30,26,15,13,8,wood,roof2);
 roofHouse('Oxçuluq meydançası',30,26,19,13,7,plaster,roof);
 roofHouse('Resurs anbarı',-26,68,18,13,8,wood,roof);
-roofHouse('Bazar',27,68,20,12,7,plaster,roof2);
+const bazarBlockout=roofHouse('Bazar',27,68,20,12,7,plaster,roof2);
+// CC0 medieval GLB assets: load real authored meshes and keep the procedural fallback if a host is unavailable.
+const cityAssetLoader=new GLTFLoader();
+const cityAssetRoot='https://raw.githubusercontent.com/anishthite/cc0-models-Polygonal-Mind/main/projects/medieval-fair/';
+function loadCityAsset(file,label,x,z,targetWidth,rotation=0,onLoaded){
+ cityAssetLoader.load(cityAssetRoot+file,loaded=>{
+  const root=loaded.scene;
+  root.updateMatrixWorld(true);
+  let bounds=new THREE.Box3().setFromObject(root);
+  const size=bounds.getSize(new THREE.Vector3());
+  const width=Math.max(size.x,size.z);
+  if(!Number.isFinite(width)||width<.01){console.warn('Model ölçüsü yanlışdır:',label);return}
+  const scale=targetWidth/width;
+  root.scale.setScalar(scale);
+  root.rotation.y=rotation;
+  root.updateMatrixWorld(true);
+  bounds=new THREE.Box3().setFromObject(root);
+  const center=bounds.getCenter(new THREE.Vector3());
+  root.position.set(x-center.x,-bounds.min.y,z-center.z);
+  root.traverse(node=>{
+   if(!node.isMesh)return;
+   node.castShadow=true;node.receiveShadow=true;node.userData.label=label;
+   pickables.push(node);
+  });
+  root.userData.label=label;scene.add(root);
+  if(onLoaded)onLoaded(root);
+ },undefined,error=>console.warn('3D model yüklənmədi:',label,error));
+}
+// The CC0 tavern replaces the bazaar blockout once the real GLB arrives.
+loadCityAsset('Tabern.glb','Orta əsr bazarı',27,68,20,0,()=>{bazarBlockout.visible=false});
+// Small authored props make the market square feel occupied.
+loadCityAsset('Cart.glb','Bazar arabası',13,76,5,.25);
+loadCityAsset('Barrel.glb','Taxta çəlləklər',39,76,2.6,0);
+loadCityAsset('Lamp.glb','Bazar fənəri',13,62,3,0);
 cylinder('Su quyusu',0,0,67,4,4,2,stone,12);
 const pool=new THREE.Mesh(new THREE.CircleGeometry(3,20),water);pool.rotation.x=-Math.PI/2;pool.position.set(0,2.1,67);scene.add(pool);
 // Archery targets, stable paddock, forge chimney and market stalls.
