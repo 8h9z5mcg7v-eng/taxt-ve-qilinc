@@ -333,6 +333,30 @@ renderEnemyApproach();
 setInterval(renderEnemyApproach,60000);
 
 for(const id of ['village','mine']){if(territory[id]?.captured){const el=document.querySelector('[data-id="'+id+'"]');if(el){el.querySelector('span').textContent='🏳 '+territories.find(t=>t.id===id).name;el.querySelector('small').textContent='Sənin nəzarətində';}}}
+// Keep the world-map fortress marker synchronized with the battle result.
+function renderRedFortressOwnership(){
+ const place=document.querySelector('[data-id="enemy"]');
+ if(!place)return;
+ let world={};
+ try{world=JSON.parse(localStorage.getItem('tvq_world_state_v1')||'{}')}catch{}
+ const fortress=world.redFortress||{};
+ if(!fortress.captured){
+  place.classList.remove('fortress-owned');
+  place.querySelector('span').textContent='🛡 Düşmən qalası';
+  place.querySelector('small').textContent='Müdafiə: '+(Number(fortress.remainingDefenders)||300)+' əsgər';
+  return;
+ }
+ const guard=fortress.garrison||{};
+ const count=Object.values(guard).reduce((sum,n)=>sum+Math.max(0,Math.floor(Number(n)||0)),0);
+ place.classList.add('fortress-owned');
+ place.querySelector('span').textContent='🏳️ Sənin qalan';
+ place.querySelector('small').textContent='Qarnizon: '+count+' · Sənin nəzarətində';
+ place.title='Fəth edilmiş qala · Qarnizon: '+count;
+}
+renderRedFortressOwnership();
+window.addEventListener('storage',event=>{
+ if(event.key==='tvq_world_state_v1')renderRedFortressOwnership();
+});
 const journeyKey='tvq_active_journey_v1';
 const marchButton=document.querySelector('#march');
 if(fortressState.captured){marchButton.disabled=true;marchButton.textContent='🏳 Qala fəth olunub';}
