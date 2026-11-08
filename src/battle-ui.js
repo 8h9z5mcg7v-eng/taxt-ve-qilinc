@@ -502,6 +502,28 @@ function playCombatAnimation(attacker = {}, defender = {}, siege = {}, result = 
       );
     }
   });
+  // Raise the attacker's standard over the captured fortress after the breach.
+  if (isWorldMapAttack && result.winner === 'attacker' && result.siege?.wallBreached) {
+    const capture = document.createElementNS(svgNS, 'g');
+    capture.setAttribute('id', 'fortressCaptureSequence');
+    const flagX = 300, flagY = 54;
+    svgNode('path', { d: `M${flagX} ${flagY+5} L${flagX} 8`, stroke:'#d7d0b9', 'stroke-width':4, 'stroke-linecap':'round' }, capture);
+    const banner = svgNode('path', { d:`M${flagX} 10 L${flagX+35} 17 L${flagX+31} 36 L${flagX} 29 Z`, fill:'#a83d32', stroke:'#e6c77c', 'stroke-width':2 }, capture);
+    svgNode('path', { d:`M${flagX+7} 15 L${flagX+27} 19 M${flagX+7} 22 L${flagX+25} 25`, stroke:'#f2dfb0', 'stroke-width':2 }, capture);
+    field.appendChild(capture);
+    capture.animate(
+      [{opacity:0,transform:'translate(0px,30px) scale(.75)'},{opacity:1,transform:'translate(0px,0px) scale(1)'}],
+      {duration:1350,delay:2050,easing:'cubic-bezier(.2,.8,.2,1)',fill:'forwards'}
+    );
+    banner.animate(
+      [{d:`M${flagX} 10 L${flagX+35} 17 L${flagX+31} 36 L${flagX} 29 Z`},
+       {d:`M${flagX} 10 Q${flagX+18} 4 ${flagX+35} 17 L${flagX+31} 36 Q${flagX+14} 28 ${flagX} 29 Z`}],
+      {duration:720,delay:3400,iterations:3,direction:'alternate'}
+    );
+    const title=svgNode('text',{x:300,y:48,'text-anchor':'middle',fill:'#f4d68b','font-size':17,'font-weight':800,stroke:'#20251f','stroke-width':3,'paint-order':'stroke',opacity:0},capture,'QALA ƏLƏ KEÇİRİLDİ');
+    title.animate([{opacity:0,transform:'translate(0px,10px)'},{opacity:1,transform:'translate(0px,-18px)'}],
+      {duration:1700,delay:2550,fill:'forwards',easing:'ease-out'});
+  }
   const wallGuards = field.querySelectorAll('#fortressDefenses > g');
   wallGuards.forEach((guard, index) => {
     const base = guard.getAttribute('transform');
