@@ -21,7 +21,14 @@ try{recoverBorderDispatch()}catch(error){console.error('Sərhəd yürüşü bər
 const host=document.querySelector('#scene');
 const cityOverlayDock=document.createElement('div');
 cityOverlayDock.id='cityOverlayDock';
+cityOverlayDock.setAttribute('aria-label','Şəhər məlumat panelləri');
 document.body.append(cityOverlayDock);
+const detailsToggle=document.querySelector('#detailsToggle');
+detailsToggle.addEventListener('click',()=>{
+ const open=document.body.classList.toggle('details-open');
+ detailsToggle.setAttribute('aria-expanded',String(open));
+ detailsToggle.textContent=open?'Məlumatları bağla':'Məlumatlar';
+});
 function appendCityOverlay(panel){cityOverlayDock.append(panel);}
 const cityAssetStatus={total:0,loaded:0,failed:0};
 const cityAssetStatusPanel=document.createElement('div');

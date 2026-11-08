@@ -7,12 +7,12 @@
 <title>Taxt və Qılınc — Qala şəhəri</title>
 <style>
 *{box-sizing:border-box}
-#cityOverlayDock{position:fixed;z-index:7;top:174px;left:10px;right:10px;max-height:calc(100dvh - 350px);display:flex;flex-direction:column;gap:6px;overflow-y:auto;overscroll-behavior:contain;pointer-events:none;scrollbar-width:thin}
+#cityOverlayDock{position:fixed;z-index:7;top:150px;left:10px;right:10px;max-height:calc(100dvh - 320px);display:none;flex-direction:column;gap:6px;overflow-y:auto;overscroll-behavior:contain;pointer-events:none;scrollbar-width:thin}
 #cityOverlayDock>*{position:relative!important;inset:auto!important;left:auto!important;right:auto!important;top:auto!important;bottom:auto!important;width:100%!important;max-width:none!important;max-height:min(24vh,170px)!important;min-width:0!important;margin:0!important;flex:0 0 auto;overflow:auto!important;pointer-events:auto;box-sizing:border-box}
 #cityOverlayDock #generalPanel{padding:0!important;background:transparent!important;border:0!important;box-shadow:none!important}
 #cityOverlayDock #generalPanel details{width:100%}
 #cityOverlayDock #generalPanel summary{white-space:normal}
-body:has(#recruit.open) #cityOverlayDock{display:none}
+body.details-open #cityOverlayDock{display:flex}body:has(#recruit.open) #cityOverlayDock{display:none}
 @media(max-height:700px){#cityOverlayDock{top:168px;max-height:calc(100dvh - 320px)}#cityOverlayDock>*{max-height:20vh!important}}
 @media(min-width:700px){#cityOverlayDock{left:18px;right:18px;max-width:390px;max-height:calc(100dvh - 260px)}}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#17211d;color:#f4ead6;font-family:system-ui,-apple-system,sans-serif}
 #scene{position:fixed;inset:0;background:linear-gradient(#8da0a0,#34453a)}canvas{display:block;width:100%;height:100%}
@@ -21,7 +21,7 @@ h1{font-size:16px;letter-spacing:.07em;margin:0;text-shadow:0 2px 5px #000}heade
 header nav{display:flex;gap:6px;flex-wrap:wrap;pointer-events:auto}
 header nav a{color:#fff0d0;text-decoration:none;font-size:11px;border:1px solid #b59a69;border-radius:8px;padding:6px 9px;background:#392f24e8}
 #resources{position:fixed;z-index:4;top:88px;left:10px;right:10px;display:flex;justify-content:flex-start;gap:6px;overflow-x:auto;white-space:nowrap;pointer-events:none;scrollbar-width:none}#resources span{flex:0 0 auto;background:#17221eeF;border:1px solid #75806d;border-radius:8px;padding:7px 10px;font-size:11px;color:#f3dfb7;box-shadow:0 3px 10px #0004}#upgrade{background:#78603a;border-color:#e0bf7b}
-#panel{position:fixed;z-index:5;left:10px;right:10px;bottom:calc(8px + env(safe-area-inset-bottom));display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;align-items:stretch}
+#panel{position:fixed;z-index:5;left:10px;right:10px;bottom:calc(8px + env(safe-area-inset-bottom));display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;align-items:stretch}
 button{min-width:0;min-height:42px;border:1px solid #b49a6b;border-radius:9px;background:#51402b; color:#fff1d9;padding:9px 6px;font-size:11px;font-weight:700;white-space:normal}
 #info{grid-column:1/-1;min-width:0;max-height:68px;overflow:auto;background:#111c20ed;border:1px solid #657066;border-radius:9px;padding:7px 10px;font-size:11px;line-height:1.35;color:#e5ddcc;box-shadow:0 4px 14px #0005}
 #info b{display:block;color:#f3d69d;font-size:12px;margin-bottom:2px}
@@ -35,7 +35,7 @@ button{min-width:0;min-height:42px;border:1px solid #b49a6b;border-radius:9px;ba
 #generalPanel .generalContent{padding:0 10px 10px;font-size:11px;line-height:1.4}
 #generalPanel select{max-width:100%;margin-top:6px;padding:7px;border-radius:7px;background:#26352d;color:#fff;border:1px solid #806d4a}
 #returnJourneyPanel{font-size:10px!important}
-@media(min-width:700px){#panel{left:18px;right:18px;grid-template-columns:minmax(280px,1fr) auto auto auto;align-items:stretch}#info{grid-column:auto;min-height:48px}#panel button{min-width:90px;font-size:12px}#resources{justify-content:center}#generalPanel{max-width:245px!important}#assetStatus{max-width:210px!important}}
+@media(min-width:700px){#panel{left:18px;right:18px;grid-template-columns:minmax(220px,1fr) repeat(4,minmax(82px,auto));align-items:stretch}#info{grid-column:auto;min-height:48px}#panel button{min-width:90px;font-size:12px}#resources{justify-content:center}#generalPanel{max-width:245px!important}#assetStatus{max-width:210px!important}}
 @media(max-width:380px){header p{max-width:240px}#resources{top:84px}#generalPanel{top:128px!important;max-width:calc(100vw - 170px)!important}#assetStatus{top:128px!important;max-width:145px!important}#panel button{font-size:10px;padding:8px 4px}#info{max-height:60px}}
 </style>
 </head>
@@ -43,7 +43,7 @@ button{min-width:0;min-height:42px;border:1px solid #b49a6b;border-radius:9px;ba
 <div id="scene"></div>
 <header><h1>TAXT VƏ QILINC</h1><p>KRALLIĞIN PAYTAXTI</p><nav><a id="back" href="./index.html">← Əsas səhifə</a><a id="battleLink" href="./battle.html">⚔ Döyüş meydanı</a></nav></header>
 <div id="resources"><span>🪵 <b id="wood">1200</b></span><span>🪨 <b id="stone">1000</b></span><span>🪙 <b id="gold">500</b></span></div>
-<section id="recruit"><div class="fields"><div><label for="troopType">Qoşun növü</label><select id="troopType"><option value="infantry">Piyada — 10 odun, 5 qızıl</option><option value="spearman">Nizəçi — 15 odun, 5 daş</option><option value="archer">Oxçu — 10 odun, 10 daş</option><option value="cavalry">Süvari — 20 odun, 10 qızıl</option><option value="knight">Cəngavər — 20 daş, 20 qızıl</option></select></div><div><label for="troopCount">Say</label><input id="troopCount" type="number" min="1" max="500" value="10"></div></div><div class="actions"><button id="train">Hazırla</button><button id="sendArmy">Döyüşə göndər</button></div><div id="armyStatus">Hazır qoşun: 0</div></section><div id="panel"><div id="info"><b>Şəhər meydanı</b>Obyekt seçmək üçün binaya toxun</div><button id="upgrade">İnkişaf et</button><button id="recruitToggle">Qoşun</button><button id="home">Mərkəzlə</button></div>
+<section id="recruit"><div class="fields"><div><label for="troopType">Qoşun növü</label><select id="troopType"><option value="infantry">Piyada — 10 odun, 5 qızıl</option><option value="spearman">Nizəçi — 15 odun, 5 daş</option><option value="archer">Oxçu — 10 odun, 10 daş</option><option value="cavalry">Süvari — 20 odun, 10 qızıl</option><option value="knight">Cəngavər — 20 daş, 20 qızıl</option></select></div><div><label for="troopCount">Say</label><input id="troopCount" type="number" min="1" max="500" value="10"></div></div><div class="actions"><button id="train">Hazırla</button><button id="sendArmy">Döyüşə göndər</button></div><div id="armyStatus">Hazır qoşun: 0</div></section><div id="panel"><div id="info"><b>Şəhər meydanı</b>Obyekt seçmək üçün binaya toxun</div><button id="upgrade">İnkişaf et</button><button id="recruitToggle">Qoşun</button><button id="home">Mərkəzlə</button><button id="detailsToggle" aria-expanded="false">Məlumatlar</button></div>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.166.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.166.1/examples/jsm/"}}</script>
 <script type="module" src="./src/city.js"></script>
 </body></html>
