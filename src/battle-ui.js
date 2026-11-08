@@ -505,11 +505,25 @@ function playCombatAnimation(attacker = {}, defender = {}, siege = {}, result = 
     launch(90 + i * 18, 235 + (i % 2) * 12, 380 + i * 7, 150 + (i % 3) * 15, '#e8d7ad', i * 95, 2);
   }
   const defendingShots = Math.min(8, Math.ceil((defender.archer || 0) / 20));
+  const incomingSide = result.direction || result.attackDirection || siege.attackDirection || 'south';
+  const wallFireLines = {
+    north: { x: 240, y: 61, dx: 40, dy: -1, tx: 0, ty: -1 },
+    east: { x: 385, y: 91, dx: 0, dy: 32, tx: 1, ty: 0 },
+    south: { x: 240, y: 151, dx: 40, dy: -1, tx: 0, ty: 1 },
+    west: { x: 215, y: 91, dx: 0, dy: 32, tx: -1, ty: 0 }
+  };
   for (let i = 0; i < defendingShots; i++) {
-    const wallArcher = result.terrain === 'fortress';
-    const sourceX = wallArcher ? 226 + (i % 4) * 49 : 370 - i * 15;
-    const sourceY = wallArcher ? 66 : 80 + (i % 3) * 8;
-    launch(sourceX, sourceY, 185 - i * 8, 240 + (i % 2) * 12, '#f0b29a', 160 + i * 105, 2);
+    if (result.terrain === 'fortress') {
+      const line = wallFireLines[incomingSide] || wallFireLines.south;
+      const along = (i % 4) * (line.dx || line.dy);
+      const sourceX = line.x + (line.dx ? along : 0);
+      const sourceY = line.y + (line.dy ? along : 0);
+      const targetX = sourceX + line.tx * (70 + (i % 3) * 13);
+      const targetY = sourceY + line.ty * (70 + (i % 3) * 13);
+      launch(sourceX, sourceY, targetX, targetY, '#f0b29a', 160 + i * 105, 2);
+    } else {
+      launch(370 - i * 15, 80 + (i % 3) * 8, 185 - i * 8, 240 + (i % 2) * 12, '#f0b29a', 160 + i * 105, 2);
+    }
   }
   const catapultShots = Math.min(4, siege.catapult || 0);
   for (let i = 0; i < catapultShots; i++) {
@@ -538,13 +552,22 @@ function playCombatAnimation(attacker = {}, defender = {}, siege = {}, result = 
   // Defensive towers fire coordinated arrow volleys; higher towers field more
   // firing positions, independently of the heavy defensive catapults.
   const towerVolleyCount = result.terrain === 'fortress'
-    ? Math.min(10, Math.max(1, Number(result.modifiers?.defenderBuildings?.tower) || 1)) : 0;
+    ? Math.min(10, Math.max(1, Number(result.modifiers?.defenderBuildings?.tower) || Number(siege.defenseTowerLevel) || 1)) : 0;
+  const towerFirePosts = {
+    north: { x: 240, y: 55, dx: 30, dy: 0, tx: 0, ty: -1 },
+    east: { x: 392, y: 91, dx: 0, dy: 24, tx: 1, ty: 0 },
+    south: { x: 240, y: 157, dx: 30, dy: 0, tx: 0, ty: 1 },
+    west: { x: 208, y: 91, dx: 0, dy: 24, tx: -1, ty: 0 }
+  };
+  const towerLine = towerFirePosts[incomingSide] || towerFirePosts.south;
   for (let wave = 0; wave < 2; wave++) {
     for (let i = 0; i < towerVolleyCount; i++) {
-      const sourceX = 222 + (i % 5) * 38;
-      const sourceY = 61 + Math.floor(i / 5) * 8;
-      const targetX = 78 + ((i * 53 + wave * 31) % 440);
-      const targetY = 226 + ((i + wave) % 3) * 19;
+      const along = (i % 5) * (towerLine.dx || towerLine.dy);
+      const sourceX = towerLine.x + (towerLine.dx ? along : 0);
+      const sourceY = towerLine.y + (towerLine.dy ? along : 0);
+      const range = 78 + wave * 12 + (i % 3) * 8;
+      const targetX = sourceX + towerLine.tx * range;
+      const targetY = sourceY + towerLine.ty * range;
       launch(sourceX, sourceY, targetX, targetY, '#e8c879', 180 + wave * 760 + i * 72, 3);
     }
   }
