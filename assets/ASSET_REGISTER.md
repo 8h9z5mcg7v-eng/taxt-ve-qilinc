@@ -6,7 +6,7 @@ Bu fayla yalnız mənbəsi və lisenziyası yoxlanmış aktivlər əlavə edilir
 
 | Aktiv | Mənbə | Lisenziya | Status | İstifadə / risk |
 |---|---|---|---|---|
-| Castle with Keep (GLB, 17.1 MB) | https://www.innerscene.com/tools/library/3d-parts/castle-with-keep-1a75a9e1 | CC0 | Əsas qala üçün birinci namizəd | 49.3 × 49.7 × 29.1 m; dörd dairəvi künc qülləsi, daxili keep, öz əkiz qülləli darvazası, divarlar və böyük zal. GLB materiallıdır. Poliqon sayı, tekstura ölçüləri və mobil FPS hələ yoxlanmayıb. Bu model artıq divar və darvaza ehtiva edir; eyni hissələr ayrıca model ilə təkrarlanmamalıdır. |
+| Castle with Keep (GLB, 17.1 MB) | https://www.innerscene.com/tools/library/3d-parts/castle-with-keep-1a75a9e1 | CC0 | **Bloklanıb — birbaşa GLB endpoint brauzer alətində əlçatan deyil; oyundakı uzaq URL çağırışı dayandırılıb.** | 49.3 × 49.7 × 29.1 m; dörd dairəvi künc qülləsi, daxili keep, öz əkiz qülləli darvazası, divarlar və böyük zal. Lisenziya CC0 kimi göstərilir, lakin binary faylı repozitoriyaya endirilməyib və real cihazda yoxlanmayıb. Yalnız fayl əldə olunub repoya əlavə edildikdən, ölçü/poliqon/tekstura yoxlanıldıqdan sonra yenidən qoşulacaq. |
 | Medieval Gatehouse (GLB, 11.6 MB) | https://www.innerscene.com/tools/library/3d-parts/medieval-gatehouse-8fd67334 | CC0 | Alternativ giriş modeli | 36.6 × 10.8 × 17.5 m; ayrıca iki qülləli giriş. Əsas qala modelinin darvazasını əvəz etmək üçün alternativdir, üstünə əlavə edilməməlidir. |
 
 ## Şəhər binaları və ətraf mühit
