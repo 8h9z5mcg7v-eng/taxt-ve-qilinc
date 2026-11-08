@@ -296,10 +296,12 @@ const warehouseBlockout=roofHouse('Resurs anbarı',-26,68,18,13,8,wood,roof);
 const bazarBlockout=roofHouse('Bazar',27,68,20,12,7,plaster,roof2);
 // CC0 medieval GLB assets: load real authored meshes and keep the procedural fallback if a host is unavailable.
 const cityAssetLoader=new GLTFLoader();
+const cityAnimationMixers=[];
 const cityAssetRoot='https://raw.githubusercontent.com/anishthite/cc0-models-Polygonal-Mind/main/projects/medieval-fair/';
 function loadCityAssetSource(source,label,x,z,targetWidth,rotation=0,onLoaded){
  cityAssetLoader.load(source,loaded=>{
   const root=loaded.scene;
+  if(loaded.animations?.length){const mixer=new THREE.AnimationMixer(root);loaded.animations.forEach(clip=>mixer.clipAction(clip).play());cityAnimationMixers.push(mixer)}
   root.updateMatrixWorld(true);
   let bounds=new THREE.Box3().setFromObject(root);
   const size=bounds.getSize(new THREE.Vector3());
@@ -813,4 +815,4 @@ try{const world=JSON.parse(localStorage.getItem('tvq_world_state_v1')||'{}');if(
 document.querySelector('#home').addEventListener('click',()=>{camera.position.set(150,165,175);controls.target.set(0,10,12);controls.update()});
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.5))});
 const patrolClock=new THREE.Clock();
-renderer.setAnimationLoop(()=>{const t=patrolClock.getElapsedTime();patrols.forEach((p,i)=>{p.position.x=p.userData.baseX+Math.sin(t*.7+i)*1.4;p.rotation.y=Math.sin(t*.55+i)*.22});controls.update();renderer.render(scene,camera)});
+renderer.setAnimationLoop(()=>{const delta=patrolClock.getDelta(),t=patrolClock.elapsedTime;cityAnimationMixers.forEach(mixer=>mixer.update(delta));patrols.forEach((p,i)=>{p.position.x=p.userData.baseX+Math.sin(t*.7+i)*1.4;p.rotation.y=Math.sin(t*.55+i)*.22});controls.update();renderer.render(scene,camera)});
