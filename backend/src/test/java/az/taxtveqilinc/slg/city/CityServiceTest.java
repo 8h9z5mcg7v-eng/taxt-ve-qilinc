@@ -55,7 +55,7 @@ class CityServiceTest {
         long foodBefore = city.getFood();
         long ironBefore = city.getIron();
 
-        CityState result = service.startBuildingUpgrade(playerId, "woodcutter");
+        CityState result = service.startBuildingUpgrade(playerId, "WOODCUTTER");
 
         assertSame(city, result);
         assertEquals(2, city.getKeepLevel());
