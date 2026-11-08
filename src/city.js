@@ -38,7 +38,7 @@ const cityAssetStatus={total:0,loaded:0,failed:0};
 const cityAssetFailures=[];
 const cityAssetStatusPanel=document.createElement('div');
 cityAssetStatusPanel.id='assetStatus';
-cityAssetStatusPanel.textContent='3D modellər hazırlanır…';
+cityAssetStatusPanel.textContent='GLB modellər hazırlanır…';
 cityAssetStatusPanel.style.cssText='position:fixed;top:132px;right:10px;z-index:6;max-width:210px;padding:7px 10px;border:1px solid #8b7958;border-radius:8px;background:#17231ddd;color:#f1dfbd;font:11px/1.35 system-ui;pointer-events:auto;cursor:pointer;user-select:none';
 document.body.append(cityAssetStatusPanel);
 cityAssetStatusPanel.addEventListener('click',()=>{
@@ -48,8 +48,8 @@ cityAssetStatusPanel.addEventListener('click',()=>{
 });
 function refreshCityAssetStatus(){
  const done=cityAssetStatus.loaded+cityAssetStatus.failed;
- cityAssetStatusPanel.textContent='3D modellər: '+cityAssetStatus.loaded+' yükləndi'+(cityAssetStatus.failed?' · '+cityAssetStatus.failed+' xəta':'')+(cityAssetStatus.total>done?' · '+(cityAssetStatus.total-done)+' gözləyir':'');
- cityAssetStatusPanel.title=cityAssetFailures.length?'Xəta siyahısını görmək üçün toxun.':'3D modellərin yüklənmə vəziyyəti';
+ cityAssetStatusPanel.textContent='GLB modellər: '+cityAssetStatus.loaded+' yükləndi'+(cityAssetStatus.failed?' · '+cityAssetStatus.failed+' xəta':'')+(cityAssetStatus.total>done?' · '+(cityAssetStatus.total-done)+' gözləyir':'');
+ cityAssetStatusPanel.title=cityAssetFailures.length?'Xəta siyahısını görmək üçün toxun.':'Yerli quruluşlar əlavə yükləmə tələb etmir.';
  if(cityAssetStatus.total>0&&done===cityAssetStatus.total)cityAssetStatusPanel.style.borderColor=cityAssetStatus.failed?'#b77b55':'#82956c';
 }
 const scene=new THREE.Scene();
@@ -375,8 +375,7 @@ function loadCityAsset(file,label,x,z,targetWidth,rotation=0,onLoaded){
 // The citadel uses its detailed local Three.js blockout as a dependable fallback.
 // Remote model hosts that repeatedly failed in the player's browser are not requested.
 keepBlockoutMeshes.forEach(object=>{object.visible=true});
-// CC0 guard barracks remains an external GLB; the other village structures are built locally.
-loadCityAssetSource('https://cdn.3dassets.dev/assets/28764/v1/model.glb','Kazarma',-29,-29,18,0,()=>{barracksBlockout.visible=false});
+// Kazarma yerli, procedural 3D modeldir; xarici serverdən asılı deyil.
 // Locally-built medieval village buildings: no third-party download or CORS dependency.
 const cottageBlockout=roofHouse('Kənd evi',-48,72,16,13,8,mat(0xc4b18b),roof2);
 const tavernBlockout=roofHouse('Meyxana',48,72,19,15,10,mat(0x9b805f),roof);
@@ -410,10 +409,19 @@ for(let i=0;i<3;i++){
  const target=box('Ox hədəfi',24+i*6,2,45,2,4,.5,wood);archeryTargets.push(target);
  const ring=cylinder('Ox hədəfi',24+i*6,4.1,45,.9,.9,.25,roof,12);archeryTargets.push(ring);
 }
-// CC0 military compound: a complete outer training annex with barracks, armoury, stables and siege facilities.
+// Kənar hərbi düşərgə tamamilə yerli qurulur: kazarma, silah anbarı, tövlə və emalatxana.
 const militaryAnnexGround=new THREE.Mesh(new THREE.PlaneGeometry(60,62),mat(0x81765f));
 militaryAnnexGround.rotation.x=-Math.PI/2;militaryAnnexGround.position.set(94,.055,91);militaryAnnexGround.receiveShadow=true;scene.add(militaryAnnexGround);
-loadCityAssetSource('https://cdn.3dassets.dev/assets/25004/v1/model.glb','Kənar hərbi düşərgə',94,91,49,0);
+roofHouse('Hərbi kazarma',78,78,17,14,9,plaster,roof2);
+roofHouse('Silah anbarı',106,78,14,12,7,wood,roof);
+roofHouse('At tövləsi',78,105,17,13,8,mat(0xa88e68),roof2);
+roofHouse('Mühəndis emalatxanası',106,105,16,13,8,wood,roof);
+// Taxta müdafiə hasarı və giriş qapısı hərbi zonanı vizual olaraq ayırır.
+box('Hərbi düşərgə hasarı',94,0,60,60,3,2,wood,false);
+box('Hərbi düşərgə hasarı',94,0,122,60,3,2,wood,false);
+box('Hərbi düşərgə hasarı',64,0,91,2,3,62,wood,false);
+box('Hərbi düşərgə hasarı',124,0,91,2,3,62,wood,false);
+box('Hərbi düşərgə darvazası',94,0,60,10,3,1,roof2,false);
 // The CC0 tavern replaces the bazaar blockout once the real GLB arrives.
 loadCityAsset('Tabern.glb','Orta əsr bazarı',27,68,20,0,()=>{bazarBlockout.visible=false});
 // Small authored props make the market square feel occupied.
