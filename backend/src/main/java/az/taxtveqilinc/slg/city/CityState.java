@@ -30,6 +30,14 @@ public class CityState {
     @Column(nullable = false) private double foodRemainder;
     @Column(nullable = false) private double ironRemainder;
     @Column private Instant keepUpgradeEndsAt;
+    @Column(nullable = false) private int woodcutterLevel = 1;
+    @Column(nullable = false) private int quarryLevel = 1;
+    @Column(nullable = false) private int farmLevel = 1;
+    @Column(nullable = false) private int ironMineLevel = 1;
+    @Column private Instant woodcutterUpgradeEndsAt;
+    @Column private Instant quarryUpgradeEndsAt;
+    @Column private Instant farmUpgradeEndsAt;
+    @Column private Instant ironMineUpgradeEndsAt;
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -72,10 +80,10 @@ public class CityState {
         if (elapsedSeconds > 0) {
             double multiplier = 1.0 + Math.max(0, keepLevel - 1) * 0.10;
             gold = addProduction(gold, 20, elapsedSeconds, multiplier, 0);
-            wood = addProduction(wood, 45, elapsedSeconds, multiplier, 1);
-            stone = addProduction(stone, 30, elapsedSeconds, multiplier, 2);
-            food = addProduction(food, 60, elapsedSeconds, multiplier, 3);
-            iron = addProduction(iron, 12, elapsedSeconds, multiplier, 4);
+            wood = addProduction(wood, 45, elapsedSeconds, multiplier * buildingMultiplier(woodcutterLevel), 1);
+            stone = addProduction(stone, 30, elapsedSeconds, multiplier * buildingMultiplier(quarryLevel), 2);
+            food = addProduction(food, 60, elapsedSeconds, multiplier * buildingMultiplier(farmLevel), 3);
+            iron = addProduction(iron, 12, elapsedSeconds, multiplier * buildingMultiplier(ironMineLevel), 4);
         }
         lastResourceUpdateAt = segmentEnd;
     }
@@ -115,6 +123,50 @@ public class CityState {
         }
     }
 
+
+    private double buildingMultiplier(int level) { return 1.0 + Math.max(0, level - 1) * 0.25; }
+
+    public int getBuildingLevel(String building) {
+        return switch (building) {
+            case "WOODCUTTER" -> woodcutterLevel;
+            case "QUARRY" -> quarryLevel;
+            case "FARM" -> farmLevel;
+            case "IRON_MINE" -> ironMineLevel;
+            default -> throw new IllegalArgumentException("Naməlum istehsal binası.");
+        };
+    }
+
+    public Instant getBuildingUpgradeEndsAt(String building) {
+        return switch (building) {
+            case "WOODCUTTER" -> woodcutterUpgradeEndsAt;
+            case "QUARRY" -> quarryUpgradeEndsAt;
+            case "FARM" -> farmUpgradeEndsAt;
+            case "IRON_MINE" -> ironMineUpgradeEndsAt;
+            default -> throw new IllegalArgumentException("Naməlum istehsal binası.");
+        };
+    }
+
+    public void startBuildingUpgrade(String building, Instant finishAt) {
+        switch (building) {
+            case "WOODCUTTER" -> woodcutterUpgradeEndsAt = finishAt;
+            case "QUARRY" -> quarryUpgradeEndsAt = finishAt;
+            case "FARM" -> farmUpgradeEndsAt = finishAt;
+            case "IRON_MINE" -> ironMineUpgradeEndsAt = finishAt;
+            default -> throw new IllegalArgumentException("Naməlum istehsal binası.");
+        }
+    }
+
+    public void completeBuildingUpgrades(Instant now) {
+        if (woodcutterUpgradeEndsAt != null && !now.isBefore(woodcutterUpgradeEndsAt)) { woodcutterLevel++; woodcutterUpgradeEndsAt = null; }
+        if (quarryUpgradeEndsAt != null && !now.isBefore(quarryUpgradeEndsAt)) { quarryLevel++; quarryUpgradeEndsAt = null; }
+        if (farmUpgradeEndsAt != null && !now.isBefore(farmUpgradeEndsAt)) { farmLevel++; farmUpgradeEndsAt = null; }
+        if (ironMineUpgradeEndsAt != null && !now.isBefore(ironMineUpgradeEndsAt)) { ironMineLevel++; ironMineUpgradeEndsAt = null; }
+    }
+
+    public void deductBuildingUpgradeCost(long goldCost, long woodCost, long stoneCost, long foodCost, long ironCost) {
+        gold -= goldCost; wood -= woodCost; stone -= stoneCost; food -= foodCost; iron -= ironCost;
+    }
+
     public void beginKeepUpgrade(long goldCost, long woodCost, long stoneCost,
                                  long foodCost, long ironCost, Instant finishAt) {
         this.gold -= goldCost;
@@ -143,5 +195,13 @@ public class CityState {
     public long getIron() { return iron; }
     public Instant getLastResourceUpdateAt() { return lastResourceUpdateAt; }
     public Instant getKeepUpgradeEndsAt() { return keepUpgradeEndsAt; }
+    public int getWoodcutterLevel() { return woodcutterLevel; }
+    public int getQuarryLevel() { return quarryLevel; }
+    public int getFarmLevel() { return farmLevel; }
+    public int getIronMineLevel() { return ironMineLevel; }
+    public Instant getWoodcutterUpgradeEndsAt() { return woodcutterUpgradeEndsAt; }
+    public Instant getQuarryUpgradeEndsAt() { return quarryUpgradeEndsAt; }
+    public Instant getFarmUpgradeEndsAt() { return farmUpgradeEndsAt; }
+    public Instant getIronMineUpgradeEndsAt() { return ironMineUpgradeEndsAt; }
     public Instant getCreatedAt() { return createdAt; }
 }
