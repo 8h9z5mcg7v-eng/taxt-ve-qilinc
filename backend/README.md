@@ -9,10 +9,20 @@ Spring Boot 3 / Java 21 backend foundation for the existing browser prototype. T
 - RabbitMQ reserved for asynchronous game jobs and domain events
 - Spring Security, BCrypt password hashing and signed JWT access tokens
 
-## Run dependencies
-1. Copy `.env.example` to `.env` and replace all example passwords and the JWT secret.
-2. From this directory run `docker compose up -d`.
-3. Install Java 21 and Maven, then run `mvn spring-boot:run`.
+## Run locally (computer required)
+This section requires a computer with Docker, Java 21 and Maven. It cannot be completed on an iPhone alone.
+
+1. Copy `.env.example` to `.env` and replace the example passwords and JWT secret with private values.
+2. From this directory, start the dependencies: `docker compose up -d`.
+3. Load the variables from `.env` into the shell before starting Spring Boot. On macOS/Linux:
+   ```bash
+   set -a
+   . ./.env
+   set +a
+   mvn spring-boot:run
+   ```
+   On Windows PowerShell, set the variables in the terminal (or use a local environment loader) before running `mvn spring-boot:run`. Docker Compose reads `.env` automatically, but Spring Boot does not automatically load that file.
+4. Check `http://localhost:8080/actuator/health`.
 
 ## Authentication API
 
@@ -43,4 +53,5 @@ Health: `GET /actuator/health`
 - Do not store authoritative resources, troops or battle outcomes in the browser. The server must validate every state-changing command.
 - Add Flyway migrations before production; Hibernate schema auto-update is currently for early development only.
 - Local Docker Compose is for development. Production hosting and its free-tier limits must be checked separately.
+- Redis and RabbitMQ dependencies/configuration are present, but gameplay queues and cache operations have not yet been implemented.
 - The current game client is Three.js in a browser. Unity is a possible later client; both should use the same versioned API contract.
