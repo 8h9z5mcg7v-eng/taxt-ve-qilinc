@@ -60,12 +60,28 @@ function renderTerrain(terrain, wallDamage = 0, siege = {}) {
       svgNode('path', { d: `M${x} 205 l-17 35 h34Z`, fill: i % 2 ? '#1d3425' : '#29452d' }, scene);
     }
   } else if (terrain === 'fortress') {
-    svgNode('rect', { x: 214, y: 76, width: 172, height: 54, fill: '#77786d', stroke: '#282b27', 'stroke-width': 5 }, scene);
-    for (let x = 220; x < 386; x += 28) svgNode('rect', { x, y: 65, width: 14, height: 15, fill: '#99998a', stroke: '#282b27', 'stroke-width': 2 }, scene);
-    svgNode('rect', { x: 270, y: 35, width: 58, height: 44, fill: '#858679', stroke: '#282b27', 'stroke-width': 4 }, scene);
-    svgNode('path', { d: 'M262 36 L299 8 L336 36Z', fill: '#6f4032', stroke: '#282b27', 'stroke-width': 3 }, scene);
-    svgNode('rect', { x: 284, y: 91, width: 24, height: 39, fill: '#211d19' }, scene);
     const damage = Math.max(0, Math.min(100, Number(wallDamage) || 0));
+    svgNode('rect', { x: 214, y: 76, width: 172, height: 54, fill: '#77786d', stroke: '#282b27', 'stroke-width': 5 }, scene);
+    for (let i = 0, x = 220; x < 386; x += 28, i++) {
+      // Damaged walls progressively lose their merlons instead of only
+      // displaying a generic damage badge.
+      if (damage >= 22 && i === 2 || damage >= 48 && i === 4 || damage >= 72 && i === 0 || damage >= 88 && i === 5) continue;
+      svgNode('rect', { x, y: 65, width: 14, height: 15, fill: '#99998a', stroke: '#282b27', 'stroke-width': 2 }, scene);
+    }
+    svgNode('rect', { x: 270, y: 35, width: 58, height: 44, fill: '#858679', stroke: '#282b27', 'stroke-width': 4 }, scene);
+    svgNode('path', { d: damage >= 82 ? 'M262 36 L280 22 L290 30 L299 8 L312 26 L336 36Z' : 'M262 36 L299 8 L336 36Z', fill: '#6f4032', stroke: '#282b27', 'stroke-width': 3 }, scene);
+    if (damage >= 42) {
+      svgNode('path', { d: 'M297 13 L291 25 L301 31 L294 43 L304 51', fill: 'none', stroke: '#211e1a', 'stroke-width': 3.2, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, scene);
+      svgNode('path', { d: 'M277 34 L284 40 L280 49', fill: 'none', stroke: '#211e1a', 'stroke-width': 2 }, scene);
+    }
+    if (damage >= 82) {
+      svgNode('path', { d: 'M279 52 L289 47 L298 54 L306 47 L319 55 L316 78 L278 78Z', fill: '#55584f', stroke: '#282b27', 'stroke-width': 2 }, scene);
+      for (let i = 0; i < 5; i++) {
+        const x = 267 + i * 15;
+        svgNode('path', { d: `M${x} 129 l6 -5 l8 4 l-3 6 l-8 0Z`, fill: ['#77786d','#969184','#5e625d'][i%3], stroke: '#393b35', 'stroke-width': 1 }, scene);
+      }
+    }
+    svgNode('rect', { x: 284, y: 91, width: 24, height: 39, fill: '#211d19' }, scene);
     const gate = svgNode('g', { id: 'fortressGate' }, scene);
     const gateOpen = damage >= 100;
     const gateWear = Math.max(0, Math.min(1, damage / 100));
