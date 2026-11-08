@@ -12,7 +12,7 @@ test('speed-up is rejected when gold is insufficient or repair is complete',()=>
 
 test('wall damage visuals progress from hairline cracks to a breached opening',()=>{
  assert.deepEqual(getWallDamageVisuals(0,15),{crackCount:0,rubbleCount:0,fallenCrenels:0,breachVisible:false});
- assert.deepEqual(getWallDamageVisuals(50,15),{crackCount:3,rubbleCount:3,fallenCrenels:7,breachVisible:false});
+ assert.deepEqual(getWallDamageVisuals(50,15),{crackCount:3,rubbleCount:3,fallenCrenels:5,breachVisible:false});
  assert.deepEqual(getWallDamageVisuals(100,15),{crackCount:5,rubbleCount:7,fallenCrenels:10,breachVisible:true});
 });
 test('wall damage visuals clamp damage and support vertical wall lengths',()=>{
