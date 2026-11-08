@@ -96,6 +96,6 @@ The city has four server-owned production buildings, each starting at level 1:
 - `FARM` — increases food production
 - `IRON_MINE` — increases iron production
 
-Upgrade one with `POST /api/v1/city/buildings/{building}/upgrade`, using the Bearer token. The path key is case-insensitive. The server checks and deducts the costs; the building upgrade takes 20 seconds per target level in this development balance. Each building is capped at level 20. Target level N costs N×100 gold, N×250 wood, N×150 stone, N×100 food and N×50 iron. Each level above 1 increases that building's resource production by 25%.
+Upgrade one with `POST /api/v1/city/buildings/{building}/upgrade`, using the Bearer token. The path key is case-insensitive. The server checks and deducts the costs; the building upgrade takes 20 seconds per target level in this development balance. Each building is capped at level 20 and cannot exceed the current keep level (upgrade the keep first). Target level N costs N×100 gold, N×250 wood, N×150 stone, N×100 food and N×50 iron. Each level above 1 increases that building's resource production by 25%.
 
 The city response includes each building level and its upgrade completion timestamp. Offline production is split at building and keep upgrade completion times so a new production bonus is applied only after the corresponding upgrade completes. These timings and prices are provisional. The next step is to expose these controls in the browser city UI and then tune the economy.
