@@ -9,9 +9,10 @@ export function normalizeTrainingQueue(value){
  for(const raw of value){
   if(!raw||typeof raw!=='object'||typeof raw.id!=='string'||!raw.id.trim()||seen.has(raw.id))continue;
   if(!TROOP_TYPES.includes(raw.type))continue;
-  const count=Math.floor(Number(raw.count));
+  const rawCount=Number(raw.count);
+  const count=Math.floor(rawCount);
   const startedAt=Number(raw.startedAt),endsAt=Number(raw.endsAt);
-  if(!Number.isFinite(count)||count<1||count>MAX_JOB_COUNT||!Number.isFinite(startedAt)||!Number.isFinite(endsAt)||endsAt<=startedAt)continue;
+  if(!Number.isInteger(rawCount)||!Number.isFinite(count)||count<1||count>MAX_JOB_COUNT||!Number.isFinite(startedAt)||!Number.isFinite(endsAt)||endsAt<=startedAt)continue;
   seen.add(raw.id);
   queue.push({id:raw.id,type:raw.type,count,startedAt,endsAt,duration:endsAt-startedAt});
   if(queue.length>=MAX_QUEUE)break;
