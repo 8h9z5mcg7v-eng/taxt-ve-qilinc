@@ -33,11 +33,6 @@ const cityAssetErrorList=document.createElement('div');
 cityAssetErrorList.id='assetErrorList';
 cityAssetErrorList.style.cssText='display:none;position:fixed;top:174px;right:10px;z-index:20;width:min(310px,calc(100vw - 20px));max-height:42vh;overflow:auto;padding:10px 12px;border:1px solid #b77b55;border-radius:9px;background:#17231df5;color:#f1dfbd;font:11px/1.45 system-ui;white-space:pre-wrap;pointer-events:auto';
 document.body.append(cityAssetErrorList);
-cityAssetStatusPanel.addEventListener('click',()=>{
- const open=cityAssetErrorList.style.display!=='block';
- cityAssetErrorList.style.display=open?'block':'none';
- if(open){cityAssetErrorList.textContent=cityAssetFailures.length?cityAssetFailures.map((item,i)=>(i+1)+'. '+item.label+' — '+item.reason+'\\n'+item.source).join('\\n\\n'):'Hazırda qeydə alınmış model xətası yoxdur.';}
-});
 function appendCityOverlay(panel){cityOverlayDock.append(panel);}
 const cityAssetStatus={total:0,loaded:0,failed:0};
 const cityAssetFailures=[];
@@ -46,6 +41,11 @@ cityAssetStatusPanel.id='assetStatus';
 cityAssetStatusPanel.textContent='3D modellər hazırlanır…';
 cityAssetStatusPanel.style.cssText='position:fixed;top:132px;right:10px;z-index:6;max-width:210px;padding:7px 10px;border:1px solid #8b7958;border-radius:8px;background:#17231ddd;color:#f1dfbd;font:11px/1.35 system-ui;pointer-events:auto;cursor:pointer;user-select:none';
 document.body.append(cityAssetStatusPanel);
+cityAssetStatusPanel.addEventListener('click',()=>{
+ const open=cityAssetErrorList.style.display!=='block';
+ cityAssetErrorList.style.display=open?'block':'none';
+ if(open){cityAssetErrorList.textContent=cityAssetFailures.length?cityAssetFailures.map((item,i)=>(i+1)+'. '+item.label+' — '+item.reason+'\\n'+item.source).join('\\n\\n'):'Hazırda qeydə alınmış model xətası yoxdur.';}
+});
 function refreshCityAssetStatus(){
  const done=cityAssetStatus.loaded+cityAssetStatus.failed;
  cityAssetStatusPanel.textContent='3D modellər: '+cityAssetStatus.loaded+' yükləndi'+(cityAssetStatus.failed?' · '+cityAssetStatus.failed+' xəta':'')+(cityAssetStatus.total>done?' · '+(cityAssetStatus.total-done)+' gözləyir':'');
