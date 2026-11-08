@@ -7,6 +7,8 @@ import java.util.UUID;
 @Entity
 @Table(name = "player_cities")
 public class CityState {
+    public static final long RESOURCE_CAP = 100_000L;
+
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
@@ -35,6 +37,9 @@ public class CityState {
     @Column(nullable = false)
     private long iron;
 
+    @Column(nullable = false)
+    private Instant lastResourceUpdateAt;
+
     @Column
     private Instant keepUpgradeEndsAt;
 
@@ -44,6 +49,7 @@ public class CityState {
     protected CityState() {}
 
     public CityState(UUID playerId, String cityName) {
+        Instant now = Instant.now();
         this.playerId = playerId;
         this.cityName = cityName;
         this.keepLevel = 1;
@@ -52,7 +58,35 @@ public class CityState {
         this.stone = 1000;
         this.food = 2000;
         this.iron = 500;
-        this.createdAt = Instant.now();
+        this.lastResourceUpdateAt = now;
+        this.createdAt = now;
+    }
+
+    public void accrueResources(Instant now) {
+        if (lastResourceUpdateAt == null) {
+            lastResourceUpdateAt = now;
+            return;
+        }
+        if (!now.isAfter(lastResourceUpdateAt)) return;
+
+        long elapsedSeconds = java.time.Duration.between(lastResourceUpdateAt, now).getSeconds();
+        if (elapsedSeconds <= 0) return;
+
+        // Temporary development rates per hour at keep level 1; each keep level adds 10%.
+        double multiplier = 1.0 + Math.max(0, keepLevel - 1) * 0.10;
+        gold = addProduction(gold, 20, elapsedSeconds, multiplier);
+        wood = addProduction(wood, 45, elapsedSeconds, multiplier);
+        stone = addProduction(stone, 30, elapsedSeconds, multiplier);
+        food = addProduction(food, 60, elapsedSeconds, multiplier);
+        iron = addProduction(iron, 12, elapsedSeconds, multiplier);
+        lastResourceUpdateAt = now;
+    }
+
+    private long addProduction(long current, long perHour, long elapsedSeconds, double multiplier) {
+        if (current >= RESOURCE_CAP) return RESOURCE_CAP;
+        double produced = perHour * multiplier * (elapsedSeconds / 3600.0);
+        long wholeUnits = (long) Math.floor(produced);
+        return Math.min(RESOURCE_CAP, current + wholeUnits);
     }
 
     public void beginKeepUpgrade(long goldCost, long woodCost, long stoneCost,
@@ -81,6 +115,7 @@ public class CityState {
     public long getStone() { return stone; }
     public long getFood() { return food; }
     public long getIron() { return iron; }
+    public Instant getLastResourceUpdateAt() { return lastResourceUpdateAt; }
     public Instant getKeepUpgradeEndsAt() { return keepUpgradeEndsAt; }
     public Instant getCreatedAt() { return createdAt; }
 }
