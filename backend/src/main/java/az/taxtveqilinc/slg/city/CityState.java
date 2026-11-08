@@ -55,15 +55,29 @@ public class CityState {
             return;
         }
         if (!now.isAfter(lastResourceUpdateAt)) return;
-        long elapsedSeconds = Duration.between(lastResourceUpdateAt, now).getSeconds();
-        if (elapsedSeconds <= 0) return;
-        double multiplier = 1.0 + Math.max(0, keepLevel - 1) * 0.10;
-        gold = addProduction(gold, 20, elapsedSeconds, multiplier, 0);
-        wood = addProduction(wood, 45, elapsedSeconds, multiplier, 1);
-        stone = addProduction(stone, 30, elapsedSeconds, multiplier, 2);
-        food = addProduction(food, 60, elapsedSeconds, multiplier, 3);
-        iron = addProduction(iron, 12, elapsedSeconds, multiplier, 4);
-        lastResourceUpdateAt = now;
+
+        Instant upgradeFinish = keepUpgradeEndsAt;
+        if (upgradeFinish != null && upgradeFinish.isAfter(lastResourceUpdateAt)
+                && !upgradeFinish.isAfter(now)) {
+            accrueSegment(upgradeFinish);
+            keepLevel += 1;
+            keepUpgradeEndsAt = null;
+        }
+        accrueSegment(now);
+    }
+
+    private void accrueSegment(Instant segmentEnd) {
+        if (!segmentEnd.isAfter(lastResourceUpdateAt)) return;
+        long elapsedSeconds = Duration.between(lastResourceUpdateAt, segmentEnd).getSeconds();
+        if (elapsedSeconds > 0) {
+            double multiplier = 1.0 + Math.max(0, keepLevel - 1) * 0.10;
+            gold = addProduction(gold, 20, elapsedSeconds, multiplier, 0);
+            wood = addProduction(wood, 45, elapsedSeconds, multiplier, 1);
+            stone = addProduction(stone, 30, elapsedSeconds, multiplier, 2);
+            food = addProduction(food, 60, elapsedSeconds, multiplier, 3);
+            iron = addProduction(iron, 12, elapsedSeconds, multiplier, 4);
+        }
+        lastResourceUpdateAt = segmentEnd;
     }
 
     private long addProduction(long current, long perHour, long elapsedSeconds, double multiplier, int resource) {
