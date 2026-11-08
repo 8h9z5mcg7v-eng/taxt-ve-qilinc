@@ -675,10 +675,6 @@ document.getElementById('fight').addEventListener('click', async () => {
     localStorage.setItem('tvq_resolved_battles_v1',JSON.stringify(ledger));
    }catch(error){fightButton.disabled=false;document.getElementById('winner').textContent='Nəticəni təhlükəsiz yadda saxlamaq mümkün olmadı. Döyüşü təkrar hesablamadan əvvəl yaddaşı yoxla.';console.warn('Döyüş qoruma qeydi saxlanmadı',error);return;}
   }
-  if(isWorldMapAttack || isBorderBattle){
-   try{const key='tvq_general_v1';const current=JSON.parse(localStorage.getItem(key)||'{}');current.id=commanderId;current.xp=Math.max(0,Number(current.xp)||0)+25+(result.winner==='attacker'?25:0);localStorage.setItem(key,JSON.stringify(current));}
-   catch(error){console.warn('Sərkərdə təcrübəsi saxlanmadı',error)}
-  }
   fightButton.textContent = (isWorldMapAttack || isBorderBattle) ? 'DÖYÜŞ TAMAMLANDI' : 'YENİ DÖYÜŞÜ HESABLA';
   if (!isWorldMapAttack && !isBorderBattle) fightButton.disabled = false;
   const survivingAttacker = result.remaining?.attacker ?? attacker;
@@ -697,8 +693,22 @@ document.getElementById('fight').addEventListener('click', async () => {
         saved.wounded = wounded;
       });
     } catch (error) {
+      // The replay lock was written before settlement; release it if this first critical write fails.
+      try {
+        const ledger=JSON.parse(localStorage.getItem('tvq_resolved_battles_v1')||'{}');
+        delete ledger[battleId];
+        localStorage.setItem('tvq_resolved_battles_v1',JSON.stringify(ledger));
+      } catch (rollbackError) { console.warn('Döyüş kilidini geri almaq mümkün olmadı',rollbackError); }
+      fightButton.disabled=false;
+      fightButton.textContent='YENİDƏN CƏHD ET';
+      document.getElementById('winner').textContent='Qoşun itkisini yadda saxlamaq mümkün olmadı. Nəticə təsdiqlənmədi; yaddaş yerini yoxla və yenidən cəhd et.';
       console.warn('Ordunun nəticəsini yadda saxlamaq mümkün olmadı.', error);
+      return;
     }
+  }
+  if(isWorldMapAttack || isBorderBattle){
+   try{const key='tvq_general_v1';const current=JSON.parse(localStorage.getItem(key)||'{}');current.id=commanderId;current.xp=Math.max(0,Number(current.xp)||0)+25+(result.winner==='attacker'?25:0);localStorage.setItem(key,JSON.stringify(current));}
+   catch(error){console.warn('Sərkərdə təcrübəsi saxlanmadı',error)}
   }
   const survivingDefender = result.remaining?.defender ?? defender;
   currentWallDamage = result.siege?.wallDamage || 0;
