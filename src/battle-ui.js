@@ -684,7 +684,9 @@ function playCombatAnimation(attacker = {}, defender = {}, siege = {}, result = 
     const field = document.getElementById('battlefield');
     const impact = document.createElementNS(svgNS, 'g');
     impact.setAttribute('id', 'wallImpactAnimation');
-    const burst = svgNode('g', { transform: 'translate(300 112)' }, impact);
+    const hitSide = result.direction || siege.attackDirection || 'south';
+    const hitPoint = ({north:[300,53],east:[398,103],south:[300,157],west:[202,103]})[hitSide] || [300,112];
+    const burst = svgNode('g', { transform: `translate(${hitPoint[0]} ${hitPoint[1]})` }, impact);
     for (let i = 0; i < Math.min(12, Math.max(4, Math.ceil(damage / 9))); i++) {
       const angle = (Math.PI * 2 * i) / 12;
       const dx = Math.cos(angle) * (18 + damage * .24);
@@ -692,8 +694,8 @@ function playCombatAnimation(attacker = {}, defender = {}, siege = {}, result = 
       svgNode('path', { d: `M0 0 L${dx.toFixed(1)} ${dy.toFixed(1)}`, stroke: '#e1b36b', 'stroke-width': 2.4, 'stroke-linecap': 'round', opacity: .9 }, burst);
     }
     for (let i = 0; i < Math.min(10, Math.ceil(damage / 10)); i++) {
-      const x = 270 + ((i * 17) % 60);
-      const y = 116 + ((i * 13) % 18);
+      const x = hitPoint[0] - 30 + ((i * 17) % 60);
+      const y = hitPoint[1] - 8 + ((i * 13) % 18);
       const stone = svgNode('path', { d: `M${x} ${y} l5 -4 l7 3 l-2 6 l-8 0Z`, fill: '#b0a99a', stroke: '#393b35', 'stroke-width': 1 }, impact);
       stone.style.transformBox = 'fill-box';
       stone.style.transformOrigin = 'center';
@@ -706,8 +708,8 @@ function playCombatAnimation(attacker = {}, defender = {}, siege = {}, result = 
     if (freshDamage > 0) {
       const hitCount = Math.min(8, Math.max(1, Math.ceil(freshDamage / 13)));
       for (let hit = 0; hit < hitCount; hit++) {
-        const x = 226 + ((hit * 37 + 19) % 145);
-        const y = 83 + ((hit * 17 + 9) % 37);
+        const x = hitSide === 'west' ? 202 : hitSide === 'east' ? 398 : 250 + ((hit * 37 + 19) % 100);
+        const y = hitSide === 'north' ? 53 : hitSide === 'south' ? 157 : 78 + ((hit * 17 + 9) % 50);
         const delay = 420 + hit * 190;
         const fracture = svgNode('path', {
           d: `M${x} ${y} l-5 8 l8 5 l-5 10 M${x+3} ${y+13} l8 5`,
