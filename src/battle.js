@@ -72,11 +72,12 @@ export function resolveBattle({ attacker, defender, direction = 'south', tactic 
   const wallRemaining = Math.max(0, wallMax - wallDamage);
   const wallBreached = wallMax > 0 && wallRemaining === 0;
   const wallLevelBonus = 1 + (safeWallLevel - 1) * 0.045;
-  const wallProtection = wallMax > 0 ? (((1 + (wallRemaining / wallMax) * 0.32) / 1.32) * wallLevelBonus) / (1 + siegeEngines.tower * 0.16) : 1;
+  const wallIntegrityFactor = wallMax > 0 ? 1 - (wallDamage / wallMax) * 0.4 : 1;
+  const wallProtection = wallMax > 0 ? ((((1 + (wallRemaining / wallMax) * 0.32) / 1.32) * wallLevelBonus) / (1 + siegeEngines.tower * 0.16)) * wallIntegrityFactor : 1;
   const siegeAttackBonus = wallMax > 0 ? siegeEngines.catapult * 14 + siegeEngines.tower * 10 + (wallBreached ? siegeEngines.ram * 6 : 0) : 0;
   const defensiveStoneDamage = defensiveCatapults * 12;
   const attackPower = Math.max(1, rawAttackPower * directionBonus * terrainAttackBonus * cavalryTerrainFactor + siegeAttackBonus - defensiveStoneDamage);
-  const defendPower = calculatePower(defendArmy, true, safeDefenderTactic, attackArmy, null, {}, safeTerrain === 'fortress' ? defenderBuildings : {}) * (wallBreached ? 1 : terrainDefenseBonus * wallProtection);
+  const defendPower = calculatePower(defendArmy, true, safeDefenderTactic, attackArmy, null, {}, safeTerrain === 'fortress' ? defenderBuildings : {}) * terrainDefenseBonus * wallProtection;
   const ratio = attackPower / Math.max(1, defendPower);
   const attackerWins = ratio >= 1;
   const random = (Math.sin(seed * 9301 + 49297) * 233280) % 1;
@@ -109,7 +110,7 @@ export function resolveBattle({ attacker, defender, direction = 'south', tactic 
       `Ərazi: ${safeTerrain}`,
       `Mühasirə: qoçbaşı ${siegeEngines.ram}, katapult ${siegeEngines.catapult}, mühasirə qülləsi ${siegeEngines.tower}`,
       ...(defensiveCatapults ? [`Qala müdafiə katapultları: ${defensiveCatapults} · hücum gücünə zərər: ${defensiveStoneDamage}`] : []),
-      ...(wallMax ? [`Divar səviyyəsi: ${safeWallLevel}/10 · əvvəlki zədə: ${Math.round(safePriorWallDamage)}/100 · bu döyüşdə əlavə zədə: +${Math.round(wallDamageThisBattle)} · ümumi zədə: ${Math.round(wallDamage)}/100 · ${wallBreached ? 'divar yarıldı' : 'divar hələ dayanır'}`] : []),
+      ...(wallMax ? [`Divar səviyyəsi: ${safeWallLevel}/10 · əvvəlki zədə: ${Math.round(safePriorWallDamage)}/100 · bu döyüşdə əlavə zədə: +${Math.round(wallDamageThisBattle)} · ümumi zədə: ${Math.round(wallDamage)}/100 · müdafiə bütövlüyü: ${Math.round(wallIntegrityFactor * 100)}% · ${wallBreached ? 'divar yarıldı' : 'divar hələ dayanır'}`] : []),
       `Hücum tikililəri: Kazarma +${(Math.max(1,Math.min(10,Math.floor(Number(attackerBuildings.barracks)||1)))-1)*2.5}% piyada/nizəçi · Oxçuluq +${(Math.max(1,Math.min(10,Math.floor(Number(attackerBuildings.archery)||1)))-1)*3}% oxçu · Tövlə +${(Math.max(1,Math.min(10,Math.floor(Number(attackerBuildings.stable)||1)))-1)*3}% süvari/cəngavər`,
       ...(safeTerrain === 'fortress' ? [`Qala müdafiə tikililəri: Qüllə +${(Math.max(1,Math.min(10,Math.floor(Number(defenderBuildings.tower)||1)))-1)*2.5}% · Kazarma +${(Math.max(1,Math.min(10,Math.floor(Number(defenderBuildings.barracks)||1)))-1)*2}% piyada/nizəçi · Oxçuluq +${(Math.max(1,Math.min(10,Math.floor(Number(defenderBuildings.archery)||1)))-1)*2.5}% oxçu · Tövlə +${(Math.max(1,Math.min(10,Math.floor(Number(defenderBuildings.stable)||1)))-1)*2}% süvari/cəngavər`] : []),
       `Hücum gücü: ${Math.round(attackPower)} · Müdafiə gücü: ${Math.round(defendPower)}`,

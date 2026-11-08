@@ -206,3 +206,14 @@ test('higher fortress wall levels reduce incoming siege damage', () => {
  const levelTen=resolveBattle({...base,wallLevel:10});
  assert.ok(levelTen.siege.wallDamageThisBattle<levelOne.siege.wallDamageThisBattle);
 });
+
+test('fortress wall damage progressively weakens defenders and a breach removes the intact-wall advantage', () => {
+ const base={attacker:{infantry:35},defender:{infantry:30},terrain:'fortress',seed:312};
+ const intact=resolveBattle({...base,priorWallDamage:0});
+ const half=resolveBattle({...base,priorWallDamage:50});
+ const breached=resolveBattle({...base,priorWallDamage:100});
+ assert.ok(intact.power.defender>half.power.defender);
+ assert.ok(half.power.defender>breached.power.defender);
+ assert.ok(intact.log.some(line=>line.includes('müdafiə bütövlüyü: 100%')));
+ assert.ok(breached.log.some(line=>line.includes('müdafiə bütövlüyü: 60%')));
+});
