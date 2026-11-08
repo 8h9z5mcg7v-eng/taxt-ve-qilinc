@@ -84,6 +84,10 @@ scene.add(new THREE.HemisphereLight(0xdce9ef,0x4b4935,2.0));
 const sun=new THREE.DirectionalLight(0xffdfb0,3.1);sun.position.set(-90,150,80);sun.castShadow=true;sun.shadow.mapSize.set(compactCityViewport?1024:2048,compactCityViewport?1024:2048);sun.shadow.camera.left=-130;sun.shadow.camera.right=130;sun.shadow.camera.top=130;sun.shadow.camera.bottom=-130;scene.add(sun);
 const fill=new THREE.DirectionalLight(0x9ab9df,1.0);fill.position.set(100,60,-100);scene.add(fill);
 const mat=(c,r=.88)=>new THREE.MeshStandardMaterial({color:c,roughness:r});
+const buildingMaterials={
+ foundation:mat(0x69675d),timber:mat(0x493322),woodLight:mat(0x886443),
+ glass:new THREE.MeshStandardMaterial({color:0x344a4c,roughness:.24,metalness:.12,emissive:0x18292b})
+};
 const grass=mat(0x586b45),grass2=mat(0x65774b),stone=mat(0x77796f),stoneDark=mat(0x4c514d),roof=mat(0x684535),roof2=mat(0x76503a),wood=mat(0x65472e),plaster=mat(0xc1ad83),dark=mat(0x302c27),metal=mat(0x555c5b),water=mat(0x477b83,.35);
 function makeGroundTexture(){
  const canvas=document.createElement('canvas');canvas.width=512;canvas.height=512;
@@ -117,7 +121,7 @@ function roofHouse(name,x,z,w,d,h,wall=plaster,top=roof){
   const mesh=new THREE.Mesh(geometry,material);mesh.position.set(px,py,pz);mesh.rotation.set(0,ry,rz);
   mesh.castShadow=true;mesh.receiveShadow=true;mesh.userData.label=name;group.add(mesh);pickables.push(mesh);return mesh;
  };
- const foundation=mat(0x69675d),timber=mat(0x493322),woodLight=mat(0x886443),glass=new THREE.MeshStandardMaterial({color:0x344a4c,roughness:.24,metalness:.12,emissive:0x18292b});
+ const {foundation,timber,woodLight,glass}=buildingMaterials;
  add(new THREE.BoxGeometry(w+.9,.8,d+.9),foundation,0,.4,0);
  add(new THREE.BoxGeometry(w,h,d),wall,0,.8+h/2,0);
  const roofRise=Math.max(3.4,Math.min(6.5,w*.27)),angle=Math.atan2(roofRise,w/2),slope=Math.hypot(w/2,roofRise);
