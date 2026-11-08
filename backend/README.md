@@ -70,3 +70,18 @@ Development balance for target level N:
 - Maximum keep level: 30
 
 The city row is pessimistically locked while a state-changing upgrade is processed to reduce concurrent double-spend races. This is an initial single-city implementation; building queues, production, speed-ups, migrations, economy balancing and load tests remain future work.
+
+## Offline resource production
+
+Resources are accrued on the server whenever the authenticated city is read or a city command is submitted. The elapsed time is calculated from the persisted `lastResourceUpdateAt` timestamp, so production continues while the player is offline; no background timer or client clock is trusted. Fractional production is retained between requests so frequent refreshes do not discard fractions.
+
+Temporary development production at keep level 1 (per hour):
+- Gold: 20
+- Wood: 45
+- Stone: 30
+- Food: 60
+- Iron: 12
+
+Each keep level above level 1 increases production by 10%. Each resource has a storage cap of 100,000. When the cap is reached, excess production is discarded. These are prototype balancing values, not final live-game economics.
+
+The city API response includes `resourceStorageCap` and `lastResourceUpdateAt`. Unit tests cover offline accrual, fractional accumulation, cap enforcement and backwards clock input. Production rates, upgrades to resource buildings, boosts, protection against clock manipulation at infrastructure level and load testing remain future work.
