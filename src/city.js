@@ -1,6 +1,20 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
+// Recover an interrupted border-army dispatch before this page reads city or battle state.
+const borderDispatchJournalKey='tvq_pending_border_dispatch_v1';
+function recoverBorderDispatch(){
+ const raw=localStorage.getItem(borderDispatchJournalKey);
+ if(!raw)return;
+ const journal=JSON.parse(raw);
+ if(!journal?.cityAfter||!journal?.active?.battleId||!journal?.active?.url||!journal?.active?.kingdom)throw new Error('Sərhəd yürüşünün bərpa qeydi yanlışdır.');
+ localStorage.setItem('taxt-ve-qilinc-city-v1',JSON.stringify(journal.cityAfter));
+ localStorage.setItem('tvq_active_border_battle_v1',JSON.stringify(journal.active));
+ localStorage.setItem('tvq_border_battle_kingdom',journal.active.kingdom);
+ localStorage.removeItem(borderDispatchJournalKey);
+}
+try{recoverBorderDispatch()}catch(error){console.error('Sərhəd yürüşü bərpa edilmədi:',error)}
+
 const host=document.querySelector('#scene');
 const scene=new THREE.Scene();
 scene.background=new THREE.Color(0x879b98);
