@@ -93,4 +93,20 @@ class CityStateTest {
         assertNull(city.getKeepUpgradeEndsAt());
     }
 
+    @Test
+    void resourceBuildingUpgradeBoostBeginsAtItsCompletionTime() {
+        CityState city = new CityState(UUID.randomUUID(), "Qala");
+        Instant start = city.getLastResourceUpdateAt();
+        Instant finish = start.plusSeconds(1800);
+        city.deductBuildingUpgradeCost(0, 0, 0, 0, 0);
+        city.startBuildingUpgrade("WOODCUTTER", finish);
+
+        city.accrueResources(start.plusSeconds(3600));
+
+        assertEquals(2, city.getWoodcutterLevel());
+        assertNull(city.getWoodcutterUpgradeEndsAt());
+        // Half an hour at level 1, then half an hour at level 2 (+25%).
+        assertEquals(1550, city.getWood());
+    }
+
 }
