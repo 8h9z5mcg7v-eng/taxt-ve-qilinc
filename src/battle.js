@@ -74,7 +74,7 @@ export function resolveBattle({ attacker, defender, direction = 'south', tactic 
   const siegeAttackBonus = wallMax > 0 ? siegeEngines.catapult * 14 + siegeEngines.tower * 10 + (wallBreached ? siegeEngines.ram * 6 : 0) : 0;
   const defensiveStoneDamage = defensiveCatapults * 12;
   const attackPower = Math.max(1, rawAttackPower * directionBonus * terrainAttackBonus * cavalryTerrainFactor + siegeAttackBonus - defensiveStoneDamage);
-  const defendPower = calculatePower(defendArmy, true, safeDefenderTactic, attackArmy, null, {}, defenderBuildings) * (wallBreached ? 1 : terrainDefenseBonus * wallProtection);
+  const defendPower = calculatePower(defendArmy, true, safeDefenderTactic, attackArmy, null, {}, safeTerrain === 'fortress' ? defenderBuildings : {}) * (wallBreached ? 1 : terrainDefenseBonus * wallProtection);
   const ratio = attackPower / Math.max(1, defendPower);
   const attackerWins = ratio >= 1;
   const random = (Math.sin(seed * 9301 + 49297) * 233280) % 1;
