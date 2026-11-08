@@ -477,9 +477,15 @@ function torch(x,z){
  const light=new THREE.PointLight(0xff9b42,1.1,13);light.position.set(x,3.5,z);scene.add(light);
 }
 torch(-9,44);torch(9,44);torch(-8,-45);torch(8,-45);
+const patrolMaterialCache=new Map();
+function getPatrolMaterials(armorColor){
+ const key=Number(armorColor).toString(16);
+ if(!patrolMaterialCache.has(key))patrolMaterialCache.set(key,{armor:mat(armorColor,.55),skin:mat(0xb98b68),cloak:mat(0x6b302b)});
+ return patrolMaterialCache.get(key);
+}
 function makePatrol(x,z,armorColor){
  const group=new THREE.Group();group.position.set(x,0,z);group.userData.baseX=x;
- const armor=mat(armorColor,.55),skin=mat(0xb98b68),cloak=mat(0x6b302b);
+ const {armor,skin,cloak}=getPatrolMaterials(armorColor);
  const body=new THREE.Mesh(new THREE.CylinderGeometry(.75,.95,2.7,8),armor);body.position.y=3.1;body.castShadow=true;group.add(body);
  const head=new THREE.Mesh(new THREE.SphereGeometry(.72,10,8),skin);head.position.y=5.1;head.castShadow=true;group.add(head);
  const helmet=new THREE.Mesh(new THREE.ConeGeometry(.85,1.25,8),metal);helmet.position.y=6.05;helmet.castShadow=true;group.add(helmet);
@@ -488,10 +494,11 @@ function makePatrol(x,z,armorColor){
  scene.add(group);return group;
 }
 const patrols=[makePatrol(-13,16,0x6e7780),makePatrol(13,16,0x8b754c),makePatrol(-5,38,0x687c68),makePatrol(5,38,0x8b3434)];
-// Tree clusters beyond the settlement walls.
+// Tree clusters beyond the settlement walls. Reuse bark material across every tree.
+const treeBranchMat=mat(0x59412c);
 function tree(x,z,scale=1){
  const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.48*scale,.82*scale,5.5*scale,7),wood);trunk.position.set(x,2.75*scale,z);trunk.castShadow=true;trunk.receiveShadow=true;scene.add(trunk);
- const branchMat=mat(0x59412c);
+ const branchMat=treeBranchMat;
  for(const side of [-1,1]){
   const branch=new THREE.Mesh(new THREE.CylinderGeometry(.16*scale,.24*scale,2.8*scale,6),branchMat);
   branch.position.set(side*1.05*scale,4.1*scale,z);branch.rotation.z=side*.68;branch.castShadow=true;scene.add(branch);
