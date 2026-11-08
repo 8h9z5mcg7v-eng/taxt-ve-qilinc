@@ -88,6 +88,9 @@ const wallSegments=[
  {label:'Şərq qala divarı',x:wallX,z:0,w:7,h:13,d:105,axis:'z'}
 ];
 const wallBattlements=[];
+const wallDamageDetails=[];
+const crackMaterial=new THREE.MeshStandardMaterial({color:0x211d19,roughness:1,transparent:true,opacity:.9});
+const rubbleMaterial=new THREE.MeshStandardMaterial({color:0x77736a,roughness:1});
 for(const wall of wallSegments){
  const base=box(wall.label,wall.x,0,wall.z,wall.w,wall.h,wall.d,stone);
  base.userData.wallSegment=wall.label;
@@ -98,9 +101,25 @@ for(const wall of wallSegments){
   const block=box(wall.label,wall.axis==='x'?offset:wall.x,13,wall.axis==='x'?wall.z:offset,wall.axis==='x'?2.8:7,3.2,wall.axis==='x'?7:2.8,stoneDark,false);
   block.userData.wallSegment=wall.label;crenels.push(block);
  }
- wallBattlements.push({label:wall.label,base,crenels});
+ const cracks=[],rubble=[];
+ for(let k=0;k<5;k++){
+  const along=-wall.w/2+18+k*wall.w/7;
+  const x=wall.axis==='x'?along:wall.x+(wall.x<0?3.56:-3.56);
+  const z=wall.axis==='x'?wall.z+(wall.z<0?3.56:-3.56):along;
+  const crack=new THREE.Mesh(new THREE.BoxGeometry(wall.axis==='x'?1.25:.13,5.5,wall.axis==='x'?.13:1.25),crackMaterial);
+  crack.position.set(x,6.2,z);crack.rotation.z=(k%2?-.24:.2);crack.visible=false;scene.add(crack);cracks.push(crack);
+ }
+ for(let k=0;k<8;k++){
+  const along=-wall.w/2+12+k*wall.w/9;
+  const x=wall.axis==='x'?along:wall.x+(wall.x<0?5:-5);
+  const z=wall.axis==='x'?wall.z+(wall.z<0?5:-5):along;
+  const stoneChunk=new THREE.Mesh(new THREE.DodecahedronGeometry(1.1+(k%3)*.35,0),rubbleMaterial);
+  stoneChunk.position.set(x,.65+(k%2)*.2,z);stoneChunk.rotation.set(k*.7,k*.4,k*.25);stoneChunk.visible=false;stoneChunk.castShadow=true;scene.add(stoneChunk);rubble.push(stoneChunk);
+ }
+ wallBattlements.push({label:wall.label,base,crenels,cracks,rubble});
 }
 function refreshWallModels(){
+ const damage=Math.max(0,Math.min(100,Number(wallDamage)||0));
  for(const wall of wallBattlements){
   const level=Math.max(1,Math.min(10,Math.floor(Number(levels[wall.label])||1)));
   const scale=1+(level-1)*.055;
@@ -109,6 +128,10 @@ function refreshWallModels(){
    block.visible=i<Math.min(wall.crenels.length,8+level*2);
    block.position.y=13*scale+1.5;
   });
+  const crackCount=Math.ceil(damage/20);
+  wall.cracks.forEach((crack,i)=>{crack.visible=i<crackCount;});
+  const rubbleCount=Math.floor(damage/13);
+  wall.rubble.forEach((piece,i)=>{piece.visible=i<rubbleCount;});
  }
 }
 for(const [x,z] of [[-wallX,-wallZ],[wallX,-wallZ],[-wallX,wallZ],[wallX,wallZ]])tower(x,z);
