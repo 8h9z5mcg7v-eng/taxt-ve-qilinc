@@ -21,8 +21,9 @@ export function configureApiBaseUrl(value) {
   }
   let parsed;
   try { parsed = new URL(raw); } catch { throw new TypeError('API ünvanı düzgün URL olmalıdır.'); }
-  if (!['http:', 'https:'].includes(parsed.protocol) || parsed.username || parsed.password) {
-    throw new TypeError('API ünvanı yalnız təhlükəsiz HTTP(S) ünvanı ola bilər.');
+  const localDevelopmentHost = ['localhost', '127.0.0.1', '[::1]'].includes(parsed.hostname);
+  if ((parsed.protocol !== 'https:' && !(parsed.protocol === 'http:' && localDevelopmentHost)) || parsed.username || parsed.password) {
+    throw new TypeError('API ünvanı HTTPS olmalıdır (yalnız lokal test üçün HTTP icazəlidir).');
   }
   apiBaseUrl = raw;
   sessionStore()?.setItem(API_URL_KEY, raw);
