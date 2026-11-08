@@ -167,6 +167,8 @@ let resources={wood:Math.max(0,Number(savedCity.resources?.wood??1200)),stone:Ma
 const levels={...(savedCity.levels||{})};
 const wounded={infantry:0,spearman:0,archer:0,cavalry:0,knight:0,...(savedCity.wounded||{})};
 let treatmentEndsAt=Math.max(0,Number(savedCity.treatmentEndsAt)||0);
+let trainingQueue=Array.isArray(savedCity.trainingQueue)?savedCity.trainingQueue.filter(job=>job&&job.id&&troopTitlesSafe(job.type)&&Number(job.count)>0):[];
+function troopTitlesSafe(type){return ['infantry','spearman','archer','cavalry','knight'].includes(type)}
 const resourceNodes={wood:document.querySelector('#wood'),stone:document.querySelector('#stone'),gold:document.querySelector('#gold')};
 function refreshResources(){for(const key of Object.keys(resources))resourceNodes[key].textContent=resources[key].toLocaleString('en-US')}
 function showBuilding(label){selectedBuilding=label;const level=levels[label]||1;const defenseNote=label==='Müdafiə qülləsi'?'<br>Hər səviyyə yüksəlişi qala müdafiəsinə 1 katapult əlavə edir. Hazırda: '+Math.max(0,level-1)+' katapult.':label.includes('qala divarı')?'<br>Divar səviyyəsi: '+level+'/10 · daha hündür daş divar və sıx mazğallar.':' ';info.innerHTML='<b>'+label+' · Səviyyə '+level+'</b>İnkişaf üçün düyməyə toxun. Növbəti səviyyə resurs tələb edir.'+defenseNote;}
@@ -234,7 +236,7 @@ function saveCity(){
   for(const key of Object.keys(wounded))wounded[key]=mergedWounded[key]??0;
   for(const key of Object.keys(levels))levels[key]=mergedLevels[key]??levels[key];
   treatmentEndsAt=mergedTreatment;
-  const next={...savedCity,...latest,resources:mergedResources,army:mergedArmy,levels:mergedLevels,wounded:mergedWounded,treatmentEndsAt};
+  const next={...savedCity,...latest,resources:mergedResources,army:mergedArmy,levels:mergedLevels,wounded:mergedWounded,treatmentEndsAt,trainingQueue};
   localStorage.setItem(SAVE_KEY,JSON.stringify(next));
   savedCity=next;
   return true;
@@ -251,6 +253,7 @@ async function withCityEconomyLock(action){
    for(const key of Object.keys(levels))delete levels[key];
    Object.assign(levels,latest.levels||{});
    treatmentEndsAt=Math.max(0,Number(latest.treatmentEndsAt)||0);
+   trainingQueue=Array.isArray(latest.trainingQueue)?latest.trainingQueue.filter(job=>job&&job.id&&troopTitlesSafe(job.type)&&Number(job.count)>0):[];
    refreshResources();updateArmyStatus();renderArmyInCity();refreshDefenseTowerModels();refreshWallModels();
   }catch{return}
   action();
@@ -305,7 +308,7 @@ const troopCosts={infantry:{wood:10,gold:5},spearman:{wood:15,stone:5},archer:{w
 const troopTitles={infantry:'Piyada',spearman:'Nizəçi',archer:'Oxçu',cavalry:'Süvari',knight:'Cəngavər'};
 const recruit=document.querySelector('#recruit');
 document.querySelector('#recruitToggle').addEventListener('click',()=>recruit.classList.toggle('open'));
-function updateArmyStatus(){document.querySelector('#armyStatus').textContent='Hazır qoşun: '+Object.entries(army).map(([k,v])=>troopTitles[k]+': '+v).join(' · ')}
+function updateArmyStatus(){const active=trainingQueue[0];const remaining=active?Math.max(0,Number(active.endsAt)-Date.now()):0;document.querySelector('#armyStatus').textContent='Hazır qoşun: '+Object.entries(army).map(([k,v])=>troopTitles[k]+': '+v).join(' · ')+(active?' · 🛠 Hazırlanır: '+troopTitles[active.type]+' '+active.count+' ədəd · '+Math.ceil(remaining/1000)+' san.':'')+(trainingQueue.length>1?' · Növbədə '+(trainingQueue.length-1)+' sifariş':'')}
 function renderHospital(){
  let panel=document.querySelector('#hospitalPanel');
  if(!panel){panel=document.createElement('section');panel.id='hospitalPanel';panel.style.cssText='position:absolute;right:12px;top:112px;z-index:5;width:min(290px,calc(100vw - 24px));padding:11px 13px;border:1px solid #b58a55;border-radius:10px;background:#1d2b25ed;color:#f4e6c8;font:12px/1.5 system-ui;pointer-events:auto';document.body.append(panel)}
@@ -358,11 +361,15 @@ document.querySelector('#train').addEventListener('click',()=>withCityEconomyLoc
  const count=Math.max(1,Math.min(500,Math.floor(Number(document.querySelector('#troopCount').value)||1)));
  const cost=troopCosts[type];
  if(!cost){document.querySelector('#armyStatus').textContent='Naməlum qoşun növü.';return}
+ if(trainingQueue.length>=8){document.querySelector('#armyStatus').textContent='Təlim növbəsi doludur. Əvvəlki sifarişlərin tamamlanmasını gözlə.';return}
  const totalCost={wood:(cost.wood||0)*count,stone:(cost.stone||0)*count,gold:(cost.gold||0)*count};
  if(Object.keys(totalCost).some(k=>resources[k]<totalCost[k])){document.querySelector('#armyStatus').textContent='Resurs çatışmır — '+count+' '+troopTitles[type]+' hazırlamaq mümkün deyil.';return}
+ const now=Date.now(),last=trainingQueue[trainingQueue.length-1],startedAt=Math.max(now,Number(last?.endsAt)||now),duration=count*3000;
  for(const key of Object.keys(resources))resources[key]-=totalCost[key];
- army[type]+=count;refreshResources();saveCity();updateArmyStatus();renderArmyInCity();
+ trainingQueue.push({id:'train-'+now+'-'+Math.random().toString(36).slice(2,8),type,count,startedAt,endsAt:startedAt+duration,duration});
+ refreshResources();if(!saveCity()){document.querySelector('#armyStatus').textContent='Təlim sifarişi yadda saxlanmadı. Yenidən yoxla.';return}updateArmyStatus();
 }));
+function processTraining(){withCityEconomyLock(()=>{let changed=false;const now=Date.now();while(trainingQueue.length&&Number(trainingQueue[0].endsAt)<=now){const job=trainingQueue.shift();if(!troopTitlesSafe(job.type))continue;army[job.type]=Math.max(0,Math.floor(Number(army[job.type])||0))+Math.max(1,Math.floor(Number(job.count)||1));changed=true;}if(changed){if(!saveCity())return;renderArmyInCity();}updateArmyStatus()})}
 document.querySelector('#sendArmy').addEventListener('click',()=>{
  if(Object.values(army).every(v=>v===0)){document.querySelector('#armyStatus').textContent='Əvvəlcə kazarmada qoşun hazırla.';return}
  const params=new URLSearchParams();for(const [type,count] of Object.entries(army))params.set(type,String(count));
@@ -481,6 +488,8 @@ updateArmyStatus();
 renderArmyInCity();
 processHospital();
 setInterval(processHospital,1000);
+processTraining();
+setInterval(processTraining,1000);
 processReturningArmy();
 renderLastBattleReport();
 renderBattleHistory();
