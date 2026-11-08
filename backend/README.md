@@ -87,3 +87,15 @@ Each keep level above level 1 increases production by 10%. Each resource has a s
 The city API response includes `resourceStorageCap` and `lastResourceUpdateAt`. Unit tests cover offline accrual, fractional accumulation, cap enforcement and backwards clock input. Production rates, upgrades to resource buildings, boosts, protection against clock manipulation at infrastructure level and load testing remain future work.
 
 Production is split at a keep-upgrade completion timestamp when the player has been offline: elapsed time before completion uses the old keep level, and time after completion uses the new level. Resource arithmetic is capped before addition to avoid integer overflow.
+
+## Resource production buildings
+
+The city has four server-owned production buildings, each starting at level 1:
+- `WOODCUTTER` — increases wood production
+- `QUARRY` — increases stone production
+- `FARM` — increases food production
+- `IRON_MINE` — increases iron production
+
+Upgrade one with `POST /api/v1/city/buildings/{building}/upgrade`, using the Bearer token. The path key is case-insensitive. The server checks and deducts the costs; the building upgrade takes 20 seconds per target level in this development balance. Each building is capped at level 20. Target level N costs N×100 gold, N×250 wood, N×150 stone, N×100 food and N×50 iron. Each level above 1 increases that building's resource production by 25%.
+
+The city response includes each building level and its upgrade completion timestamp. Offline production is split at building and keep upgrade completion times so a new production bonus is applied only after the corresponding upgrade completes. These timings and prices are provisional. The next step is to expose these controls in the browser city UI and then tune the economy.
