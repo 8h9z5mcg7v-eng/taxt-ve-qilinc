@@ -17,6 +17,19 @@ Bu fayla yalnız mənbəsi və lisenziyası yoxlanmış aktivlər əlavə edilir
 | Medieval Castle Construction (149 GLB, 2.4 MB, 47,140 tris cəmi) | https://3dassets.dev/packs/medieval-castle-construction | CC0 1.0 | Modul istehkam prototipi | Divar, keçid, qala hissələri və həyət avadanlığı. Kiçik həndəsəli və AI ilə yaradılmışdır; final qala üçün deyil, modul ölçü/yerləşmə sınağı üçündür. |
 | Kenney Castle Kit | https://kenney.nl/assets/castle-kit | CC0 | Stilizə edilmiş ehtiyat dəst | GLB/FBX/OBJ və teksturalar; stilizə olunmuş vizual dili səbəbilə final realizm üçün uyğunluğu təsdiqlənməyib. |
 
+## Oyuna qoşulan xarici GLB mənbələri
+
+Aşağıdakı modellər `src/city.js` daxilində GLTFLoader ilə uzaq URL-dən çağırılır. Bunlar repozitoriyaya hələ kopyalanmayıb; brauzerdə faktiki yüklənmə və vizual uyğunluq ayrıca yoxlanmalıdır.
+
+| Model | Mənbə | Lisenziya / texniki məlumat | Hazırkı vəziyyət |
+|---|---|---|---|
+| Medieval Horse Stable | https://shuriken.studio/models/buildings/medieval-horse-stable | Free Model License; GLB, 0.4 MB, 7,748 tris | Tövlə maketi yüklənəndə gizlədilir; uzaqdan yükləmə kodu qoşulub |
+| Blacksmith Workshop | https://shuriken.studio/models/buildings/blacksmith-workshop | Free Model License; GLB, 0.4 MB, 7,640 tris | Dəmirçi maketi yüklənəndə gizlədilir; uzaqdan yükləmə kodu qoşulub |
+| Thatched Storybook Cottage | https://shuriken.studio/models/buildings/thatched-storybook-cottage | Free Model License; GLB, 0.5 MB, 5,610 tris | Kənd evi kimi əlavə edilir; uzaqdan yükləmə kodu qoşulub |
+| Half-Timbered Tavern | https://shuriken.studio/models/buildings/half-timbered-tavern | Free Model License; GLB, 0.5 MB, 8,716 tris | Meyxana kimi əlavə edilir; uzaqdan yükləmə kodu qoşulub |
+| Castle Gatehouse | https://shuriken.studio/models/buildings/castle-gatehouse | Free Model License; GLB, 0.4 MB, 6,190 tris | Darvaza maketi yüklənəndə gizlədilir; uzaqdan yükləmə kodu qoşulub |
+| Medieval Fair props | https://github.com/anishthite/cc0-models-Polygonal-Mind/tree/main/projects/medieval-fair | CC0; GLB | Bazar çadırı, araba, çəllək və fənər üçün uzaqdan yükləmə kodu qoşulub |
+
 ## İlkin kompozisiya qərarı
 1. Castle with Keep əsas qala kimi sınaqdan keçiriləcək; onun daxili divarları və darvazası saxlanılacaq.
 2. Ayrı Medieval Gatehouse yalnız alternativ qala girişi kimi qiymətləndiriləcək.
@@ -34,7 +47,7 @@ Bu fayla yalnız mənbəsi və lisenziyası yoxlanmış aktivlər əlavə edilir
 ## Qəbul yoxlaması
 - [x] Mənbə linkləri qeydə alınıb
 - [x] İlkin lisenziya qeydləri yoxlanıb
-- [ ] Aktivlər repozitoriyaya yüklənib
+- [ ] Aktivlər repozitoriyaya lokal yüklənib (hazırda bir hissəsi uzaq URL-dən çağırılır)
 - [ ] Material və tekstura keyfiyyəti yoxlanıb
 - [ ] Poliqon sayı və LOD yoxlanıb
 - [ ] GLB iPhone Safari-də açılıb
