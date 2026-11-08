@@ -68,3 +68,12 @@ Aşağıdakı modellər `src/city.js` daxilində GLTFLoader ilə uzaq URL-dən �
 | Medieval Water Sawmill | https://shuriken.studio/models/buildings/medieval-water-sawmill | Free Model License; GLB, 0.4 MB, 7,588 tris, 16 parts | Resurs anbarının yerində taxta istehsalı binası; yüklənəndə prosedur anbar gizlədilir; model brauzerdə vizual yoxlanmayıb |
 
 | Guard Barracks (Medieval MMO Starter Realm) | https://3dassets.dev/assets/medieval-mmo-starter-realm-guard-barracks-8e59d1cc | CC0 1.0; GLB 171.6 KB, 3,556 tris, 8 materials; open/close/banner-sway animations | Kazarma maketini uğurlu yüklənmədə əvəz edir; CORS-enabled CDN; brauzer/iPhone vizual sınağı hələ aparılmayıb |
+
+
+## Innerscene Castle with Keep — runtime integration
+- Source: https://www.innerscene.com/tools/library/3d-parts/castle-with-keep-1a75a9e1
+- Download endpoint currently referenced by the browser client: https://files.innerscene.com/library/castle-with-keep-1a75a9e1/be0d9411a3e3b580b2b5/castle-with-keep.glb
+- Format / size: GLB, 17.1 MB; nominal footprint 49.3 × 49.7 m, height 29.1 m.
+- License: CC0 public domain; commercial use, modification and redistribution permitted by source page.
+- Integration status: browser runtime loader wired in `src/city.js` at target width 70 m. Existing procedural citadel stays visible until the GLB loads successfully, then is hidden. If network/CORS/host fails, procedural fallback remains visible.
+- Verification status: NOT yet confirmed in a real browser or on iPhone. External-host CORS, download stability, geometry/material quality, draw-call count, texture memory and frame rate still require validation. The 17.1 MB asset is remotely streamed and is not yet stored in this repository.
