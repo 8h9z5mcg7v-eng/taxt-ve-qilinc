@@ -853,16 +853,17 @@ function mountGeneralPanel(){
  const generals={
   alp:{name:'Alp Arslan',title:'Süvari sərkərdəsi',desc:'Süvari hücumuna +18%, bütün qoşunlara +3%.'},
   tomris:{name:'Tomris',title:'Oxçu sərkərdəsi',desc:'Oxçu hücumuna +18%, bütün qoşunlara +3%.'},
-  babek:{name:'Babək',title:'Piyada sərkərdəsi',desc:'Piyada və nizəçi hücumuna +18%, bütün qoşunlara +3%.'}
+  babek:{name:'Babək',title:'Piyada sərkərdəsi',desc:'Piyada və nizəçi hücumuna +18%, bütün qoşunlara +3%.'},
+  salahaddin:{name:'Səlahəddin Əyyubi',title:'Qüdsün müdafiəçisi',desc:'Sərkərdə portreti təsdiqlənib. Xüsusi bacarıqları sonrakı balans mərhələsində təyin ediləcək.',image:'./assets/heroes/salahaddin-ayyubi.jpg'}
  };
  if(!generals[state.id])state.id='alp';
  const level=Math.min(10,1+Math.floor(Math.max(0,Number(state.xp)||0)/100));
  let panel=document.getElementById('generalPanel');
  if(!panel){panel=document.createElement('section');panel.id='generalPanel';appendCityOverlay(panel)}
  const totalXp=Math.max(0,Math.floor(Number(state.xp)||0)),levelProgress=level>=10?100:totalXp%100;
- panel.innerHTML='<details><summary>🛡 Sərkərdə · '+generals[state.id].name+' ▾</summary><div class="generalContent"><div style="margin:4px 0">Səviyyə <b>'+level+'/10</b> · Təcrübə <b>'+totalXp+'</b> XP</div><div style="font-size:10px;color:#d7c8a9">'+(level>=10?'Maksimum səviyyə əldə edilib':'Növbəti səviyyəyə '+(100-levelProgress)+' XP qalıb')+'</div><select id="generalSelect" style="width:100%"><option value="alp">Alp Arslan</option><option value="tomris">Tomris</option><option value="babek">Babək</option></select><div id="generalDesc" style="margin-top:7px;color:#e6d5b4"></div><div style="height:5px;background:#3b4034;border-radius:5px;margin-top:7px;overflow:hidden"><div style="height:100%;width:'+levelProgress+'%;background:#d1a85d"></div></div><small>Döyüşdən sonra təcrübə qazanır.</small></div></details>';
+ panel.innerHTML='<details><summary>🛡 Sərkərdə · '+generals[state.id].name+' ▾</summary><div class="generalContent"><div style="margin:4px 0">Səviyyə <b>'+level+'/10</b> · Təcrübə <b>'+totalXp+'</b> XP</div><div style="font-size:10px;color:#d7c8a9">'+(level>=10?'Maksimum səviyyə əldə edilib':'Növbəti səviyyəyə '+(100-levelProgress)+' XP qalıb')+'</div><select id="generalSelect" style="width:100%"><option value="alp">Alp Arslan</option><option value="tomris">Tomris</option><option value="babek">Babək</option><option value="salahaddin">Səlahəddin Əyyubi</option></select><div id="generalPortrait" style="margin-top:8px;text-align:center;pointer-events:none;user-select:none"><img src="./assets/heroes/salahaddin-ayyubi.jpg" alt="Səlahəddin Əyyubi" draggable="false" style="display:none;width:100%;max-width:150px;max-height:110px;object-fit:cover;border-radius:8px;border:1px solid #b58a55;pointer-events:none"></div><div id="generalDesc" style="margin-top:7px;color:#e6d5b4"></div><div style="height:5px;background:#3b4034;border-radius:5px;margin-top:7px;overflow:hidden"><div style="height:100%;width:'+levelProgress+'%;background:#d1a85d"></div></div><small>Döyüşdən sonra təcrübə qazanır.</small></div></details>';
  const select=panel.querySelector('#generalSelect');select.value=state.id;
- const update=()=>{state.id=select.value;localStorage.setItem(key,JSON.stringify(state));panel.querySelector('#generalDesc').textContent=generals[state.id].title+' — '+generals[state.id].desc;panel.querySelector('summary').textContent='🛡 Sərkərdə · '+generals[state.id].name+' ▾'};
+ const update=()=>{state.id=select.value;localStorage.setItem(key,JSON.stringify(state));panel.querySelector('#generalDesc').textContent=generals[state.id].title+' — '+generals[state.id].desc;panel.querySelector('summary').textContent='🛡 Sərkərdə · '+generals[state.id].name+' ▾';const portrait=panel.querySelector('#generalPortrait img');portrait.style.display=state.id==='salahaddin'?'inline-block':'none'};
  select.addEventListener('change',update);update();
 }
 
